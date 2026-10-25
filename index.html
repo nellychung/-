@@ -1,0 +1,2835 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<title>智慧班級經營-寵物王國</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8">
+<script src="config.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700;900&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.js"></script>
+<style>
+    
+
+    body {
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #f0f3ff 0%, #e5e9ff 100%);
+      user-select: none;
+    }
+    [v-cloak] { display: none; }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #a5b4fc; border-radius: 4px; }
+
+    /* 高密度 3D 觸屏卡片 */
+    .card-touch {
+      transition: all 0.25s ease-in-out;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .card-touch:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 18px rgba(99, 102, 241, 0.2);
+    }
+
+    .animal-sphere {
+      box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .animal-3d-img {
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+      transition: transform 0.3s ease;
+    }
+    .group:hover .animal-3d-img {
+      transform: scale(1.12) rotate(-2deg);
+    }
+
+    /* 3D 觸控按鈕 */
+    .btn-3d-emerald { box-shadow: 0 3px 0 #059669; }
+    .btn-3d-emerald:active { transform: translateY(2px); box-shadow: 0 1px 0 #059669; }
+    .btn-3d-rose { box-shadow: 0 3px 0 #e11d48; }
+    .btn-3d-rose:active { transform: translateY(2px); box-shadow: 0 1px 0 #e11d48; }
+
+    /* Keyframes 動畫 */
+    @keyframes gachaShake {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      20% { transform: rotate(-15deg) scale(1.1); }
+      40% { transform: rotate(15deg) scale(1.15); }
+      60% { transform: rotate(-10deg) scale(1.1); }
+      80% { transform: rotate(10deg) scale(1.05); }
+    }
+    .animate-gacha-shake {
+      animation: gachaShake 0.6s infinite ease-in-out;
+    }
+
+    @keyframes cardPop {
+      0% { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+      70% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .animate-card-pop {
+      animation: cardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes eggWobble {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      25% { transform: rotate(-8deg) translateY(-3px); }
+      75% { transform: rotate(8deg) translateY(-2px); }
+    }
+    .animate-egg-wobble {
+      animation: eggWobble 1.8s infinite ease-in-out;
+    }
+
+    /* 加減分 1 秒飄浮數字動畫 */
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, -10px) scale(1.3); }
+      50% { opacity: 1; transform: translate(-50%, -30px) scale(1.1); }
+      100% { opacity: 0; transform: translate(-50%, -50px) scale(0.9); }
+    }
+    .animate-float-num {
+      animation: floatUp 1s ease-out forwards;
+      pointer-events: none;
+    }
+
+    /* 邊框閃爍特效 */
+    @keyframes flashGreen {
+      0%, 100% { border-color: transparent; }
+      20%, 80% { border-color: #10b981; box-shadow: 0 0 16px rgba(16, 185, 129, 0.8); }
+    }
+    @keyframes flashRed {
+      0%, 100% { border-color: transparent; }
+      20%, 80% { border-color: #f43f5e; box-shadow: 0 0 16px rgba(244, 63, 94, 0.8); }
+    }
+    .flash-green { animation: flashGreen 0.9s ease-in-out; }
+    .flash-red { animation: flashRed 0.9s ease-in-out; }
+
+    /* 高階角色特效邊框 */
+    .border-effect-glow-cyan {
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.7), inset 0 0 8px rgba(6, 182, 212, 0.4);
+    }
+    .border-effect-glow-gold {
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.85), inset 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    .border-effect-glow-purple {
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.9), inset 0 0 12px rgba(168, 85, 247, 0.6);
+    }
+    .border-effect-glow-rainbow {
+      box-shadow: 0 0 24px rgba(244, 63, 94, 0.95), inset 0 0 14px rgba(236, 72, 153, 0.7);
+      animation: pulse 2s infinite ease-in-out;
+    }
+  
+    /* 內建圖示（以文字符號取代外部字型，避免被封鎖） */
+    .fa-solid{display:inline-block;font-style:normal;line-height:1}
+    .fa-crown::before{content:"👑"}
+    .fa-xmark::before{content:"✕"}
+    .fa-plus::before{content:"＋"}
+    .fa-wand-magic-sparkles::before{content:"✨"}
+    .fa-upload::before{content:"⬆"}
+    .fa-trash::before{content:"🗑"}
+    .fa-magnifying-glass::before{content:"🔍"}
+    .fa-dice::before{content:"🎲"}
+    .fa-check::before{content:"✔"}
+    .fa-book-open::before{content:"📖"}
+    .fa-arrows-rotate::before{content:"🔄"}
+    .fa-volcano::before{content:"🌋"}
+    .fa-users-gear::before{content:"👥"}
+    .fa-user-plus::before{content:"👤"}
+    .fa-rotate::before{content:"🔄"}
+    .fa-right-left::before{content:"⇄"}
+    .fa-paw::before{content:"🐾"}
+    .fa-house::before{content:"🏠"}
+    .fa-gifts::before{content:"🎁"}
+    .fa-gift::before{content:"🎁"}
+    .fa-gem::before{content:"💎"}
+    .fa-gamepad::before{content:"🎮"}
+    .fa-folder-open::before{content:"📂"}
+    .fa-file-import::before{content:"📥"}
+    .fa-download::before{content:"⬇"}
+    .fa-dice-d20::before{content:"🎲"}
+    .fa-cloud-check::before{content:"☁"}
+    .fa-clock-rotate-left::before{content:"🕘"}
+    .fa-clock::before{content:"🕒"}
+    .fa-boxes-stacked::before{content:"📦"}
+    .fa-book-bookmark::before{content:"🔖"}
+    .fa-address-card::before{content:"🪪"}
+    .fa-spin{animation:faspin 1s linear infinite}@keyframes faspin{to{transform:rotate(360deg)}}
+
+
+    /* 流動邊框：漸層沿邊框旋轉 */
+    @property --pet-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+    @keyframes petFlow { to { --pet-ang: 360deg; } }
+    .pet-flow { animation: petFlow 3s linear infinite; }
+    @media (prefers-reduced-motion: reduce) { .pet-flow { animation: none; } }
+    html,body{background-color:#f0f3ff}
+    .page-wrap{padding-block:4px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+    .pet-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:900;color:#4338ca;background:#eef2ff;border-radius:12px;font-size:1.2em}
+</style>
+</head>
+<body style="margin:0">
+<div class="page-wrap">
+<div id="app" v-cloak class="max-w-[1680px] mx-auto bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden border-2 border-indigo-100 min-h-[96vh] flex flex-col justify-between">
+  
+  <div>
+    <!-- 頂部導覽列 -->
+    <header class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-600 text-white px-3 sm:px-5 py-2.5 flex flex-wrap justify-between items-center gap-2 shadow-md">
+      <div class="flex items-center space-x-2.5">
+        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide">
+          <i class="fa-solid fa-gamepad text-yellow-300"></i>
+          <span>智慧班級經營-寵物王國 (寶可夢特別版)</span>
+        </div>
+
+        <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shadow-inner"
+             :class="syncStatus.isSyncing ? 'bg-amber-400/30 text-amber-200 border-amber-300' : 'bg-emerald-400/30 text-emerald-200 border-emerald-300'">
+          <i class="fa-solid" :class="syncStatus.isSyncing ? 'fa-spin fa-rotate' : 'fa-cloud-check'"></i>
+          <span @click="configureCloud" class="cursor-pointer underline decoration-dotted">{{ syncStatus.text }}</span>
+        </div>
+      </div>
+
+      <!-- 右側即時時間與頁面切換按鈕 -->
+      <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5 bg-black/25 px-3 py-1 rounded-2xl border border-white/20 text-xs font-black text-cyan-200 shadow-inner">
+          <i class="fa-solid fa-clock text-cyan-300"></i>
+          <span>{{ currentDateStr }} {{ currentDayStr }} {{ currentTimeStr }}</span>
+        </div>
+
+        <div class="flex items-center space-x-1 bg-white/20 p-1 rounded-2xl border border-white/20">
+          <button @click="showPickerModal = true" class="px-2.5 py-1 rounded-xl text-xs font-black bg-amber-400 text-slate-900 hover:bg-amber-300 transition flex items-center gap-1 shadow-sm">
+            <i class="fa-solid fa-dice"></i> 隨機抽籤
+          </button>
+        </div>
+
+        <nav class="flex items-center space-x-1 bg-black/30 p-1 rounded-2xl border border-white/10">
+          <button v-for="menu in pages" :key="menu.id" 
+                  @click="currentTab = menu.id"
+                  :class="['px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
+                          currentTab === menu.id ? 'bg-white text-indigo-800 shadow-md scale-105' : 'text-indigo-100 hover:text-white hover:bg-white/10']">
+            <i :class="menu.icon"></i>
+            <span>{{ menu.name }}</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="p-2 sm:p-3 space-y-3">
+      
+      <!-- 頁面 1：全班學生列表 -->
+      <div v-if="currentTab === 'dashboard'" class="space-y-2">
+        <div class="flex flex-wrap justify-between items-center gap-2 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 px-3 py-2 rounded-2xl border border-indigo-100 shadow-xs">
+          <div class="flex items-center space-x-3">
+            <span class="text-xs font-black text-indigo-950 flex items-center gap-1.5">
+              <i class="fa-solid fa-crown text-amber-500"></i> 全班名單 (共 {{ filteredStudents.length }} / {{ students.length }} 人)
+            </span>
+            
+            <div class="flex bg-indigo-100 p-0.5 rounded-xl text-[11px] font-bold">
+              <button @click="viewMode = 'all'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'all' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">全班座號</button>
+              <button @click="viewMode = 'grouped'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'grouped' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">依組分區</button>
+            </div>
+
+            <div v-if="viewMode === 'all'" class="flex items-center space-x-1 text-xs">
+              <span class="text-slate-500 font-bold">排序：</span>
+              <select v-model="sortBy" class="bg-white border rounded-lg px-2 py-0.5 font-bold text-slate-700 text-[11px] outline-none">
+                <option value="seat">依座號小到大</option>
+                <option value="score">依 EXP 排行榜</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <div class="relative">
+              <input v-model="searchQuery" type="text" placeholder="搜尋姓名或座號..." class="pl-7 pr-3 py-1 bg-white border rounded-xl text-xs font-bold outline-none w-36 focus:w-48 transition-all" />
+              <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-2.5 top-2"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模式 A：全班高密度 3D 卡片網格 -->
+        <div v-if="viewMode === 'all'" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+          <div v-for="student in sortedStudents" :key="student.id" 
+               class="bg-gradient-to-b from-white to-slate-50 rounded-2xl p-2 card-touch flex flex-col justify-between relative group border"
+               :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
+            
+            <!-- 1秒飄浮數字 (+1 / -1) -->
+            <div v-if="student.anim" 
+                 :key="student.anim.key" 
+                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num drop-shadow-lg"
+                 :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
+              {{ student.anim.type }}
+            </div>
+
+            <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-lg sm:text-xl drop-shadow-md z-20 animate-bounce" title="全班經驗值王者 👑">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+            </div>
+
+            <div class="absolute top-1.5 left-1.5 bg-slate-900/90 text-white font-black text-[10px] px-1.5 py-0.2 rounded-full z-10 shadow-sm">
+              #{{ student.seatNumber }}
+            </div>
+
+            <div class="absolute top-1.5 right-1.5 text-[9px] font-black text-indigo-700 bg-indigo-100/90 backdrop-blur-xs px-1.5 py-0.2 rounded-full border border-indigo-200 z-10 shadow-xs max-w-[62px] truncate">
+              {{ getStageName(student) }}
+            </div>
+
+            <div @click="openProfileModal(student)" class="cursor-pointer text-center pt-2.5 group-hover:scale-105 transition-transform">
+              <div class="w-13 h-13 sm:w-15 sm:h-15 mx-auto p-1 animal-sphere flex items-center justify-center overflow-hidden transition-all relative"
+                   :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
+                <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
+              </div>
+
+              <div class="font-black text-slate-800 text-xs mt-1 truncate flex items-center justify-center gap-1">
+                <span>{{ student.name }}</span>
+                <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[11px]" title="經驗值王冠"></i>
+              </div>
+              
+              <div class="text-[10px] font-bold text-amber-700 my-0.5 truncate bg-amber-50/80 px-1.5 py-0.2 rounded-full border border-amber-200/60">
+                🐾 {{ getPetName(student) }}
+              </div>
+
+              <div class="px-0.5">
+                <div class="flex justify-between items-center text-[9px] font-black mb-0.5">
+                  <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span>
+                  <span class="text-indigo-600 font-extrabold">{{ student.score }} EXP</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300" title="升級進度">
+                  <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-300" 
+                       :style="{ width: getStudentLevelData(student.score).progressPercent + '%' }"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-1.5 mt-1 border-t border-slate-200/80 grid grid-cols-2 gap-1">
+              <button @click.stop="addScore(student, 1)" class="bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black py-1 rounded-lg text-xs btn-3d-emerald active:scale-95 transition">
+                +1
+              </button>
+              <button @click.stop="addScore(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-1 rounded-lg text-xs btn-3d-rose active:scale-95 transition">
+                -1
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模式 B：小組分區 -->
+        <div v-else class="space-y-2">
+          <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-2.5 rounded-2xl border-2 border-slate-200">
+            <div class="flex justify-between items-center mb-2 pb-1 border-b">
+              <span class="bg-indigo-600 text-white font-black text-xs px-2.5 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
+              <div class="flex space-x-1">
+                <button @click="addGroupScore(gNum, 1)" class="px-2.5 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black rounded-lg transition">+1 全組</button>
+                <button @click="addGroupScore(gNum, -1)" class="px-2.5 py-0.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black rounded-lg transition">-1 全組</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+              <div v-for="student in getStudentsByGroup(gNum)" :key="student.id" 
+                   @click="openProfileModal(student)"
+                   class="bg-white p-2 rounded-xl border-2 border-slate-200 flex items-center justify-between cursor-pointer hover:border-indigo-400 transition relative"
+                   :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
+                
+                <div v-if="student.anim" 
+                     :key="student.anim.key" 
+                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-xl animate-float-num drop-shadow-md"
+                     :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
+                  {{ student.anim.type }}
+                </div>
+
+                <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-sm z-20 animate-bounce" title="全班經驗值王者">
+                  <i class="fa-solid fa-crown"></i>
+                </div>
+
+                <div class="flex items-center space-x-2 min-w-0">
+                  <div class="w-9 h-9 rounded-xl p-0.5 animal-sphere shrink-0 overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
+                    <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1">
+                      <span>{{ student.name }}</span>
+                      <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
+                    </div>
+                    <div class="text-[10px] text-amber-700 font-bold truncate">🐾 {{ getPetName(student) }}</div>
+                  </div>
+                </div>
+                <div class="flex space-x-1" @click.stop>
+                  <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] font-black rounded active:scale-95">+1</button>
+                  <button @click="addScore(student, -1)" class="px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded active:scale-95">-1</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 頁面 2：作業管理頁面 -->
+      <div v-if="currentTab === 'homework'" class="space-y-4 max-w-7xl mx-auto">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-3xl shadow-lg flex flex-wrap justify-between items-center gap-3">
+          <div class="space-y-1">
+            <h2 class="text-lg font-black flex items-center gap-2">
+              <i class="fa-solid fa-book-open text-yellow-300"></i> 全班作業繳交與追蹤管理中心
+            </h2>
+            <p class="text-xs text-purple-100 font-medium">按「完成」時，訂正燈號將自動熄滅！</p>
+          </div>
+
+          <div class="flex items-center space-x-2 bg-white/10 p-2 rounded-2xl border border-white/20">
+            <input v-model="newHomeworkTitle" placeholder="輸入新作業名稱 (例：數學習作 P.15)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-800 outline-none w-52 sm:w-64" />
+            <button @click="addHomework" class="px-4 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-xs font-black rounded-xl transition shadow">
+              <i class="fa-solid fa-plus mr-1"></i> 新增作業
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border-2 border-emerald-200 p-4 shadow-md flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1 min-w-0">
+            <h3 class="text-sm font-black text-emerald-900 flex items-center gap-2">
+              <i class="fa-solid fa-rotate" :class="sheetState.busy ? 'fa-spin' : ''"></i> 作業檢核表自動同步（Google 試算表）
+            </h3>
+            <p class="text-xs font-black" :class="sheetState.kind === 'ok' ? 'text-emerald-700' : sheetState.kind === 'error' ? 'text-rose-600' : 'text-slate-500'">{{ sheetState.text }}</p>
+            <p class="text-[11px] text-slate-500 font-bold">開啟頁面時自動讀取，之後每 3 分鐘再讀一次。TRUE 加 1 分並標為「已交」；同一項作業不重複加分，FALSE 不扣分。</p>
+          </div>
+          <button @click="syncSheet(true)" :disabled="sheetState.busy" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-black rounded-xl shadow transition active:scale-95 disabled:opacity-50">
+            <i class="fa-solid fa-rotate mr-1"></i> 立即同步
+          </button>
+        </div>
+
+        <div class="bg-white rounded-3xl border-2 border-purple-200 p-4 shadow-md overflow-x-auto custom-scroll">
+          <div v-if="homeworkList.length === 0" class="text-center py-12 text-slate-400 font-bold space-y-2">
+            <i class="fa-solid fa-folder-open text-4xl text-slate-300"></i>
+            <div>目前尚未建立任何作業項目，請於右上方新增作業。</div>
+          </div>
+
+          <table v-else class="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr class="border-b-2 border-purple-200 text-xs font-black text-purple-900 bg-purple-50/70">
+                <th class="p-3 w-16">座號</th>
+                <th class="p-3 w-28 border-r-2 border-purple-200">學生姓名</th>
+                <th v-for="hw in homeworkList" :key="hw.id" class="p-3 min-w-[200px] border-r-2 border-purple-200 bg-purple-100/50">
+                  <div class="flex justify-between items-center gap-1">
+                    <span class="truncate font-black text-purple-950">{{ hw.title }}</span>
+                    <div class="flex items-center space-x-1 shrink-0">
+                      <button @click="batchSetHwStatus(hw.id, 'submitted')" title="一鍵將全班設為已繳交" class="px-1.5 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] rounded font-extrabold shadow-xs">全交</button>
+                      <button @click="removeHomework(hw.id)" class="text-rose-400 hover:text-rose-600 p-0.5"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-purple-100 text-xs font-bold">
+              <tr v-for="student in sortedStudents" :key="student.id" class="hover:bg-purple-50/30 transition">
+                <td class="p-3 font-mono text-slate-500">#{{ student.seatNumber }}</td>
+                <td class="p-3 font-black text-slate-800 border-r-2 border-purple-200">
+                  <div class="flex items-center space-x-2">
+                    <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-6 h-6 object-contain" />
+                    <span>{{ student.name }}</span>
+                    <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-xs"></i>
+                  </div>
+                </td>
+                <td v-for="hw in homeworkList" :key="hw.id" class="p-2 border-r-2 border-purple-200 bg-purple-50/20">
+                  <div class="flex items-center space-x-1 bg-white p-1 rounded-xl border border-purple-100 shadow-xs">
+                    <button @click="setHomeworkStatus(student, hw.id, 'submitted')"
+                            :class="['px-2 py-1 rounded-lg text-[11px] font-black transition flex-1 text-center', 
+                                    getHwStatus(student, hw.id, 'submitted') ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 text-slate-500 hover:bg-emerald-100']">
+                      已交 (+1)
+                    </button>
+                    <button @click="setHomeworkStatus(student, hw.id, 'completed')"
+                            :class="['px-2 py-1 rounded-lg text-[11px] font-black transition flex-1 text-center', 
+                                    getHwStatus(student, hw.id, 'completed') ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-500 hover:bg-indigo-100']">
+                      完成 (+1)
+                    </button>
+                    <button @click="setHomeworkStatus(student, hw.id, 'revision')"
+                            :class="['px-2 py-1 rounded-lg text-[11px] font-black transition text-center px-2', 
+                                    getHwStatus(student, hw.id, 'revision') ? 'bg-amber-500 text-white shadow-xs animate-pulse' : 'bg-slate-100 text-slate-400 hover:bg-amber-100']">
+                      訂正
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 頁面 3：卡片交換中心 -->
+      <div v-if="currentTab === 'cardMarket'" class="space-y-4 max-w-6xl mx-auto">
+        <div class="bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 text-white p-4 rounded-3xl shadow-lg flex justify-between items-center">
+          <div class="space-y-1">
+            <h2 class="text-lg font-black flex items-center gap-2">
+              <i class="fa-solid fa-arrows-rotate text-yellow-300"></i> 卡片交換與自由貿易中心
+            </h2>
+            <p class="text-xs text-pink-100">學生之間可以自由交換或轉讓扭蛋獲得的特權卡片！</p>
+          </div>
+          <div class="text-xs font-black bg-white/20 px-3 py-1.5 rounded-2xl border border-white/20">
+            全班流通卡片總數：{{ totalCardsInClass }} 張
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          <div class="md:col-span-5 bg-white p-4 rounded-3xl border-2 border-pink-200 shadow-sm space-y-3">
+            <div class="font-black text-xs text-pink-900 flex justify-between items-center">
+              <span>👤 甲方 (交易發起人)</span>
+              <span v-if="tradePartyA.student" class="text-pink-600 font-bold">持有 {{ tradePartyA.student.cards?.length || 0 }} 張卡片</span>
+            </div>
+
+            <select v-model="tradePartyA.studentId" @change="onTradeStudentAChange" class="w-full p-2 border-2 rounded-xl text-xs font-bold outline-none border-pink-200">
+              <option :value="null">-- 請選擇學生 --</option>
+              <option v-for="s in students" :key="s.id" :value="s.id">#{{ s.seatNumber }} {{ s.name }} ({{ s.score }} EXP)</option>
+            </select>
+
+            <div v-if="tradePartyA.student" class="space-y-2">
+              <label class="block text-[11px] font-bold text-slate-500">選擇要出的卡片：</label>
+              <div v-if="tradePartyA.student.cards && tradePartyA.student.cards.length > 0" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scroll">
+                <div v-for="(card, idx) in tradePartyA.student.cards" :key="idx" 
+                     @click="tradePartyA.cardIndex = idx"
+                     :class="['p-2 rounded-xl border-2 cursor-pointer text-xs transition', tradePartyA.cardIndex === idx ? 'border-pink-500 bg-pink-50 scale-95' : 'border-slate-200 bg-white']">
+                  <div class="font-black text-slate-800 text-[11px] truncate">{{ card.name }}</div>
+                  <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-slate-800 text-white">{{ card.rarity }}</span>
+                </div>
+              </div>
+              <div v-else class="text-center py-6 text-xs text-slate-400 font-bold border-2 border-dashed rounded-xl">該學生目前沒有卡片</div>
+            </div>
+          </div>
+
+          <div class="md:col-span-2 text-center space-y-2">
+            <div class="w-12 h-12 mx-auto bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-full flex items-center justify-center text-xl shadow-md">
+              <i class="fa-solid fa-right-left"></i>
+            </div>
+            <button @click="executeCardTrade" class="w-full py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-md transition active:scale-95">
+              確認交換卡片
+            </button>
+          </div>
+
+          <div class="md:col-span-5 bg-white p-4 rounded-3xl border-2 border-purple-200 shadow-sm space-y-3">
+            <div class="font-black text-xs text-purple-900 flex justify-between items-center">
+              <span>👤 乙方 (交易對象)</span>
+              <span v-if="tradePartyB.student" class="text-purple-600 font-bold">持有 {{ tradePartyB.student.cards?.length || 0 }} 張卡片</span>
+            </div>
+
+            <select v-model="tradePartyB.studentId" @change="onTradeStudentBChange" class="w-full p-2 border-2 rounded-xl text-xs font-bold outline-none border-purple-200">
+              <option :value="null">-- 請選擇學生 --</option>
+              <option v-for="s in students" :key="s.id" :value="s.id">#{{ s.seatNumber }} {{ s.name }} ({{ s.score }} EXP)</option>
+            </select>
+
+            <div v-if="tradePartyB.student" class="space-y-2">
+              <label class="block text-[11px] font-bold text-slate-500">選擇要出的卡片 (或選無進行單向贈與)：</label>
+              <div v-if="tradePartyB.student.cards && tradePartyB.student.cards.length > 0" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scroll">
+                <div v-for="(card, idx) in tradePartyB.student.cards" :key="idx" 
+                     @click="tradePartyB.cardIndex = idx"
+                     :class="['p-2 rounded-xl border-2 cursor-pointer text-xs transition', tradePartyB.cardIndex === idx ? 'border-purple-500 bg-purple-50 scale-95' : 'border-slate-200 bg-white']">
+                  <div class="font-black text-slate-800 text-[11px] truncate">{{ card.name }}</div>
+                  <span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-slate-800 text-white">{{ card.rarity }}</span>
+                </div>
+              </div>
+              <div v-else class="text-center py-6 text-xs text-slate-400 font-bold border-2 border-dashed rounded-xl">無卡片 (將進行單向卡片贈與)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-3xl border-2 border-slate-200 shadow-sm space-y-3">
+          <h3 class="text-xs font-black text-slate-800 flex items-center justify-between">
+            <span><i class="fa-solid fa-boxes-stacked text-indigo-500 mr-1"></i> 全班學生持有卡片總覽</span>
+          </h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-72 overflow-y-auto custom-scroll p-1">
+            <div v-for="student in studentsWithCards" :key="student.id" class="p-2.5 bg-slate-50 rounded-2xl border text-xs space-y-1.5">
+              <div class="font-black text-slate-800 flex justify-between items-center border-b pb-1">
+                <span>#{{ student.seatNumber }} {{ student.name }}</span>
+                <span class="text-[10px] text-pink-600 bg-pink-100 px-1.5 py-0.2 rounded-full font-bold">{{ student.cards.length }} 張卡</span>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                <span v-for="(c, cIdx) in student.cards" :key="cIdx" class="text-[10px] bg-white border px-1.5 py-0.5 rounded font-black text-slate-700">
+                  [{{ c.rarity }}] {{ c.name }}
+                </span>
+              </div>
+            </div>
+            <div v-if="studentsWithCards.length === 0" class="col-span-full text-center py-8 text-slate-400 font-bold text-xs">
+              目前全班學生皆未持有任何卡片 (可經由扭蛋獲得)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 頁面 4：新增學生 / 批次上傳 / 新增自訂寵物 / 禮品與扭蛋設定 -->
+      <div v-if="currentTab === 'addStudent'" class="space-y-4 max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- 左側：新增學生區 -->
+          <div class="bg-white p-4 rounded-2xl border-2 border-indigo-200 shadow-sm space-y-3">
+            <div class="flex bg-indigo-100 p-1 rounded-xl text-xs font-black">
+              <button @click="studentAddMode = 'single'" :class="['flex-1 py-1 rounded-lg transition', studentAddMode === 'single' ? 'bg-white text-indigo-900 shadow-xs' : 'text-indigo-600']">單筆新增</button>
+              <button @click="studentAddMode = 'batch'" :class="['flex-1 py-1 rounded-lg transition', studentAddMode === 'batch' ? 'bg-white text-indigo-900 shadow-xs' : 'text-indigo-600']">⚡ 批次上傳學生</button>
+            </div>
+
+            <!-- 單筆新增表單 -->
+            <div v-if="studentAddMode === 'single'" class="space-y-2 text-xs font-bold">
+              <div>
+                <label class="block text-slate-600 mb-1">座號：</label>
+                <input v-model.number="newStudent.seatNumber" type="number" placeholder="請輸入座號" class="w-full p-2 border-2 rounded-xl focus:border-indigo-500 outline-none" />
+              </div>
+
+              <div>
+                <label class="block text-slate-600 mb-1">姓名：</label>
+                <input v-model="newStudent.name" type="text" placeholder="請輸入學生姓名" class="w-full p-2 border-2 rounded-xl focus:border-indigo-500 outline-none" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-600 mb-1">小組：</label>
+                  <input v-model.number="newStudent.group" type="number" placeholder="第幾組" class="w-full p-2 border-2 rounded-xl focus:border-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label class="block text-slate-600 mb-1">職務：</label>
+                  <select v-model="newStudent.roleSelect" @change="onNewStudentRoleSelectChange" class="w-full p-2 border-2 rounded-xl focus:border-indigo-500 outline-none">
+                    <option value="組長">組長</option>
+                    <option value="副組長">副組長</option>
+                    <option value="秩序長">秩序長</option>
+                    <option value="座位長">座位長</option>
+                    <option value="custom">手動輸入...</option>
+                  </select>
+                  <input v-if="newStudent.roleSelect === 'custom'" v-model="newStudent.role" type="text" placeholder="請輸入自訂職務" class="w-full mt-1.5 p-2 border-2 rounded-xl focus:border-indigo-500 outline-none text-xs" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-600 mb-1">選擇初始寶可夢/寵物造型 (共 {{ presetAvatars.length }} 款)：</label>
+                <div class="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto custom-scroll p-1 border rounded-xl">
+                  <div v-for="(avatar, idx) in presetAvatars" :key="idx" 
+                       @click="newStudent.customAvatar = avatar.url; newStudent.petId = avatar.id; newStudent.animalBg = avatar.bg"
+                       :class="['p-1 rounded-xl cursor-pointer border-2 transition text-center relative', (newStudent.petId === avatar.id || newStudent.customAvatar === avatar.url) ? 'border-indigo-600 bg-indigo-50 shadow-xs' : 'border-transparent hover:border-indigo-200']">
+                    <img :src="avatar.url" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-8 h-8 mx-auto object-contain" />
+                    <span class="text-[9px] block text-slate-600 font-black mt-0.5 truncate">{{ avatar.name }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button @click="createStudent" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95">
+                <i class="fa-solid fa-plus mr-1"></i> 新增至學生名單
+              </button>
+            </div>
+
+            <!-- 批次上傳學生表單 -->
+            <div v-else class="space-y-2 text-xs font-bold">
+              <div class="text-[11px] text-slate-500 bg-indigo-50 p-2 rounded-xl border border-indigo-100">
+                📌 格式說明：每行一位學生，例如：<br>
+                <code class="text-indigo-700 font-mono">1 朱邑笙 1<br>2 林小霸 1<br>3 陳宇豪 2</code>
+              </div>
+
+              <textarea v-model="batchStudentInput" rows="6" placeholder="請在此貼上學生名單..." class="w-full p-2 border-2 rounded-xl text-xs font-mono outline-none focus:border-indigo-500 custom-scroll"></textarea>
+
+              <button @click="parseBatchStudents" class="w-full py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-black text-xs rounded-xl transition">
+                <i class="fa-solid fa-magnifying-glass mr-1"></i> 解析預覽
+              </button>
+
+              <div v-if="parsedBatchList.length > 0" class="space-y-2 pt-1">
+                <div class="text-[11px] font-black text-emerald-600">成功解析 {{ parsedBatchList.length }} 筆學生資料：</div>
+                <div class="max-h-28 overflow-y-auto border rounded-xl p-1 bg-slate-50 space-y-1 text-[11px]">
+                  <div v-for="(item, idx) in parsedBatchList" :key="idx" class="flex justify-between px-1.5 py-0.5 bg-white rounded border">
+                    <span>#{{ item.seatNumber }} {{ item.name }}</span>
+                    <span class="text-indigo-600">第 {{ item.group }} 組</span>
+                  </div>
+                </div>
+
+                <button @click="confirmBatchImport" class="w-full py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95">
+                  <i class="fa-solid fa-file-import mr-1"></i> 確認批次匯入 {{ parsedBatchList.length }} 人
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右側：新增自訂寵物、禮品與扭蛋池管理、現有學生管理 -->
+          <div class="md:col-span-2 space-y-4">
+            
+            <!-- 🎨 新增：自訂上傳寵物功能區 -->
+            <div class="bg-white p-4 rounded-2xl border-2 border-indigo-200 shadow-sm space-y-3">
+              <h3 class="text-base font-black text-indigo-900 flex items-center justify-between">
+                <span><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1"></i> 🎨 自訂新增寵物造型 (支援上傳圖片/網址)</span>
+                <span class="text-xs text-indigo-600 font-bold">目前寵物池共 {{ presetAvatars.length }} 款</span>
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-bold">
+                <div>
+                  <label class="block text-slate-600 mb-1">寵物名稱：</label>
+                  <input v-model="newCustomPet.name" placeholder="請輸入名稱 (例: 班級吉祥物)" class="w-full p-2 border-2 rounded-xl outline-none focus:border-indigo-500" />
+                </div>
+
+                <div>
+                  <label class="block text-slate-600 mb-1">上傳圖案或貼上網址：</label>
+                  <div class="flex space-x-1">
+                    <label class="px-2.5 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-black rounded-xl cursor-pointer text-center text-xs flex items-center gap-1 shrink-0 shadow-xs">
+                      <i class="fa-solid fa-upload"></i> 上傳檔
+                      <input type="file" accept="image/*" @change="onCustomPetFileChange" class="hidden" />
+                    </label>
+                    <input v-model="newCustomPet.url" placeholder="或貼上圖片 URL..." class="w-full p-2 border-2 rounded-xl text-xs outline-none focus:border-indigo-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-slate-600 mb-1">卡片光暈風格：</label>
+                  <select v-model="newCustomPet.bg" class="w-full p-2 border-2 rounded-xl outline-none focus:border-indigo-500">
+                    <option value="bg-gradient-to-br from-orange-100 to-red-200 border-orange-300">🔥 火系橘紅</option>
+                    <option value="bg-gradient-to-br from-emerald-100 to-teal-200 border-emerald-300">🍃 草系翡翠</option>
+                    <option value="bg-gradient-to-br from-sky-100 to-blue-200 border-sky-300">💧 水系天空藍</option>
+                    <option value="bg-gradient-to-br from-amber-100 to-yellow-200 border-amber-300">⚡ 電系黃金</option>
+                    <option value="bg-gradient-to-br from-purple-100 to-indigo-200 border-purple-300">🔮 超能紫</option>
+                    <option value="bg-gradient-to-br from-pink-100 to-rose-200 border-pink-300">🌸 夢幻粉紅</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-1">
+                <div v-if="newCustomPet.url" class="flex items-center space-x-2 text-xs font-bold">
+                  <span class="text-slate-500">圖片預覽：</span>
+                  <img :src="newCustomPet.url" class="w-9 h-9 object-contain rounded-lg border p-0.5 bg-white shadow-xs" />
+                </div>
+                <div v-else class="text-slate-400 text-xs font-bold">尚未選擇或輸入圖片</div>
+
+                <button @click="addCustomPet" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs rounded-xl shadow transition active:scale-95">
+                  <i class="fa-solid fa-plus mr-1"></i> 新增至寵物池
+                </button>
+              </div>
+            </div>
+
+            <!-- 實體禮品與扭蛋池設定區 -->
+            <div class="bg-white p-4 rounded-2xl border-2 border-teal-200 shadow-sm space-y-3">
+              <h3 class="text-base font-black text-teal-900 flex items-center gap-2">
+                <i class="fa-solid fa-gifts text-teal-500"></i> 實體兌換禮品與扭蛋卡片項目設定
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <!-- 新增實體禮品 -->
+                <div class="space-y-1.5 p-2 bg-teal-50/50 rounded-xl border border-teal-100">
+                  <div class="font-black text-teal-900">新增實體禮品：</div>
+                  <div class="flex space-x-1">
+                    <input v-model="newDirectItem.name" placeholder="禮品名稱 (例：🧢 髮帽)" class="p-1.5 border rounded-lg flex-1 font-bold outline-none" />
+                    <input v-model.number="newDirectItem.cost" type="number" placeholder="EXP" class="p-1.5 border rounded-lg w-16 font-bold outline-none" />
+                    <button @click="addDirectItem" class="px-2 py-1 bg-teal-600 text-white font-black rounded-lg">新增</button>
+                  </div>
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    <span v-for="item in directItems" :key="item.id" class="bg-white border text-[11px] px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                      {{ item.name }} (-{{ item.cost }}EXP)
+                      <i @click="removeDirectItem(item.id)" class="fa-solid fa-xmark text-rose-500 cursor-pointer"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 新增扭蛋卡片 -->
+                <div class="space-y-1.5 p-2 bg-amber-50/50 rounded-xl border border-amber-100">
+                  <div class="font-black text-amber-900">新增扭蛋卡片：</div>
+                  <div class="flex space-x-1">
+                    <input v-model="newGachaCard.name" placeholder="卡片名稱 (例：👑 免作業特權)" class="p-1.5 border rounded-lg flex-1 font-bold outline-none" />
+                    <select v-model="newGachaCard.rarity" class="p-1.5 border rounded-lg font-bold outline-none">
+                      <option value="SSR">SSR</option>
+                      <option value="SR">SR</option>
+                      <option value="N">N</option>
+                    </select>
+                    <button @click="addGachaCard" class="px-2 py-1 bg-amber-600 text-white font-black rounded-lg">新增</button>
+                  </div>
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    <span v-for="card in gachaCardPool" :key="card.id" class="bg-white border text-[11px] px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                      [{{ card.rarity }}] {{ card.name }}
+                      <i @click="removeGachaCard(card.id)" class="fa-solid fa-xmark text-rose-500 cursor-pointer"></i>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 現有學生列表與組別/職務/更換寵物 -->
+            <div class="bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-sm space-y-3">
+              <h3 class="text-base font-black text-slate-800 flex items-center justify-between">
+                <span><i class="fa-solid fa-users-gear mr-1"></i> 現有學生名冊與組別 / 職務 / 寵物管理</span>
+                <span class="text-xs text-slate-500 font-normal">教師可手動為學生更換寵物造型</span>
+              </h3>
+
+              <div class="max-h-60 overflow-y-auto custom-scroll space-y-1.5 pr-1">
+                <div v-for="student in students" :key="student.id" class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border text-xs gap-2">
+                  <div class="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                    <span class="font-black text-slate-700 w-7">#{{ student.seatNumber }}</span>
+                    <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-7 h-7 object-contain" />
+                    <span class="font-black text-slate-900 min-w-[55px] flex items-center gap-1">
+                      <span>{{ student.name }}</span>
+                      <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-xs"></i>
+                    </span>
+                    
+                    <div class="flex items-center space-x-1 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
+                      <span class="text-indigo-700 font-bold text-[11px]">組別：第</span>
+                      <input type="number" min="1" max="99" v-model.number="student.group" @change="saveData" class="w-10 px-1 py-0.5 text-center bg-white border border-indigo-300 rounded font-black text-indigo-900 text-xs outline-none focus:border-indigo-600 shadow-inner" />
+                      <span class="text-indigo-700 font-bold text-[11px]">組</span>
+                    </div>
+
+                    <div class="flex items-center space-x-1 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">
+                      <span class="text-purple-700 font-bold text-[11px]">職務：</span>
+                      <select :value="getStudentRoleOption(student)" @change="handleStudentRoleChange(student, $event)" class="px-1.5 py-0.5 bg-white border border-purple-300 rounded font-bold text-purple-900 text-xs outline-none focus:border-purple-600 shadow-inner">
+                        <option value="組長">組長</option>
+                        <option value="副組長">副組長</option>
+                        <option value="秩序長">秩序長</option>
+                        <option value="座位長">座位長</option>
+                        <option value="custom">手動輸入...</option>
+                      </select>
+                      <input v-if="isCustomStudentRole(student)" v-model="student.role" @change="saveData" type="text" placeholder="手動輸入" class="w-16 px-1 py-0.5 text-center bg-white border border-purple-300 rounded font-bold text-purple-900 text-xs outline-none focus:border-purple-600 shadow-inner" />
+                    </div>
+
+                    <span class="text-amber-600 font-black ml-1">Lv.{{ getStudentLevelData(student.score).level }} ({{ student.score }} EXP)</span>
+                  </div>
+
+                  <div class="flex items-center space-x-1 shrink-0">
+                    <button @click="openTeacherPetModal(student)" class="px-2.5 py-1 bg-teal-100 hover:bg-teal-200 text-teal-800 font-black rounded-lg text-[11px] transition">
+                      🐾 更換寵物
+                    </button>
+
+                    <button @click="deleteStudent(student.id)" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-black rounded-lg text-[11px]">
+                      <i class="fa-solid fa-trash mr-1"></i>刪除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 頁面 5：歷史紀錄與資料備份 -->
+      <div v-if="currentTab === 'logs'" class="space-y-3 max-w-5xl mx-auto">
+        <div class="flex flex-wrap justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-200 gap-2">
+          <h2 class="text-base font-black text-slate-800">系統異動與異動歷程</h2>
+          
+          <div class="flex items-center space-x-2">
+            <button @click="exportData" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition">
+              <i class="fa-solid fa-download mr-1"></i> 匯出 JSON 備份
+            </button>
+            <label class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-xl cursor-pointer transition">
+              <i class="fa-solid fa-upload mr-1"></i> 匯入 JSON 資料
+              <input type="file" accept=".json" @change="importData" class="hidden" />
+            </label>
+            <button @click="clearLogs" class="px-3 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-black rounded-xl transition">
+              清空歷程
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border-2 border-slate-200 p-3 shadow-sm max-h-[550px] overflow-y-auto space-y-1.5 custom-scroll">
+          <div v-if="logs.length === 0" class="text-center text-slate-400 py-12 text-sm font-bold">尚無任何紀錄</div>
+          <div v-for="(log, idx) in logs" :key="idx" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border text-xs">
+            <div class="flex items-center space-x-3">
+              <span class="font-mono text-slate-400 font-bold">{{ log.time }}</span>
+              <span class="font-black text-slate-800">{{ log.name }}</span>
+              <span class="text-slate-600 font-bold">{{ log.action }}</span>
+            </div>
+            <span :class="['font-black px-2 py-0.5 rounded-lg', log.change > 0 ? 'bg-emerald-100 text-emerald-800' : log.change < 0 ? 'bg-rose-100 text-rose-800' : 'bg-slate-200 text-slate-800']">
+              {{ log.change !== 0 ? (log.change > 0 ? '+' + log.change : log.change) + ' EXP' : '紀錄' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- 彈窗 1：🎒 學生個人頁面 -->
+  <div v-if="showProfileModal" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-3xl p-3.5 sm:p-4 max-w-4xl w-full shadow-2xl border-4 border-indigo-300 relative max-h-[96vh] flex flex-col justify-between overflow-hidden">
+      <button @click="showProfileModal = false" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
+
+      <div v-if="profileStudent" class="space-y-2.5">
+        <div class="flex items-center space-x-3 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-2.5 rounded-2xl border border-indigo-100 relative">
+          
+          <div class="relative">
+            <div class="w-14 h-14 rounded-2xl p-1 animal-sphere overflow-hidden shrink-0 relative flex items-center justify-center" :style="getPetBorderStyle(profileStudent)" :class="[getPetBorderClass(getStudentLevelData(profileStudent.score).level, profileStudent), getStudentLevelData(profileStudent.score).level < 1 ? 'animate-egg-wobble' : '']">
+              <img :src="getAvatarUrl(profileStudent)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+            </div>
+            <div v-if="isTopStudent(profileStudent)" class="absolute -top-2.5 -right-1.5 text-amber-400 text-xl drop-shadow-md z-20 animate-bounce" title="全班經驗值王者">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+            </div>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-center">
+              <div class="text-base font-black text-slate-800 truncate flex items-center gap-1.5">
+                <span>#{{ profileStudent.seatNumber }} {{ profileStudent.name }}</span>
+                <span v-if="isTopStudent(profileStudent)" class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-black border border-amber-300 flex items-center gap-1">
+                  <i class="fa-solid fa-crown text-amber-500"></i> 全班經驗第一王者
+                </span>
+              </div>
+              <span class="bg-indigo-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full shrink-0">第 {{ profileStudent.group }} 組 · {{ profileStudent.role || '組員' }}</span>
+            </div>
+            <div class="mt-0.5 space-y-0.5">
+              <div class="flex items-center space-x-2 text-[11px] font-black">
+                <span class="text-amber-600">EXP：<span class="text-xs font-black">{{ profileStudent.score }}</span></span>
+                <span class="text-indigo-600">等級：Lv.{{ getStudentLevelData(profileStudent.score).level }}</span>
+                <span class="text-purple-600 bg-purple-100 px-1.5 py-0.2 rounded">【{{ getPetName(profileStudent) }} · {{ getStageName(profileStudent) }}】</span>
+              </div>
+              
+              <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300">
+                <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-300" 
+                     :style="{ width: getStudentLevelData(profileStudent.score).progressPercent + '%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <div class="space-y-2.5">
+            <div class="bg-purple-50/60 p-2.5 rounded-2xl border border-purple-200 space-y-1.5">
+              <h4 class="text-xs font-black text-purple-950 flex items-center justify-between">
+                <span><i class="fa-solid fa-book-bookmark text-purple-600 mr-1"></i> 作業繳交狀況總覽</span>
+                <span class="text-[10px] text-purple-600 font-bold">全班 {{ homeworkList.length }} 項作業</span>
+              </h4>
+
+              <div v-if="homeworkList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-32 overflow-y-auto custom-scroll p-0.5">
+                <div v-for="hw in homeworkList" :key="hw.id" class="p-1.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[11px] shadow-xs">
+                  <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
+                  <div class="flex items-center space-x-1 shrink-0">
+                    <span v-if="getHwStatus(profileStudent, hw.id, 'submitted') && getHwStatus(profileStudent, hw.id, 'completed')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-indigo-600 text-white">完成</span>
+                    <span v-else-if="getHwStatus(profileStudent, hw.id, 'submitted') && getHwStatus(profileStudent, hw.id, 'revision')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-500 text-white">待訂正</span>
+                    <span v-else-if="getHwStatus(profileStudent, hw.id, 'submitted')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-500 text-white">已交</span>
+                    <span v-else class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-600">未交</span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-center py-2 text-slate-400 text-[11px] font-bold border border-dashed rounded-xl">尚無作業項目</div>
+            </div>
+
+            <div class="bg-teal-50/60 p-2.5 rounded-2xl border border-teal-200 space-y-1.5">
+              <h4 class="text-xs font-black text-teal-950 flex items-center justify-between">
+                <span><i class="fa-solid fa-gift text-teal-600 mr-1"></i> 實體兌換 (扣除 EXP)</span>
+              </h4>
+
+              <div v-if="directItems.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                <button v-for="item in directItems" :key="item.id" @click="redeemDirectItem(profileStudent, item)"
+                        class="p-1.5 bg-white hover:bg-teal-100/50 border border-teal-200 rounded-xl text-center transition active:scale-95 flex items-center justify-between">
+                  <div class="text-xs font-black text-slate-800 truncate">{{ item.icon || '🎁' }} {{ item.name }}</div>
+                  <div class="bg-rose-500 text-white font-black text-[9px] py-0.2 px-1 rounded-md shrink-0">
+                    -{{ item.cost }}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="bg-amber-50/60 p-2.5 rounded-2xl border border-amber-200 space-y-1.5">
+              <div class="flex justify-between items-center">
+                <h4 class="text-xs font-black text-amber-950 flex items-center gap-1">
+                  <i class="fa-solid fa-gem text-amber-500"></i> 幸運扭蛋抽卡機
+                </h4>
+                <span class="text-[9px] font-bold text-amber-800 bg-amber-200/80 px-1.5 py-0.2 rounded-full">
+                  必中特權卡
+                </span>
+              </div>
+
+              <button @click="drawGacha(profileStudent)" class="w-full py-2 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-500 hover:to-orange-500 text-slate-900 font-black text-xs rounded-xl shadow transition active:scale-95 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-dice-d20"></i>
+                <span>消耗 50 EXP 啟動扭蛋抽卡</span>
+              </button>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1.5">
+              <h4 class="text-xs font-black text-slate-800 flex items-center justify-between">
+                <span><i class="fa-solid fa-address-card text-indigo-500 mr-1"></i> 已擁有的特權卡片</span>
+                <span class="text-[9px] text-slate-500 font-bold">點擊卡片使用</span>
+              </h4>
+
+              <div v-if="profileStudent.cards && profileStudent.cards.length > 0" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto custom-scroll p-0.5">
+                <div v-for="(card, cIdx) in profileStudent.cards" :key="cIdx" 
+                     @click="useCard(profileStudent, cIdx)"
+                     class="p-1.5 bg-white rounded-xl border border-slate-200 hover:border-rose-400 transition cursor-pointer text-xs space-y-0.5 group">
+                  <div class="flex justify-between items-center">
+                    <span class="font-black text-slate-800 text-[10px] truncate">{{ card.name }}</span>
+                    <span :class="['text-[8px] font-black px-1 py-0.2 rounded text-white', card.rarity === 'SSR' ? 'bg-amber-500' : card.rarity === 'SR' ? 'bg-purple-600' : 'bg-slate-600']">
+                      {{ card.rarity }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-center py-2 text-slate-400 text-[11px] font-bold border border-dashed rounded-xl">尚無特權卡片</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 2：🎰 扭蛋特效 Modal -->
+  <div v-if="showGachaModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3">
+    <div class="bg-gradient-to-b from-indigo-900 via-purple-900 to-slate-900 text-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-amber-400 relative text-center space-y-4">
+      <h3 class="text-xl font-black text-amber-300 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-volcano text-amber-400"></i> 神秘幸運扭蛋機
+      </h3>
+
+      <div v-if="isGachaSpinning" class="py-8 space-y-4">
+        <div class="w-28 h-28 mx-auto relative flex items-center justify-center">
+          <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-rose-500 via-amber-400 to-yellow-300 shadow-2xl border-4 border-white animate-gacha-shake flex items-center justify-center text-4xl">
+            🔮
+          </div>
+        </div>
+        <div class="text-lg font-black text-yellow-200 tracking-wider animate-pulse">
+          扭蛋滾動中，幸運降臨...
+        </div>
+      </div>
+
+      <div v-else-if="gachaResultCard" class="py-4 space-y-4 animate-card-pop">
+        <div class="text-xs font-black text-amber-300">🎉 恭喜獲得特權獎勵卡品！</div>
+
+        <div class="p-5 rounded-2xl border-4 bg-gradient-to-b shadow-2xl text-slate-900 space-y-2 relative overflow-hidden"
+             :class="gachaResultCard.rarity === 'SSR' ? 'from-amber-200 via-yellow-300 to-amber-400 border-yellow-200 ring-4 ring-amber-300/50' : gachaResultCard.rarity === 'SR' ? 'from-purple-200 via-pink-200 to-purple-300 border-purple-300' : 'from-slate-100 to-slate-200 border-slate-300'">
+          
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-900 text-white shadow">
+              {{ gachaResultCard.rarity }}
+            </span>
+            <span class="text-[10px] font-bold text-slate-700">CLASS SPECIAL CARD</span>
+          </div>
+
+          <div class="text-xl font-black py-2 tracking-wide text-indigo-950">
+            {{ gachaResultCard.name }}
+          </div>
+
+          <p v-if="gachaResultCard.isWildcard" class="text-xs font-extrabold text-purple-900 bg-white/80 p-1.5 rounded-xl border">
+            ✨ 這是一張萬能指定卡，可自由挑選卡片池內任意一張特權卡！
+          </p>
+        </div>
+
+        <div v-if="gachaResultCard.isWildcard" class="space-y-2 pt-2">
+          <select v-model="wildcardSelectId" class="w-full p-3 rounded-xl text-sm font-black text-slate-900 bg-white border-2 border-amber-300 outline-none">
+            <option value="">-- 請從下拉選單選擇一張卡片 --</option>
+            <option v-for="cardOption in availableSelectCards" :key="cardOption.id" :value="cardOption.id">[{{ cardOption.rarity }}] {{ cardOption.name }}</option>
+          </select>
+          <button @click="confirmWildcardFromGacha" :disabled="!wildcardSelectId" class="w-full py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 font-black text-sm rounded-xl shadow-lg transition disabled:opacity-50">
+            ✨ 確認獲得此卡片
+          </button>
+        </div>
+        <div v-else class="flex space-x-2 pt-2">
+          <button @click="showGachaModal = false" class="flex-1 py-3 bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 font-black text-sm rounded-xl shadow-lg hover:scale-105 transition">
+            收下卡片並放入背包
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 3：✨ 自選指定卡片 Modal -->
+  <div v-if="showCardSelectModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl p-5 max-w-xl w-full shadow-2xl space-y-4 border-4 border-amber-400 relative max-h-[90vh] flex flex-col">
+      <button @click="showCardSelectModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+
+      <div class="text-center space-y-1">
+        <h3 class="text-lg font-black text-slate-800 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> 指定卡片自選門戶
+        </h3>
+        <p class="text-xs text-slate-500 font-bold">
+          請從下方卡片池中選擇一張你最想要的卡片：
+        </p>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll p-2 border-2 border-amber-100 rounded-2xl bg-amber-50/40">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div v-for="cardOption in availableSelectCards" :key="cardOption.id"
+               @click="selectedWildcardTarget = cardOption"
+               :class="['p-3 rounded-2xl cursor-pointer border-2 transition flex flex-col justify-between space-y-2', 
+                       selectedWildcardTarget?.id === cardOption.id ? 'border-amber-500 bg-amber-100 shadow-md ring-2 ring-amber-400 scale-[1.02]' : 'border-slate-200 bg-white hover:border-amber-300']">
+            <div class="flex justify-between items-center">
+              <span class="font-black text-slate-800 text-xs truncate">{{ cardOption.name }}</span>
+              <span class="text-[10px] font-black px-1.5 py-0.2 rounded bg-indigo-600 text-white">{{ cardOption.rarity }}</span>
+            </div>
+            <div class="text-[10px] text-amber-700 font-bold text-right">點擊選取這張卡片</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between gap-3 border-t">
+        <div class="text-xs font-bold text-slate-700">
+          已選定：<span class="text-amber-600 font-black">{{ selectedWildcardTarget?.name || '尚未選擇' }}</span>
+        </div>
+        <div class="flex space-x-2">
+          <button @click="showCardSelectModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-black rounded-xl hover:bg-slate-300 transition">
+            取消
+          </button>
+          <button @click="confirmWildcardChoice" :disabled="!selectedWildcardTarget" class="px-5 py-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 text-xs font-black rounded-xl shadow-md transition active:scale-95 disabled:opacity-50">
+            <i class="fa-solid fa-check mr-1"></i> 確認獲得此卡片
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 4：🎲 隨機抽籤 Modal -->
+  <div v-if="showPickerModal" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl p-5 max-w-md w-full shadow-2xl space-y-4 border-4 border-amber-300 relative text-center">
+      <button @click="showPickerModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+
+      <h3 class="text-lg font-black text-slate-800 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-dice text-amber-500"></i> 隨機幸運抽籤
+      </h3>
+
+      <div class="py-6 bg-amber-50 rounded-2xl border-2 border-amber-200 flex flex-col items-center justify-center min-h-[160px]">
+        <div v-if="pickedStudent" class="space-y-2">
+          <div class="w-20 h-20 mx-auto rounded-2xl p-1 animal-sphere overflow-hidden relative" :style="getPetBorderStyle(pickedStudent)" :class="[getPetBorderClass(getStudentLevelData(pickedStudent.score).level, pickedStudent), getStudentLevelData(pickedStudent.score).level < 1 ? 'animate-egg-wobble' : '']">
+            <img :src="getAvatarUrl(pickedStudent)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+            <div v-if="isTopStudent(pickedStudent)" class="absolute -top-2 -right-1 text-amber-400 text-base drop-shadow-md z-20">
+              <i class="fa-solid fa-crown"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-black text-indigo-900 flex items-center justify-center gap-1.5">
+            <span>#{{ pickedStudent.seatNumber }} {{ pickedStudent.name }}</span>
+            <i v-if="isTopStudent(pickedStudent)" class="fa-solid fa-crown text-amber-400 text-lg"></i>
+          </div>
+          <div class="text-xs font-bold text-amber-700">第 {{ pickedStudent.group }} 組 · {{ pickedStudent.role || '組員' }}</div>
+
+          <div class="pt-2">
+            <button @click="addScore(pickedStudent, 1)" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95 inline-flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> 給予 {{ pickedStudent.name }} +1 EXP
+            </button>
+          </div>
+        </div>
+        <div v-else class="text-slate-400 font-bold text-sm">
+          點擊下方按鈕開始隨機抽取一位幸運學生！
+        </div>
+      </div>
+
+      <button @click="startPickStudent" :disabled="isPicking" class="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-black text-sm rounded-xl shadow-md transition active:scale-95 disabled:opacity-50">
+        {{ isPicking ? '🎲 正在抽籤中...' : '🎯 開始隨機抽籤' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- 彈窗 5：🐾 選擇/更換寵物 Modal (全 64 款寶可夢與自訂上傳陣容) -->
+  <div v-if="showPetSelectModal" class="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl p-5 max-w-4xl w-full shadow-2xl space-y-4 border-4 border-teal-300 relative max-h-[90vh] flex flex-col">
+      <button @click="showPetSelectModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-2xl"></i></button>
+
+      <div class="text-center space-y-1">
+        <h3 class="text-lg font-black text-slate-800 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paw text-teal-500"></i> {{ isTeacherFreeChange ? '教師手動更換學生寵物' : '兌換更換寵物 (扣除 25 EXP)' }}
+        </h3>
+        <p class="text-xs text-slate-500 font-bold" v-if="petSelectingStudent">
+          正在為 <span class="text-indigo-600 font-black">#{{ petSelectingStudent.seatNumber }} {{ petSelectingStudent.name }}</span> 選擇新寶可夢/自訂造型 (共 {{ presetAvatars.length }} 款)
+        </p>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll p-2 border-2 border-teal-100 rounded-2xl bg-teal-50/30">
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+          <div v-for="(avatar, idx) in presetAvatars" :key="idx"
+               @click="selectedPetForExchange = avatar"
+               :class="['p-2 rounded-2xl cursor-pointer border-2 transition flex flex-col items-center justify-between group relative', 
+                       selectedPetForExchange === avatar ? 'border-teal-500 bg-teal-100/80 shadow-md scale-105 ring-2 ring-teal-400' : 'border-slate-200 bg-white hover:border-teal-300']">
+            
+            <!-- 若為自訂寵物，顯示移除按鈕 -->
+            <button v-if="avatar.isCustom" @click.stop="removeCustomPet(avatar.id)" class="absolute top-1 right-1 text-rose-500 hover:text-rose-700 text-xs p-1" title="移除此自訂寵物">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+
+            <div class="w-12 h-12 rounded-xl p-1 animal-sphere flex items-center justify-center overflow-hidden mb-1" :class="avatar.bg">
+              <img :src="avatar.url" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
+            </div>
+            <span class="text-xs font-black text-slate-800 text-center truncate w-full">{{ avatar.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between gap-3 border-t">
+        <div v-if="selectedPetForExchange" class="flex items-center space-x-2 text-xs font-bold text-slate-700">
+          <span>已選擇新造型：</span>
+          <span class="text-teal-700 font-black">{{ selectedPetForExchange.name }}</span>
+        </div>
+        <div class="flex space-x-2">
+          <button @click="showPetSelectModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-black rounded-xl hover:bg-slate-300 transition">
+            取消
+          </button>
+          <button @click="confirmPetChange" :disabled="!selectedPetForExchange" class="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white text-xs font-black rounded-xl shadow-md transition active:scale-95 disabled:opacity-50">
+            <i class="fa-solid fa-check mr-1"></i> {{ isTeacherFreeChange ? '確認更換造型' : '確認更換 (-25 EXP)' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center py-2 text-[10px] text-slate-400 font-bold bg-slate-50 border-t">
+    智慧班級經營-寵物王國 · 寶可夢養成與自主班級管理系統
+  </footer>
+</div>
+
+
+</div>
+<script>
+const { createApp } = Vue;
+
+// 可愛的寵物蛋 SVG Data URI (高畫質 2D/3D 寵物蛋，非寶可夢球)
+const PET_EGG_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><defs><radialGradient id="eggGrad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="%23ffffff"/><stop offset="40%" stop-color="%23fef3c7"/><stop offset="100%" stop-color="%23f59e0b"/></radialGradient></defs><ellipse cx="50" cy="65" rx="38" ry="48" fill="url(%23eggGrad)" stroke="%23d97706" stroke-width="3.5"/><ellipse cx="38" cy="50" rx="7" ry="10" fill="%23f43f5e" opacity="0.8" transform="rotate(-15 38 50)"/><ellipse cx="65" cy="75" rx="9" ry="12" fill="%233b82f6" opacity="0.8" transform="rotate(20 65 75)"/><ellipse cx="55" cy="40" rx="6" ry="8" fill="%2310b981" opacity="0.8" transform="rotate(10 55 40)"/><ellipse cx="32" cy="80" rx="8" ry="10" fill="%238b5cf6" opacity="0.8" transform="rotate(-10 32 80)"/><path d="M 32 28 Q 25 18 38 20" fill="none" stroke="%23ffffff" stroke-width="3" stroke-linecap="round"/></svg>`;
+
+// 收錄完整 64 款原廠寶可夢與進化鏈
+const FULL_64_POKEMON_POOL = [
+  {
+    id: 'charmander_line',
+    name: '小火龍 (Charmander)',
+    url: 'pk/4.png',
+    bg: 'bg-gradient-to-br from-orange-100 to-red-200 border-orange-300',
+    evolutions: [
+      { minLv: 1, name: '小火龍', url: 'pk/4.png' },
+      { minLv: 16, name: '火恐龍', url: 'pk/5.png' },
+      { minLv: 36, name: '噴火龍', url: 'pk/6.png' }
+    ]
+  },
+  {
+    id: 'bulbasaur_line',
+    name: '妙蛙種子 (Bulbasaur)',
+    url: 'pk/1.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-teal-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '妙蛙種子', url: 'pk/1.png' },
+      { minLv: 16, name: '妙蛙草', url: 'pk/2.png' },
+      { minLv: 32, name: '妙蛙花', url: 'pk/3.png' }
+    ]
+  },
+  {
+    id: 'squirtle_line',
+    name: '傑尼龜 (Squirtle)',
+    url: 'pk/7.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-blue-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '傑尼龜', url: 'pk/7.png' },
+      { minLv: 16, name: '卡咪龜', url: 'pk/8.png' },
+      { minLv: 36, name: '水箭龜', url: 'pk/9.png' }
+    ]
+  },
+  {
+    id: 'pikachu_line',
+    name: '皮卡丘 (Pikachu)',
+    url: 'pk/25.png',
+    bg: 'bg-gradient-to-br from-amber-100 to-yellow-200 border-amber-300',
+    evolutions: [
+      { minLv: 1, name: '皮丘', url: 'pk/172.png' },
+      { minLv: 10, name: '皮卡丘', url: 'pk/25.png' },
+      { minLv: 30, name: '雷丘', url: 'pk/26.png' }
+    ]
+  },
+  {
+    id: 'eevee_line',
+    name: '伊布 (Eevee)',
+    url: 'pk/133.png',
+    bg: 'bg-gradient-to-br from-amber-50 to-orange-100 border-amber-200',
+    evolutions: [
+      { minLv: 1, name: '伊布', url: 'pk/133.png' },
+      { minLv: 20, name: '仙子伊布', url: 'pk/700.png' }
+    ]
+  },
+  {
+    id: 'gengar_line',
+    name: '鬼斯 (Gastly)',
+    url: 'pk/92.png',
+    bg: 'bg-gradient-to-br from-purple-100 to-indigo-200 border-purple-300',
+    evolutions: [
+      { minLv: 1, name: '鬼斯', url: 'pk/92.png' },
+      { minLv: 16, name: '鬼斯通', url: 'pk/93.png' },
+      { minLv: 32, name: '耿鬼', url: 'pk/94.png' }
+    ]
+  },
+  {
+    id: 'garchomp_line',
+    name: '圓陸鯊 (Gible)',
+    url: 'pk/443.png',
+    bg: 'bg-gradient-to-br from-slate-100 to-blue-200 border-slate-300',
+    evolutions: [
+      { minLv: 1, name: '圓陸鯊', url: 'pk/443.png' },
+      { minLv: 24, name: '尖牙陸鯊', url: 'pk/444.png' },
+      { minLv: 48, name: '烈咬陸鯊', url: 'pk/445.png' }
+    ]
+  },
+  {
+    id: 'psyduck_line',
+    name: '可達鴨 (Psyduck)',
+    url: 'pk/54.png',
+    bg: 'bg-gradient-to-br from-yellow-100 to-cyan-100 border-yellow-300',
+    evolutions: [
+      { minLv: 1, name: '可達鴨', url: 'pk/54.png' },
+      { minLv: 33, name: '哥達鴨', url: 'pk/55.png' }
+    ]
+  },
+  {
+    id: 'chikorita_line',
+    name: '菊草葉 (Chikorita)',
+    url: 'pk/152.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-green-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '菊草葉', url: 'pk/152.png' },
+      { minLv: 16, name: '月桂葉', url: 'pk/153.png' },
+      { minLv: 32, name: '大劍花', url: 'pk/154.png' }
+    ]
+  },
+  {
+    id: 'cyndaquil_line',
+    name: '火球鼠 (Cyndaquil)',
+    url: 'pk/155.png',
+    bg: 'bg-gradient-to-br from-orange-100 to-amber-200 border-orange-300',
+    evolutions: [
+      { minLv: 1, name: '火球鼠', url: 'pk/155.png' },
+      { minLv: 14, name: '火岩鼠', url: 'pk/156.png' },
+      { minLv: 36, name: '火暴獸', url: 'pk/157.png' }
+    ]
+  },
+  {
+    id: 'totodile_line',
+    name: '小鋸鱷 (Totodile)',
+    url: 'pk/158.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-cyan-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '小鋸鱷', url: 'pk/158.png' },
+      { minLv: 18, name: '藍鱷', url: 'pk/159.png' },
+      { minLv: 30, name: '大力鱷', url: 'pk/160.png' }
+    ]
+  },
+  {
+    id: 'treecko_line',
+    name: '木守宮 (Treecko)',
+    url: 'pk/252.png',
+    bg: 'bg-gradient-to-br from-green-100 to-teal-200 border-green-300',
+    evolutions: [
+      { minLv: 1, name: '木守宮', url: 'pk/252.png' },
+      { minLv: 16, name: '森林蜥蜴', url: 'pk/253.png' },
+      { minLv: 36, name: '蜥蜴王', url: 'pk/254.png' }
+    ]
+  },
+  {
+    id: 'torchic_line',
+    name: '火稚雞 (Torchic)',
+    url: 'pk/255.png',
+    bg: 'bg-gradient-to-br from-red-100 to-amber-200 border-rose-300',
+    evolutions: [
+      { minLv: 1, name: '火稚雞', url: 'pk/255.png' },
+      { minLv: 16, name: '力壯雞', url: 'pk/256.png' },
+      { minLv: 36, name: '火焰雞', url: 'pk/257.png' }
+    ]
+  },
+  {
+    id: 'mudkip_line',
+    name: '水躍魚 (Mudkip)',
+    url: 'pk/258.png',
+    bg: 'bg-gradient-to-br from-blue-100 to-indigo-200 border-blue-300',
+    evolutions: [
+      { minLv: 1, name: '水躍魚', url: 'pk/258.png' },
+      { minLv: 16, name: '沼躍魚', url: 'pk/259.png' },
+      { minLv: 36, name: '巨沼怪', url: 'pk/260.png' }
+    ]
+  },
+  {
+    id: 'turtwig_line',
+    name: '草苗龜 (Turtwig)',
+    url: 'pk/387.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-lime-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '草苗龜', url: 'pk/387.png' },
+      { minLv: 18, name: '樹林龜', url: 'pk/388.png' },
+      { minLv: 32, name: '土台龜', url: 'pk/389.png' }
+    ]
+  },
+  {
+    id: 'chimchar_line',
+    name: '小火焰猴 (Chimchar)',
+    url: 'pk/390.png',
+    bg: 'bg-gradient-to-br from-amber-100 to-rose-200 border-amber-300',
+    evolutions: [
+      { minLv: 1, name: '小火焰猴', url: 'pk/390.png' },
+      { minLv: 14, name: '猛火猴', url: 'pk/391.png' },
+      { minLv: 36, name: '烈焰猴', url: 'pk/392.png' }
+    ]
+  },
+  {
+    id: 'piplup_line',
+    name: '波加曼 (Piplup)',
+    url: 'pk/393.png',
+    bg: 'bg-gradient-to-br from-cyan-100 to-blue-200 border-cyan-300',
+    evolutions: [
+      { minLv: 1, name: '波加曼', url: 'pk/393.png' },
+      { minLv: 16, name: '波皇子', url: 'pk/394.png' },
+      { minLv: 36, name: '帝王拿波', url: 'pk/395.png' }
+    ]
+  },
+  {
+    id: 'snivy_line',
+    name: '藤藤蛇 (Snivy)',
+    url: 'pk/495.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-green-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '藤藤蛇', url: 'pk/495.png' },
+      { minLv: 17, name: '青藤蛇', url: 'pk/496.png' },
+      { minLv: 36, name: '君主蛇', url: 'pk/497.png' }
+    ]
+  },
+  {
+    id: 'tepig_line',
+    name: '暖暖豬 (Tepig)',
+    url: 'pk/498.png',
+    bg: 'bg-gradient-to-br from-orange-100 to-rose-200 border-orange-300',
+    evolutions: [
+      { minLv: 1, name: '暖暖豬', url: 'pk/498.png' },
+      { minLv: 17, name: '炒炒豬', url: 'pk/499.png' },
+      { minLv: 36, name: '炎武王', url: 'pk/500.png' }
+    ]
+  },
+  {
+    id: 'oshawott_line',
+    name: '水水獺 (Oshawott)',
+    url: 'pk/501.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-indigo-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '水水獺', url: 'pk/501.png' },
+      { minLv: 17, name: '雙刃丸', url: 'pk/502.png' },
+      { minLv: 36, name: '大劍鬼', url: 'pk/503.png' }
+    ]
+  },
+  {
+    id: 'chespin_line',
+    name: '針栗鼠 (Chespin)',
+    url: 'pk/650.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-lime-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '針栗鼠', url: 'pk/650.png' },
+      { minLv: 16, name: '胖胖哈力', url: 'pk/651.png' },
+      { minLv: 36, name: '布里卡隆', url: 'pk/652.png' }
+    ]
+  },
+  {
+    id: 'fennekin_line',
+    name: '火狐狸 (Fennekin)',
+    url: 'pk/653.png',
+    bg: 'bg-gradient-to-br from-orange-100 to-amber-200 border-orange-300',
+    evolutions: [
+      { minLv: 1, name: '火狐狸', url: 'pk/653.png' },
+      { minLv: 16, name: '長尾火狐', url: 'pk/654.png' },
+      { minLv: 36, name: '妖火紅狐', url: 'pk/655.png' }
+    ]
+  },
+  {
+    id: 'froakie_line',
+    name: '呱呱泡蛙 (Froakie)',
+    url: 'pk/656.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-blue-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '呱呱泡蛙', url: 'pk/656.png' },
+      { minLv: 16, name: '呱頭蛙', url: 'pk/657.png' },
+      { minLv: 36, name: '甲賀忍蛙', url: 'pk/658.png' }
+    ]
+  },
+  {
+    id: 'rowlet_line',
+    name: '木木梟 (Rowlet)',
+    url: 'pk/722.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-teal-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '木木梟', url: 'pk/722.png' },
+      { minLv: 17, name: '投羽梟', url: 'pk/723.png' },
+      { minLv: 34, name: '狙射樹梟', url: 'pk/724.png' }
+    ]
+  },
+  {
+    id: 'litten_line',
+    name: '火斑喵 (Litten)',
+    url: 'pk/725.png',
+    bg: 'bg-gradient-to-br from-red-100 to-amber-200 border-red-300',
+    evolutions: [
+      { minLv: 1, name: '火斑喵', url: 'pk/725.png' },
+      { minLv: 17, name: '炎熱喵', url: 'pk/726.png' },
+      { minLv: 34, name: '熾焰咆哮虎', url: 'pk/727.png' }
+    ]
+  },
+  {
+    id: 'popplio_line',
+    name: '球球海獅 (Popplio)',
+    url: 'pk/728.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-cyan-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '球球海獅', url: 'pk/728.png' },
+      { minLv: 17, name: '花漾海獅', url: 'pk/729.png' },
+      { minLv: 34, name: '西獅海壬', url: 'pk/730.png' }
+    ]
+  },
+  {
+    id: 'grookey_line',
+    name: '敲敲猴 (Grookey)',
+    url: 'pk/810.png',
+    bg: 'bg-gradient-to-br from-green-100 to-emerald-200 border-green-300',
+    evolutions: [
+      { minLv: 1, name: '敲敲猴', url: 'pk/810.png' },
+      { minLv: 16, name: '拍拍猴', url: 'pk/811.png' },
+      { minLv: 35, name: '轟擂金剛猩', url: 'pk/812.png' }
+    ]
+  },
+  {
+    id: 'scorbunny_line',
+    name: '炎兔兒 (Scorbunny)',
+    url: 'pk/813.png',
+    bg: 'bg-gradient-to-br from-orange-100 to-red-200 border-orange-300',
+    evolutions: [
+      { minLv: 1, name: '炎兔兒', url: 'pk/813.png' },
+      { minLv: 16, name: '騰蹴小將', url: 'pk/814.png' },
+      { minLv: 35, name: '閃焰王牌', url: 'pk/815.png' }
+    ]
+  },
+  {
+    id: 'sobble_line',
+    name: '淚眼蜥 (Sobble)',
+    url: 'pk/816.png',
+    bg: 'bg-gradient-to-br from-cyan-100 to-blue-200 border-cyan-300',
+    evolutions: [
+      { minLv: 1, name: '淚眼蜥', url: 'pk/816.png' },
+      { minLv: 16, name: '變澀蜥', url: 'pk/817.png' },
+      { minLv: 35, name: '千面避役', url: 'pk/818.png' }
+    ]
+  },
+  {
+    id: 'sprigatito_line',
+    name: '新葉喵 (Sprigatito)',
+    url: 'pk/906.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-lime-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '新葉喵', url: 'pk/906.png' },
+      { minLv: 16, name: '蒂蕾喵', url: 'pk/907.png' },
+      { minLv: 36, name: '魔幻假面喵', url: 'pk/908.png' }
+    ]
+  },
+  {
+    id: 'fuecoco_line',
+    name: '呆火鱷 (Fuecoco)',
+    url: 'pk/909.png',
+    bg: 'bg-gradient-to-br from-rose-100 to-amber-200 border-rose-300',
+    evolutions: [
+      { minLv: 1, name: '呆火鱷', url: 'pk/909.png' },
+      { minLv: 16, name: '炙駝鱷', url: 'pk/910.png' },
+      { minLv: 36, name: '骨紋巨聲鱷', url: 'pk/911.png' }
+    ]
+  },
+  {
+    id: 'quaxly_line',
+    name: '潤水鴨 (Quaxly)',
+    url: 'pk/912.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-cyan-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '潤水鴨', url: 'pk/912.png' },
+      { minLv: 16, name: '湧躍鴨', url: 'pk/913.png' },
+      { minLv: 36, name: '狂歡浪舞鴨', url: 'pk/914.png' }
+    ]
+  },
+  {
+    id: 'abra_line',
+    name: '凱西 (Abra)',
+    url: 'pk/63.png',
+    bg: 'bg-gradient-to-br from-amber-100 to-purple-200 border-amber-300',
+    evolutions: [
+      { minLv: 1, name: '凱西', url: 'pk/63.png' },
+      { minLv: 16, name: '勇基拉', url: 'pk/64.png' },
+      { minLv: 36, name: '胡地', url: 'pk/65.png' }
+    ]
+  },
+  {
+    id: 'machop_line',
+    name: '腕力 (Machop)',
+    url: 'pk/66.png',
+    bg: 'bg-gradient-to-br from-slate-100 to-zinc-200 border-slate-300',
+    evolutions: [
+      { minLv: 1, name: '腕力', url: 'pk/66.png' },
+      { minLv: 28, name: '豪力', url: 'pk/67.png' },
+      { minLv: 40, name: '怪力', url: 'pk/68.png' }
+    ]
+  },
+  {
+    id: 'dratini_line',
+    name: '迷你龍 (Dratini)',
+    url: 'pk/147.png',
+    bg: 'bg-gradient-to-br from-indigo-100 to-blue-200 border-indigo-300',
+    evolutions: [
+      { minLv: 1, name: '迷你龍', url: 'pk/147.png' },
+      { minLv: 30, name: '哈克龍', url: 'pk/148.png' },
+      { minLv: 55, name: '快龍', url: 'pk/149.png' }
+    ]
+  },
+  {
+    id: 'larvitar_line',
+    name: '幼基拉斯 (Larvitar)',
+    url: 'pk/246.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-stone-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '幼基拉斯', url: 'pk/246.png' },
+      { minLv: 30, name: '沙基拉斯', url: 'pk/247.png' },
+      { minLv: 55, name: '班基拉斯', url: 'pk/248.png' }
+    ]
+  },
+  {
+    id: 'beldum_line',
+    name: '鐵啞鈴 (Beldum)',
+    url: 'pk/374.png',
+    bg: 'bg-gradient-to-br from-slate-200 to-indigo-200 border-slate-400',
+    evolutions: [
+      { minLv: 1, name: '鐵啞鈴', url: 'pk/374.png' },
+      { minLv: 20, name: '金屬怪', url: 'pk/375.png' },
+      { minLv: 45, name: '巨金怪', url: 'pk/376.png' }
+    ]
+  },
+  {
+    id: 'bagon_line',
+    name: '寶貝龍 (Bagon)',
+    url: 'pk/371.png',
+    bg: 'bg-gradient-to-br from-sky-100 to-blue-200 border-sky-300',
+    evolutions: [
+      { minLv: 1, name: '寶貝龍', url: 'pk/371.png' },
+      { minLv: 30, name: '甲殼龍', url: 'pk/372.png' },
+      { minLv: 50, name: '暴飛龍', url: 'pk/373.png' }
+    ]
+  },
+  {
+    id: 'goomy_line',
+    name: '黏黏寶 (Goomy)',
+    url: 'pk/704.png',
+    bg: 'bg-gradient-to-br from-purple-100 to-pink-200 border-purple-300',
+    evolutions: [
+      { minLv: 1, name: '黏黏寶', url: 'pk/704.png' },
+      { minLv: 40, name: '黏美兒', url: 'pk/705.png' },
+      { minLv: 50, name: '黏美龍', url: 'pk/706.png' }
+    ]
+  },
+  {
+    id: 'dreepy_line',
+    name: '多龍梅西亞 (Dreepy)',
+    url: 'pk/885.png',
+    bg: 'bg-gradient-to-br from-teal-100 to-indigo-200 border-teal-300',
+    evolutions: [
+      { minLv: 1, name: '多龍梅西亞', url: 'pk/885.png' },
+      { minLv: 50, name: '多龍奇', url: 'pk/886.png' },
+      { minLv: 60, name: '多龍巴魯托', url: 'pk/887.png' }
+    ]
+  },
+  {
+    id: 'riolu_line',
+    name: '利歐路 (Riolu)',
+    url: 'pk/447.png',
+    bg: 'bg-gradient-to-br from-blue-100 to-cyan-200 border-blue-400',
+    evolutions: [
+      { minLv: 1, name: '利歐路', url: 'pk/447.png' },
+      { minLv: 20, name: '路卡利歐', url: 'pk/448.png' }
+    ]
+  },
+  {
+    id: 'zorua_line',
+    name: '索羅亞 (Zorua)',
+    url: 'pk/570.png',
+    bg: 'bg-gradient-to-br from-slate-800 to-red-900 border-red-500 text-white',
+    evolutions: [
+      { minLv: 1, name: '索羅亞', url: 'pk/570.png' },
+      { minLv: 30, name: '索羅亞克', url: 'pk/571.png' }
+    ]
+  },
+  {
+    id: 'charcadet_line',
+    name: '炭小侍 (Charcadet)',
+    url: 'pk/935.png',
+    bg: 'bg-gradient-to-br from-rose-100 to-indigo-200 border-indigo-400',
+    evolutions: [
+      { minLv: 1, name: '炭小侍', url: 'pk/935.png' },
+      { minLv: 30, name: '蒼炎刃鬼', url: 'pk/937.png' }
+    ]
+  },
+  {
+    id: 'togepi_line',
+    name: '波克比 (Togepi)',
+    url: 'pk/175.png',
+    bg: 'bg-gradient-to-br from-amber-50 to-pink-100 border-amber-200',
+    evolutions: [
+      { minLv: 1, name: '波克比', url: 'pk/175.png' },
+      { minLv: 18, name: '波克基古', url: 'pk/176.png' },
+      { minLv: 38, name: '波克基斯', url: 'pk/468.png' }
+    ]
+  },
+  {
+    id: 'caterpie_line',
+    name: '綠毛蟲 (Caterpie)',
+    url: 'pk/10.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-lime-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '綠毛蟲', url: 'pk/10.png' },
+      { minLv: 7, name: '鐵甲蛹', url: 'pk/11.png' },
+      { minLv: 10, name: '巴大蝶', url: 'pk/12.png' }
+    ]
+  },
+  {
+    id: 'weedle_line',
+    name: '獨角蟲 (Weedle)',
+    url: 'pk/13.png',
+    bg: 'bg-gradient-to-br from-amber-100 to-yellow-200 border-amber-300',
+    evolutions: [
+      { minLv: 1, name: '獨角蟲', url: 'pk/13.png' },
+      { minLv: 7, name: '鐵殼蛹', url: 'pk/14.png' },
+      { minLv: 10, name: '大針蜂', url: 'pk/15.png' }
+    ]
+  },
+  {
+    id: 'pidgey_line',
+    name: '波波 (Pidgey)',
+    url: 'pk/16.png',
+    bg: 'bg-gradient-to-br from-amber-100 to-orange-200 border-amber-300',
+    evolutions: [
+      { minLv: 1, name: '波波', url: 'pk/16.png' },
+      { minLv: 18, name: '比比鳥', url: 'pk/17.png' },
+      { minLv: 36, name: '大比鳥', url: 'pk/18.png' }
+    ]
+  },
+  {
+    id: 'magikarp_line',
+    name: '鯉魚王 (Magikarp)',
+    url: 'pk/129.png',
+    bg: 'bg-gradient-to-br from-red-100 to-blue-200 border-red-300',
+    evolutions: [
+      { minLv: 1, name: '鯉魚王', url: 'pk/129.png' },
+      { minLv: 20, name: '暴鯉龍', url: 'pk/130.png' }
+    ]
+  },
+  {
+    id: 'cubone_line',
+    name: '卡拉卡拉 (Cubone)',
+    url: 'pk/104.png',
+    bg: 'bg-gradient-to-br from-amber-100 to-orange-100 border-amber-300',
+    evolutions: [
+      { minLv: 1, name: '卡拉卡拉', url: 'pk/104.png' },
+      { minLv: 28, name: '嘎拉嘎拉', url: 'pk/105.png' }
+    ]
+  },
+  {
+    id: 'scyther_line',
+    name: '飛天螳螂 (Scyther)',
+    url: 'pk/123.png',
+    bg: 'bg-gradient-to-br from-emerald-100 to-red-200 border-emerald-300',
+    evolutions: [
+      { minLv: 1, name: '飛天螳螂', url: 'pk/123.png' },
+      { minLv: 30, name: '巨鉗螳螂', url: 'pk/212.png' }
+    ]
+  },
+  {
+    id: 'jigglypuff_line',
+    name: '胖寶寶 (Igglybuff)',
+    url: 'pk/174.png',
+    bg: 'bg-gradient-to-br from-pink-100 to-rose-200 border-pink-300',
+    evolutions: [
+      { minLv: 1, name: '胖寶寶', url: 'pk/174.png' },
+      { minLv: 10, name: '胖丁', url: 'pk/39.png' },
+      { minLv: 20, name: '胖可丁', url: 'pk/40.png' }
+    ]
+  },
+  {
+    id: 'meowth_line',
+    name: '喵喵 (Meowth)',
+    url: 'pk/52.png',
+    bg: 'bg-gradient-to-br from-amber-50 to-yellow-100 border-amber-200',
+    evolutions: [
+      { minLv: 1, name: '喵喵', url: 'pk/52.png' },
+      { minLv: 28, name: '貓老大', url: 'pk/53.png' }
+    ]
+  },
+  {
+    id: 'slowpoke_line',
+    name: '呆呆獸 (Slowpoke)',
+    url: 'pk/79.png',
+    bg: 'bg-gradient-to-br from-pink-100 to-rose-200 border-pink-300',
+    evolutions: [
+      { minLv: 1, name: '呆呆獸', url: 'pk/79.png' },
+      { minLv: 37, name: '呆殼獸', url: 'pk/80.png' }
+    ]
+  },
+  {
+    id: 'vulpix_line',
+    name: '六尾 (Vulpix)',
+    url: 'pk/37.png',
+    bg: 'bg-gradient-to-br from-orange-100 to-red-100 border-orange-200',
+    evolutions: [
+      { minLv: 1, name: '六尾', url: 'pk/37.png' },
+      { minLv: 20, name: '九尾', url: 'pk/38.png' }
+    ]
+  },
+  {
+    id: 'snorlax',
+    name: '小卡比 (Munchlax)',
+    url: 'pk/446.png',
+    bg: 'bg-gradient-to-br from-slate-200 to-teal-100 border-teal-300',
+    evolutions: [
+      { minLv: 1, name: '小卡比', url: 'pk/446.png' },
+      { minLv: 30, name: '卡比獸', url: 'pk/143.png' }
+    ]
+  },
+  { id: 'mewtwo', name: '超夢 (Mewtwo)', url: 'pk/150.png', bg: 'bg-gradient-to-br from-purple-100 to-fuchsia-200 border-purple-400' },
+  { id: 'mew', name: '夢幻 (Mew)', url: 'pk/151.png', bg: 'bg-gradient-to-br from-pink-100 to-purple-100 border-pink-300' },
+  { id: 'mimikyu', name: '謎擬Q (Mimikyu)', url: 'pk/778.png', bg: 'bg-gradient-to-br from-amber-50 to-slate-200 border-amber-300' },
+  { id: 'rayquaza', name: '烈空坐 (Rayquaza)', url: 'pk/384.png', bg: 'bg-gradient-to-br from-emerald-200 to-teal-300 border-emerald-400' },
+  { id: 'kyogre', name: '蓋歐卡 (Kyogre)', url: 'pk/382.png', bg: 'bg-gradient-to-br from-blue-200 to-indigo-300 border-blue-400' },
+  { id: 'groudon', name: '固拉多 (Groudon)', url: 'pk/383.png', bg: 'bg-gradient-to-br from-red-200 to-amber-300 border-red-400' },
+  { id: 'palkia', name: '帕路奇亞 (Palkia)', url: 'pk/484.png', bg: 'bg-gradient-to-br from-pink-100 to-purple-200 border-pink-400' },
+  { id: 'dialga', name: '帝牙盧卡 (Dialga)', url: 'pk/483.png', bg: 'bg-gradient-to-br from-blue-100 to-cyan-200 border-blue-400' },
+  { id: 'giratina', name: '騎拉帝納 (Giratina)', url: 'pk/487.png', bg: 'bg-gradient-to-br from-slate-800 to-yellow-900 border-amber-400 text-white' }
+];
+
+createApp({
+  data() {
+    return {
+      currentTab: 'dashboard',
+      viewMode: 'all',
+      sortBy: 'seat',
+      searchQuery: '',
+      studentAddMode: 'single',
+
+      currentDateStr: '',
+      currentDayStr: '',
+      currentTimeStr: '',
+
+      pages: [
+        { id: 'dashboard', name: '全班主頁', icon: 'fa-solid fa-house' },
+        { id: 'homework', name: '作業管理', icon: 'fa-solid fa-book-open' },
+        { id: 'cardMarket', name: '卡片中心', icon: 'fa-solid fa-arrows-rotate' },
+        { id: 'addStudent', name: '名單與設定', icon: 'fa-solid fa-user-plus' },
+        { id: 'logs', name: '歷程備份', icon: 'fa-solid fa-clock-rotate-left' }
+      ],
+
+      syncStatus: { isSyncing: false, text: '連線中…' },
+      cloudReady: false,
+
+      students: [],
+      homeworkList: [],
+      logs: [],
+
+      newStudent: {
+        seatNumber: null,
+        name: '',
+        group: 1,
+        roleSelect: '組長',
+        role: '組長',
+        petId: 'charmander_line',
+        customAvatar: '',
+        animalBg: 'bg-gradient-to-br from-orange-100 to-red-200 border-orange-300'
+      },
+
+      batchStudentInput: '',
+      parsedBatchList: [],
+
+      newCustomPet: {
+        name: '',
+        url: '',
+        bg: 'bg-gradient-to-br from-indigo-100 to-purple-200 border-indigo-300'
+      },
+
+      presetAvatars: FULL_64_POKEMON_POOL,
+
+      newHomeworkTitle: '',
+
+      directItems: [
+        { id: 'p0', name: '🧢 髮帽', cost: 10, icon: '🧢' },
+        { id: 'pet_change', name: '🐾 更換寵物', cost: 25, icon: '🐾', isPetChange: true },
+        { id: 'p1', name: '✏️ 鉛筆', cost: 50, icon: '✏️' },
+        { id: 'p2', name: '📏 尺', cost: 50, icon: '📏' },
+        { id: 'p3', name: '🧼 橡皮擦', cost: 50, icon: '🧼' }
+      ],
+      newDirectItem: { name: '', cost: null },
+
+      gachaCardPool: [
+        { id: 'c0', name: '✨ 指定卡片自選券 (自選任一張)', rarity: 'SSR', isWildcard: true },
+        { id: 'c1', name: '👑 免一次作業特權卡', rarity: 'SSR' },
+        { id: 'c2', name: '🍕 指定座位一週卡', rarity: 'SSR' },
+        { id: 'c3', name: '⚡ 點數雙倍升級卡', rarity: 'SR' },
+        { id: 'c4', name: '🎁 隨機小禮物兌換卡', rarity: 'SR' },
+        { id: 'c5', name: '☕ 提早放學優先卡', rarity: 'N' },
+        { id: 'c6', name: '🎵 課堂音樂選擇卡', rarity: 'N' }
+      ],
+      newGachaCard: { name: '', rarity: 'SSR' },
+
+      // 交易卡片對象
+      tradePartyA: { studentId: null, student: null, cardIndex: null },
+      tradePartyB: { studentId: null, student: null, cardIndex: null },
+
+      // Modal 控制狀態
+      showProfileModal: false,
+      profileStudent: null,
+
+      showGachaModal: false,
+      isGachaSpinning: false,
+      gachaResultCard: null,
+      gachaDrawingStudent: null,
+
+      showCardSelectModal: false,
+      selectedWildcardTarget: null,
+      wildcardSelectId: '',
+      sheetState: { kind: 'idle', text: '尚未同步', busy: false },
+
+      showPickerModal: false,
+      isPicking: false,
+      pickedStudent: null,
+
+      showPetSelectModal: false,
+      petSelectingStudent: null,
+      selectedPetForExchange: null,
+      isTeacherFreeChange: false
+    };
+  },
+
+  computed: {
+    filteredStudents() {
+      if (!this.searchQuery.trim()) return this.students;
+      const q = this.searchQuery.trim().toLowerCase();
+      return this.students.filter(s => 
+        s.name.toLowerCase().includes(q) || 
+        String(s.seatNumber).includes(q)
+      );
+    },
+
+    sortedStudents() {
+      const list = [...this.filteredStudents];
+      if (this.sortBy === 'score') {
+        return list.sort((a, b) => b.score - a.score || a.seatNumber - b.seatNumber);
+      }
+      return list.sort((a, b) => a.seatNumber - b.seatNumber);
+    },
+
+    availableGroups() {
+      const groups = new Set(this.students.map(s => s.group || 1));
+      return Array.from(groups).sort((a, b) => a - b);
+    },
+
+    studentsWithCards() {
+      return this.students.filter(s => s.cards && s.cards.length > 0);
+    },
+
+    totalCardsInClass() {
+      return this.students.reduce((sum, s) => sum + (s.cards ? s.cards.length : 0), 0);
+    },
+
+    availableSelectCards() {
+      return this.gachaCardPool.filter(c => !c.isWildcard);
+    }
+  },
+
+  mounted() {
+    this.updateClock();
+    setInterval(this.updateClock, 1000);
+
+    this.loadLocalData();
+    this.initCloud();
+    this.startSheetSync();
+  },
+
+  methods: {
+    updateClock() {
+      const now = new Date();
+      this.currentDateStr = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      this.currentDayStr = days[now.getDay()];
+      this.currentTimeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+    },
+
+    // 梯度經驗值計算精確實作
+    getStudentLevelData(score) {
+      const s = Math.max(0, Number(score) || 0);
+
+      // LV0：0 ~ 49 EXP (達到 50 EXP 升至 LV1 並孵化)
+      if (s < 50) {
+        return {
+          level: 0,
+          minExpForLevel: 0,
+          nextLevelExp: 50,
+          progressPercent: Math.floor((s / 50) * 100),
+          stageName: '寵物蛋'
+        };
+      }
+
+      // LV1 ~ LV10：每級 50 EXP
+      // LV11 ~ LV20：每級 100 EXP
+      // LV21 ~ LV30：每級 150 EXP
+      // LV31 ~ LV40：每級 200 EXP (依此類推，每 10 級多 50 EXP)
+      let currentExpThreshold = 50;
+      let lvl = 1;
+
+      while (true) {
+        const block = Math.floor((lvl - 1) / 10);
+        const reqForThisLevel = 50 * (block + 1);
+
+        const nextExpThreshold = currentExpThreshold + reqForThisLevel;
+
+        if (s < nextExpThreshold || lvl >= 100) {
+          const expInCurrentLvl = s - currentExpThreshold;
+          const progressPercent = Math.min(100, Math.max(0, Math.floor((expInCurrentLvl / reqForThisLevel) * 100)));
+          
+          let stageName = '第 1 階段';
+          if (lvl >= 36) stageName = '第 3 階段 (最終形態)';
+          else if (lvl >= 16) stageName = '第 2 階段';
+
+          return {
+            level: lvl,
+            minExpForLevel: currentExpThreshold,
+            nextLevelExp: nextExpThreshold,
+            progressPercent: progressPercent,
+            stageName: stageName
+          };
+        }
+
+        currentExpThreshold = nextExpThreshold;
+        lvl++;
+      }
+    },
+
+    // 取得學生選取的寶可夢範本
+    getStudentPetObj(student) {
+      if (!student) return null;
+      let pet = this.presetAvatars.find(p => p.id === student.petId);
+      if (!pet && student.customAvatar) {
+        pet = this.presetAvatars.find(p => p.url === student.customAvatar);
+      }
+      return pet || this.presetAvatars[0];
+    },
+
+    // 取得圖片 URL (LV0 顯示寵物蛋，滿 50 EXP 自動孵化與同步進化)
+    getAvatarUrl(student) {
+      const levelData = this.getStudentLevelData(student.score);
+      if (levelData.level === 0) {
+        return PET_EGG_SVG;
+      }
+
+      const pet = this.getStudentPetObj(student);
+      if (student.customAvatar && (!pet || !pet.evolutions)) {
+        return student.customAvatar;
+      }
+
+      if (pet && pet.evolutions && pet.evolutions.length > 0) {
+        let currentEvo = pet.evolutions[0];
+        for (let evo of pet.evolutions) {
+          if (levelData.level >= evo.minLv) {
+            currentEvo = evo;
+          }
+        }
+        return currentEvo.url;
+      }
+
+      return pet ? pet.url : PET_EGG_SVG;
+    },
+
+    // 取得寵物名稱 (包含原廠同步進化名稱)
+    getPetName(student) {
+      const levelData = this.getStudentLevelData(student.score);
+      if (levelData.level === 0) {
+        return '寵物蛋';
+      }
+
+      const pet = this.getStudentPetObj(student);
+      if (pet && pet.evolutions && pet.evolutions.length > 0) {
+        let currentEvo = pet.evolutions[0];
+        for (let evo of pet.evolutions) {
+          if (levelData.level >= evo.minLv) {
+            currentEvo = evo;
+          }
+        }
+        return currentEvo.name;
+      }
+
+      return pet ? pet.name : '寶可夢';
+    },
+
+    // 階段依這隻寶可夢實際的進化形態計算（不是固定等級）
+    getStageName(student) {
+      const level = this.getStudentLevelData(student.score).level;
+      if (level < 1) return '寵物蛋';
+      const pet = this.getStudentPetObj(student);
+      if (student.customAvatar && (!pet || !pet.evolutions)) return '第 1 階段';
+      const evos = (pet && pet.evolutions) || [];
+      if (evos.length < 2) return '第 1 階段';
+      let idx = 0;
+      evos.forEach((evo, i) => { if (level >= evo.minLv) idx = i; });
+      return `第 ${idx + 1} 階段` + (idx === evos.length - 1 ? ' (最終形態)' : '');
+    },
+
+    getPetTypeColor(student) {
+      const level = this.getStudentLevelData(student.score).level;
+      const pet = this.getStudentPetObj(student);
+      let t = pet ? PET_TYPES[pet.id] : null;
+      if (Array.isArray(t)) {
+        let cur = t[0][1];
+        for (const [lv, ty] of t) if (level >= lv) cur = ty;
+        t = cur;
+      }
+      return TYPE_COLORS[t] || '#6366f1';
+    },
+
+    // 邊框顏色依屬性；等級越高光暈越強
+    getPetBorderStyle(student) {
+      const level = this.getStudentLevelData(student.score).level;
+      if (level < 1) return { border: '3px solid #fcd34d' };
+      const c = this.getPetTypeColor(student);
+      const light = `color-mix(in srgb, ${c} 30%, #ffffff)`;
+      let glow = `0 0 4px ${c}80`;
+      if (level >= 50) glow = `0 0 22px ${c}, 0 0 8px ${c}`;
+      else if (level >= 36) glow = `0 0 16px ${c}cc`;
+      else if (level >= 16) glow = `0 0 10px ${c}b3`;
+      // 等級越高流動越快
+      const dur = level >= 50 ? 1.2 : level >= 36 ? 1.8 : level >= 16 ? 2.4 : 3.2;
+      return {
+        border: '3px solid transparent',
+        background: `linear-gradient(#ffffff, #ffffff) padding-box, conic-gradient(from var(--pet-ang), ${c}, ${light}, ${c}, ${light}, ${c}) border-box`,
+        boxShadow: glow,
+        animationDuration: dur + 's'
+      };
+    },
+
+    getPetBorderClass(level, student) {
+      return level >= 1 ? 'pet-flow' : '';
+    },
+
+    handleImageError(e) {
+      if (e.target.dataset.fb === '1') { e.target.src = PET_EGG_SVG; return; }
+      e.target.dataset.fb = '1';
+      const srcAttr = e.target.getAttribute('src') || '';
+      let alt = '寵';
+      for (const pk of FULL_64_POKEMON_POOL) {
+        const hit = (pk.evolutions || []).find(ev => ev.url === srcAttr) || (pk.url === srcAttr ? pk : null);
+        if (hit) { alt = (hit.name || pk.name).trim().charAt(0); break; }
+      }
+      e.target.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#e0e7ff" stroke="#6366f1" stroke-width="4"/><text x="50" y="64" font-size="44" text-anchor="middle" fill="#4338ca" font-family="sans-serif" font-weight="700">' + alt + '</text></svg>');
+    },
+
+    isTopStudent(student) {
+      if (!this.students || this.students.length === 0) return false;
+      const maxScore = Math.max(...this.students.map(s => s.score));
+      return maxScore > 0 && student.score === maxScore;
+    },
+
+    // 加減分邏輯 + 1秒即時飄浮數字 (+1 / -1) 與綠/紅邊框閃爍
+    addScore(student, val, reason = '手動調整經驗值') {
+      const oldScore = student.score;
+      student.score = Math.max(0, student.score + val);
+      const diff = student.score - oldScore;
+
+      // 設定飄浮數字動畫與閃爍
+      student.anim = {
+        type: val > 0 ? '+1' : '-1',
+        key: Date.now() + Math.random()
+      };
+
+      setTimeout(() => {
+        student.anim = null;
+      }, 1000);
+
+      this.addLog(student.name, `${reason} (${diff > 0 ? '+' + diff : diff})`, diff);
+      this.saveData();
+    },
+
+    getStudentsByGroup(gNum) {
+      return this.sortedStudents.filter(s => (s.group || 1) === gNum);
+    },
+
+    addGroupScore(gNum, val) {
+      const targets = this.getStudentsByGroup(gNum);
+      targets.forEach(s => this.addScore(s, val, `第 ${gNum} 組全組獎懲`));
+    },
+
+    // 作業管理：按已完成時，訂正燈號自動熄滅
+    setHomeworkStatus(student, hwId, statusType) {
+      if (!student.homeworks) student.homeworks = {};
+      if (!student.homeworks[hwId]) {
+        student.homeworks[hwId] = { submitted: false, completed: false, revision: false };
+      }
+      const hwData = student.homeworks[hwId];
+
+      if (statusType === 'submitted') {
+        hwData.submitted = !hwData.submitted;
+        this.addScore(student, hwData.submitted ? 1 : -1, '作業已交變更');
+      } else if (statusType === 'completed') {
+        hwData.completed = !hwData.completed;
+        if (hwData.completed) {
+          // 只要按已完成，訂正的燈號要自動熄滅！
+          hwData.revision = false;
+        }
+        this.addScore(student, hwData.completed ? 1 : -1, '作業完成變更');
+      } else if (statusType === 'revision') {
+        hwData.revision = !hwData.revision;
+      }
+
+      this.saveData();
+    },
+
+    getHwStatus(student, hwId, statusType) {
+      if (!student.homeworks || !student.homeworks[hwId]) return false;
+      return !!student.homeworks[hwId][statusType];
+    },
+
+    batchSetHwStatus(hwId, statusType) {
+      this.students.forEach(student => {
+        if (!student.homeworks) student.homeworks = {};
+        if (!student.homeworks[hwId]) {
+          student.homeworks[hwId] = { submitted: false, completed: false, revision: false };
+        }
+        if (!student.homeworks[hwId][statusType]) {
+          student.homeworks[hwId][statusType] = true;
+          if (statusType === 'completed') {
+            student.homeworks[hwId].revision = false; // 按已完成自動熄滅訂正燈
+          }
+          this.addScore(student, 1, '批次設定作業已交');
+        }
+      });
+      this.saveData();
+    },
+
+    addHomework() {
+      if (!this.newHomeworkTitle.trim()) return;
+      this.homeworkList.push({
+        id: 'hw_' + Date.now(),
+        title: this.newHomeworkTitle.trim()
+      });
+      this.newHomeworkTitle = '';
+      this.saveData();
+    },
+
+    removeHomework(hwId) {
+      if (!confirm('確定要刪除這項作業紀錄嗎？')) return;
+      this.homeworkList = this.homeworkList.filter(h => h.id !== hwId);
+      this.saveData();
+    },
+
+    // 抽卡扭蛋
+    drawGacha(student) {
+      if (student.score < 50) {
+        alert('經驗值不足 50 EXP，無法啟動扭蛋機！');
+        return;
+      }
+      this.addScore(student, -50, '消耗 EXP 啟動扭蛋機');
+      this.gachaDrawingStudent = student;
+      this.showGachaModal = true;
+      this.isGachaSpinning = true;
+      this.gachaResultCard = null;
+      this.wildcardSelectId = '';
+
+      setTimeout(() => {
+        this.isGachaSpinning = false;
+        const cardPicked = { ...this.pickGachaCard() };
+        this.gachaResultCard = cardPicked;
+
+        if (!student.cards) student.cards = [];
+        if (!cardPicked.isWildcard) {
+          student.cards.push(cardPicked);
+          this.saveData();
+        }
+      }, 1500);
+    },
+
+    // ---------- 作業檢核表（Google 試算表）同步 ----------
+    // rows：第一列「座號」+座號，其後每列為 作業名稱 + TRUE/FALSE
+    applySheetRows(rows) {
+      let seats = null, added = 0, skipped = 0, hwCount = 0;
+      const missing = new Set();
+      for (const row of rows) {
+        const cells = (row || []).map(c => String(c == null ? '' : c).trim());
+        if (!seats) {
+          if (cells[0] === '座號') seats = cells.slice(1).map(c => parseInt(c, 10));
+          continue;
+        }
+        const label = cells[0];
+        if (!label || label === '未完成') continue;
+        const vals = cells.slice(1);
+        if (!vals.some(v => /^(true|false)$/i.test(v))) continue;
+        let hw = this.homeworkList.find(h => h.title === label);
+        if (!hw) {
+          hw = { id: 'hw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), title: label };
+          this.homeworkList.push(hw);
+        }
+        hwCount++;
+        vals.forEach((v, i) => {
+          if (!/^true$/i.test(v)) return;
+          const seat = seats[i];
+          const st = this.students.find(x => x.seatNumber === seat);
+          if (!st) { if (!isNaN(seat)) missing.add(seat); return; }
+          if (!st.homeworks) st.homeworks = {};
+          if (!st.homeworks[hw.id]) st.homeworks[hw.id] = { submitted: false, completed: false, revision: false };
+          if (st.homeworks[hw.id].submitted) { skipped++; return; }
+          st.homeworks[hw.id].submitted = true;
+          this.addScore(st, 1, `作業檢核：${label}`);
+          added++;
+        });
+      }
+      if (hwCount > 0) this.saveData();
+      return { found: !!seats, added, skipped, hwCount, missing: [...missing] };
+    },
+
+    async syncSheet(manual = false) {
+      if (this._sheetBusy) return;
+      if (!this.cfg().endpoint) {
+        this.sheetState = { kind: 'error', text: '尚未設定雲端同步：點頁首的同步狀態文字，貼上 Apps Script 網址。', busy: false };
+        this._sheetStop = true;
+        return;
+      }
+      this._sheetBusy = true;
+      this.sheetState = { ...this.sheetState, busy: true };
+      try {
+        const res = await this.gas('GET', { action: 'sheet' });
+        const values = res && res.values;
+        if (!Array.isArray(values)) throw new Error('試算表回傳格式無法解析');
+        const r = this.applySheetRows(values);
+        const t = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+        this.sheetState = r.found
+          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加分 ${r.added} 人次` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
+          : { kind: 'error', text: `${t} 讀到資料，但找不到「座號」那一列。`, busy: false };
+        this._sheetStop = false;
+      } catch (e) {
+        this.sheetState = { kind: 'error', text: '試算表讀取失敗：' + (e.message || '網路錯誤'), busy: false };
+      } finally {
+        this._sheetBusy = false;
+      }
+    },
+
+    startSheetSync() {
+      const begin = () => {
+        this.syncSheet();
+        setInterval(() => {
+          if (document.visibilityState === 'visible' && !this._sheetStop) this.syncSheet();
+        }, 180000);
+      };
+      // 等雲端資料載入完成再同步，避免用預設資料重複計分
+      let waited = 0;
+      const timer = setInterval(() => {
+        waited += 500;
+        if (this._rev !== undefined || !this.cfg().endpoint || waited >= 8000) {
+          clearInterval(timer);
+          begin();
+        }
+      }, 500);
+    },
+
+    // 抽卡機率：SSR 15%、SR 35%、N 50%（先抽稀有度，再在該稀有度內隨機）
+    pickGachaCard() {
+      const RATES = { SSR: 15, SR: 35, N: 50 };
+      const pool = this.gachaCardPool;
+      const present = Object.keys(RATES).filter(r => pool.some(c => c.rarity === r));
+      const total = present.reduce((a, r) => a + RATES[r], 0);
+      let roll = Math.random() * total, rarity = present[present.length - 1];
+      for (const r of present) {
+        if (roll < RATES[r]) { rarity = r; break; }
+        roll -= RATES[r];
+      }
+      const list = pool.filter(c => c.rarity === rarity);
+      return list[Math.floor(Math.random() * list.length)];
+    },
+
+    confirmWildcardFromGacha() {
+      const target = this.availableSelectCards.find(c => c.id === this.wildcardSelectId);
+      if (!target || !this.gachaDrawingStudent) return;
+      this.selectedWildcardTarget = target;
+      this.confirmWildcardChoice();
+      this.showGachaModal = false;
+      this.wildcardSelectId = '';
+    },
+
+    openWildcardChoiceFromGacha() {
+      this.showGachaModal = false;
+      this.showCardSelectModal = true;
+      this.selectedWildcardTarget = null;
+    },
+
+    confirmWildcardChoice() {
+      if (!this.selectedWildcardTarget || !this.gachaDrawingStudent) return;
+      if (!this.gachaDrawingStudent.cards) this.gachaDrawingStudent.cards = [];
+      this.gachaDrawingStudent.cards.push({ ...this.selectedWildcardTarget });
+      this.addLog(this.gachaDrawingStudent.name, `使用萬能自選卡獲得了【${this.selectedWildcardTarget.name}】`, 0);
+      this.saveData();
+      this.showCardSelectModal = false;
+    },
+
+    useCard(student, cardIndex) {
+      if (!confirm(`確定要使用卡片【${student.cards[cardIndex].name}】嗎？`)) return;
+      const used = student.cards.splice(cardIndex, 1)[0];
+      this.addLog(student.name, `使用了特權卡片【${used.name}】`, 0);
+      this.saveData();
+    },
+
+    // 實體禮品與更換寵物
+    redeemDirectItem(student, item) {
+      if (student.score < item.cost) {
+        alert(`經驗值不足！兌換 ${item.name} 需要 ${item.cost} EXP。`);
+        return;
+      }
+      if (item.isPetChange) {
+        this.petSelectingStudent = student;
+        this.isTeacherFreeChange = false;
+        this.selectedPetForExchange = null;
+        this.showPetSelectModal = true;
+        return;
+      }
+      if (!confirm(`確定要消耗 ${item.cost} EXP 兌換【${item.name}】嗎？`)) return;
+      this.addScore(student, -item.cost, `實體兌換【${item.name}】`);
+    },
+
+    openTeacherPetModal(student) {
+      this.petSelectingStudent = student;
+      this.isTeacherFreeChange = true;
+      this.selectedPetForExchange = null;
+      this.showPetSelectModal = true;
+    },
+
+    confirmPetChange() {
+      if (!this.petSelectingStudent || !this.selectedPetForExchange) return;
+      
+      if (!this.isTeacherFreeChange) {
+        if (this.petSelectingStudent.score < 25) {
+          alert('經驗值不足 25 EXP！');
+          return;
+        }
+        this.addScore(this.petSelectingStudent, -25, '更換寵物造型');
+      }
+
+      this.petSelectingStudent.petId = this.selectedPetForExchange.id;
+      this.petSelectingStudent.customAvatar = this.selectedPetForExchange.url;
+      this.petSelectingStudent.animalBg = this.selectedPetForExchange.bg;
+
+      this.addLog(this.petSelectingStudent.name, `寵物更換為【${this.selectedPetForExchange.name}】`, 0);
+      this.saveData();
+      this.showPetSelectModal = false;
+    },
+
+    // 卡片交易
+    onTradeStudentAChange() {
+      this.tradePartyA.student = this.students.find(s => s.id === this.tradePartyA.studentId) || null;
+      this.tradePartyA.cardIndex = null;
+    },
+    onTradeStudentBChange() {
+      this.tradePartyB.student = this.students.find(s => s.id === this.tradePartyB.studentId) || null;
+      this.tradePartyB.cardIndex = null;
+    },
+
+    executeCardTrade() {
+      const sA = this.tradePartyA.student;
+      const sB = this.tradePartyB.student;
+      if (!sA || !sB) {
+        alert('請先選擇交易雙方學生！');
+        return;
+      }
+      if (sA.id === sB.id) {
+        alert('交易雙方不能為同一人！');
+        return;
+      }
+      if (this.tradePartyA.cardIndex === null) {
+        alert('甲方必須選擇一張要交易或贈與的卡片！');
+        return;
+      }
+
+      const cardA = sA.cards[this.tradePartyA.cardIndex];
+      const cardB = (this.tradePartyB.cardIndex !== null && sB.cards) ? sB.cards[this.tradePartyB.cardIndex] : null;
+
+      sA.cards.splice(this.tradePartyA.cardIndex, 1);
+      if (cardB) {
+        sB.cards.splice(this.tradePartyB.cardIndex, 1);
+        sA.cards.push(cardB);
+      }
+      if (!sB.cards) sB.cards = [];
+      sB.cards.push(cardA);
+
+      this.addLog(`${sA.name} 與 ${sB.name}`, `進行卡片交換/贈與 (${cardA.name})`, 0);
+      this.saveData();
+
+      this.tradePartyA.cardIndex = null;
+      this.tradePartyB.cardIndex = null;
+      alert('卡片交易完成！');
+    },
+
+    // 自訂上傳寵物
+    onCustomPetFileChange(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        // 縮成 160px 以內，避免雲端文件過大
+        const img = new Image();
+        img.onload = () => {
+          const r = Math.min(1, 160 / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * r));
+          c.height = Math.max(1, Math.round(img.height * r));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          this.newCustomPet.url = c.toDataURL('image/png');
+        };
+        img.onerror = () => { this.newCustomPet.url = evt.target.result; };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+
+    addCustomPet() {
+      if (!this.newCustomPet.name.trim() || !this.newCustomPet.url.trim()) {
+        alert('請輸入寵物名稱並提供圖片！');
+        return;
+      }
+      const newPet = {
+        id: 'custom_pet_' + Date.now(),
+        name: this.newCustomPet.name.trim(),
+        url: this.newCustomPet.url.trim(),
+        bg: this.newCustomPet.bg,
+        isCustom: true
+      };
+      this.presetAvatars.unshift(newPet);
+      this.newCustomPet.name = '';
+      this.newCustomPet.url = '';
+      this.saveData();
+      alert('成功新增自訂寵物！');
+    },
+
+    removeCustomPet(petId) {
+      this.presetAvatars = this.presetAvatars.filter(p => p.id !== petId);
+      this.saveData();
+    },
+
+    // 新增學生
+    createStudent() {
+      if (!this.newStudent.name.trim() || !this.newStudent.seatNumber) {
+        alert('請輸入座號與姓名！');
+        return;
+      }
+      const pet = this.presetAvatars.find(p => p.id === this.newStudent.petId) || this.presetAvatars[0];
+      const studentObj = {
+        id: 's_' + Date.now() + Math.random(),
+        seatNumber: Number(this.newStudent.seatNumber),
+        name: this.newStudent.name.trim(),
+        group: Number(this.newStudent.group) || 1,
+        role: this.newStudent.role || '組員',
+        score: 0,
+        petId: pet.id,
+        customAvatar: this.newStudent.customAvatar || pet.url,
+        cards: [],
+        homeworks: {}
+      };
+
+      this.students.push(studentObj);
+      this.newStudent.name = '';
+      this.newStudent.seatNumber = null;
+      this.saveData();
+    },
+
+    parseBatchStudents() {
+      if (!this.batchStudentInput.trim()) return;
+      const lines = this.batchStudentInput.trim().split('\n');
+      const list = [];
+      lines.forEach(line => {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          const seat = parseInt(parts[0], 10);
+          const name = parts[1];
+          const group = parts[2] ? parseInt(parts[2], 10) : 1;
+          if (!isNaN(seat) && name) {
+            list.push({ seatNumber: seat, name: name, group: group || 1 });
+          }
+        }
+      });
+      this.parsedBatchList = list;
+    },
+
+    confirmBatchImport() {
+      if (this.parsedBatchList.length === 0) return;
+      this.parsedBatchList.forEach((item, idx) => {
+        const pet = this.presetAvatars[idx % this.presetAvatars.length];
+        this.students.push({
+          id: 's_' + Date.now() + '_' + idx,
+          seatNumber: item.seatNumber,
+          name: item.name,
+          group: item.group,
+          role: '組員',
+          score: 0,
+          petId: pet.id,
+          customAvatar: pet.url,
+          cards: [],
+          homeworks: {}
+        });
+      });
+      this.batchStudentInput = '';
+      this.parsedBatchList = [];
+      this.saveData();
+      alert('批次匯入完成！');
+    },
+
+    deleteStudent(studentId) {
+      if (!confirm('確定要刪除這位學生嗎？')) return;
+      this.students = this.students.filter(s => s.id !== studentId);
+      this.saveData();
+    },
+
+    // 隨機抽籤
+    startPickStudent() {
+      if (this.students.length === 0) return;
+      this.isPicking = true;
+      let count = 0;
+      const interval = setInterval(() => {
+        const randIdx = Math.floor(Math.random() * this.students.length);
+        this.pickedStudent = this.students[randIdx];
+        count++;
+        if (count > 20) {
+          clearInterval(interval);
+          this.isPicking = false;
+        }
+      }, 100);
+    },
+
+    openProfileModal(student) {
+      this.profileStudent = student;
+      this.showProfileModal = true;
+    },
+
+    onNewStudentRoleSelectChange() {
+      if (this.newStudent.roleSelect !== 'custom') {
+        this.newStudent.role = this.newStudent.roleSelect;
+      } else {
+        this.newStudent.role = '';
+      }
+    },
+
+    getStudentRoleOption(student) {
+      const presets = ['組長', '副組長', '秩序長', '座位長'];
+      return presets.includes(student.role) ? student.role : 'custom';
+    },
+
+    isCustomStudentRole(student) {
+      const presets = ['組長', '副組長', '秩序長', '座位長'];
+      return !presets.includes(student.role);
+    },
+
+    handleStudentRoleChange(student, e) {
+      const val = e.target.value;
+      if (val !== 'custom') {
+        student.role = val;
+      } else {
+        student.role = '秩序長';
+      }
+      this.saveData();
+    },
+
+    addDirectItem() {
+      if (!this.newDirectItem.name.trim() || !this.newDirectItem.cost) return;
+      this.directItems.push({
+        id: 'p_' + Date.now(),
+        name: this.newDirectItem.name.trim(),
+        cost: Number(this.newDirectItem.cost)
+      });
+      this.newDirectItem.name = '';
+      this.newDirectItem.cost = null;
+      this.saveData();
+    },
+    removeDirectItem(id) {
+      this.directItems = this.directItems.filter(i => i.id !== id);
+      this.saveData();
+    },
+
+    addGachaCard() {
+      if (!this.newGachaCard.name.trim()) return;
+      this.gachaCardPool.push({
+        id: 'c_' + Date.now(),
+        name: this.newGachaCard.name.trim(),
+        rarity: this.newGachaCard.rarity
+      });
+      this.newGachaCard.name = '';
+      this.saveData();
+    },
+    removeGachaCard(id) {
+      this.gachaCardPool = this.gachaCardPool.filter(c => c.id !== id);
+      this.saveData();
+    },
+
+    addLog(name, action, change) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+      this.logs.unshift({ time: timeStr, name, action, change });
+      if (this.logs.length > 200) this.logs.pop();
+    },
+
+    clearLogs() {
+      if (!confirm('確定要清空歷程紀錄嗎？')) return;
+      this.logs = [];
+      this.saveData();
+    },
+
+    // ---------- 同步（Google Apps Script，存在你自己的 Google 雲端硬碟） ----------
+    cfg() {
+      const c = window.PK_CONFIG || {};
+      let ep = c.endpoint || '', key = c.key || '';
+      try { ep = localStorage.getItem('pk_endpoint') || ep; key = localStorage.getItem('pk_key') || key; } catch (e) {}
+      return { endpoint: ep.trim(), key: key.trim() };
+    },
+
+    snapshotState() {
+      const o = {};
+      ['students','homework','logs','gacha','items','pets'].forEach(k => { o[k] = JSON.parse(this.serializeKey(k)); });
+      return o;
+    },
+
+    serializeKey(key) {
+      const replacer = (k, v) => (k === 'anim' ? undefined : v);
+      const map = {
+        students: this.students,
+        homework: this.homeworkList,
+        logs: this.logs,
+        gacha: this.gachaCardPool,
+        items: this.directItems,
+        pets: this.presetAvatars.filter(p => p.isCustom)
+      };
+      return JSON.stringify(map[key], replacer);
+    },
+
+    saveData() {
+      try {
+        ['students','homework','logs','gacha','items','pets'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
+      } catch (e) {}
+      if (!this.cfg().endpoint) {
+        this.syncStatus.isSyncing = false;
+        this.syncStatus.text = '僅存本機（點此設定雲端同步）';
+        return;
+      }
+      this._dirty = true;
+      this.syncStatus.isSyncing = true;
+      this.syncStatus.text = '同步儲存中...';
+      clearTimeout(this._saveTimer);
+      this._saveTimer = setTimeout(() => this.pushToCloud(), 1200);
+    },
+
+    async gas(method, params, body) {
+      const { endpoint, key } = this.cfg();
+      const q = new URLSearchParams({ key, ...(params || {}) }).toString();
+      const url = endpoint + (endpoint.includes('?') ? '&' : '?') + q;
+      const opt = method === 'POST'
+        ? { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }
+        : { method: 'GET' };
+      const res = await fetch(url, opt);
+      const j = await res.json();
+      if (j && j.error) throw new Error(j.error);
+      return j;
+    },
+
+    async pushToCloud() {
+      if (this._pushing) { this._again = true; return; }
+      this._pushing = true;
+      try {
+        const r = await this.gas('POST', { action: 'save' }, { state: this.snapshotState(), base: this._rev || 0 });
+        this._rev = r.rev;
+        this._dirty = false;
+        this.syncStatus.text = '已同步至雲端 ' + new Date().toLocaleTimeString('zh-TW', { hour12: false });
+      } catch (e) {
+        this.syncStatus.text = '雲端儲存失敗：' + (e.message || '網路錯誤');
+      } finally {
+        this._pushing = false;
+        this.syncStatus.isSyncing = false;
+        if (this._again) { this._again = false; this.pushToCloud(); }
+      }
+    },
+
+    applyRemoteState(st) {
+      if (!st) return;
+      if (st.students) this.students = st.students;
+      if (st.homework) this.homeworkList = st.homework;
+      if (st.logs) this.logs = st.logs;
+      if (st.gacha) this.gachaCardPool = st.gacha;
+      if (st.items) this.directItems = st.items;
+      if (st.pets) this.presetAvatars = [...st.pets, ...FULL_64_POKEMON_POOL.filter(p => !p.isCustom)];
+      if (this.profileStudent) {
+        this.profileStudent = this.students.find(s => s.id === this.profileStudent.id) || null;
+        if (!this.profileStudent) this.showProfileModal = false;
+      }
+      try {
+        ['students','homework','logs','gacha','items','pets'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
+      } catch (e) {}
+    },
+
+    async pullFromCloud(first) {
+      if (this._dirty || this._pushing) return;
+      try {
+        const r = await this.gas('GET', { action: 'load' });
+        if (r.state && (first || r.rev !== this._rev)) {
+          this.applyRemoteState(r.state);
+        } else if (!r.state && first) {
+          // 雲端還是空的：把這台的資料當作初始資料上傳
+          await this.pushToCloud();
+        }
+        this._rev = r.rev;
+        this.syncStatus.text = '已同步至雲端 ' + new Date().toLocaleTimeString('zh-TW', { hour12: false });
+      } catch (e) {
+        this.syncStatus.text = '雲端讀取失敗：' + (e.message || '網路錯誤');
+      }
+    },
+
+    configureCloud() {
+      const cur = this.cfg();
+      const ep = window.prompt('貼上 Apps Script 網頁應用程式網址（留空 = 只存本機）', cur.endpoint);
+      if (ep === null) return;
+      const key = ep.trim() ? window.prompt('輸入你在 Apps Script 設定的通關密語', cur.key) : '';
+      if (ep.trim() && key === null) return;
+      try { localStorage.setItem('pk_endpoint', ep.trim()); localStorage.setItem('pk_key', (key || '').trim()); } catch (e) {}
+      location.reload();
+    },
+
+    async initCloud() {
+      if (!this.cfg().endpoint) {
+        this.syncStatus.text = '僅存本機（點此設定雲端同步）';
+        return;
+      }
+      this.syncStatus.text = '連線雲端中…';
+      await this.pullFromCloud(true);
+      setInterval(() => { if (document.visibilityState === 'visible') this.pullFromCloud(false); }, 20000);
+    },
+
+    loadLocalData() {
+      const get = k => { try { return localStorage.getItem('pk_' + k); } catch (e) { return null; } };
+      const s = get('students'), h = get('homework'), l = get('logs'), g = get('gacha'), i = get('items'), p = get('pets');
+      this._last = {};
+      if (s) this.students = JSON.parse(s);
+      else {
+        this.students = [
+          { id: 's1', seatNumber: 1, name: '朱邑笙', group: 1, role: '組長', score: 0, petId: 'charmander_line', customAvatar: '', cards: [], homeworks: {} },
+          { id: 's2', seatNumber: 2, name: '林小霸', group: 1, role: '副組長', score: 0, petId: 'bulbasaur_line', customAvatar: '', cards: [], homeworks: {} },
+          { id: 's3', seatNumber: 3, name: '陳宇豪', group: 2, role: '組長', score: 0, petId: 'squirtle_line', customAvatar: '', cards: [], homeworks: {} },
+          { id: 's4', seatNumber: 4, name: '黃婷婷', group: 2, role: '組員', score: 0, petId: 'pikachu_line', customAvatar: '', cards: [], homeworks: {} },
+          { id: 's5', seatNumber: 5, name: '張家豪', group: 3, role: '組長', score: 0, petId: 'eevee_line', customAvatar: '', cards: [], homeworks: {} }
+        ];
+      }
+      if (h) this.homeworkList = JSON.parse(h);
+      if (l) this.logs = JSON.parse(l);
+      if (g) this.gachaCardPool = JSON.parse(g);
+      if (i) this.directItems = JSON.parse(i);
+      if (p) {
+        const custom = JSON.parse(p);
+        this.presetAvatars = [...custom, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
+      }
+    },
+
+    exportData() {
+      const data = {
+        students: this.students,
+        homeworkList: this.homeworkList,
+        logs: this.logs,
+        gachaCardPool: this.gachaCardPool,
+        directItems: this.directItems,
+        customPets: this.presetAvatars.filter(p => p.isCustom)
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `pokemon_classroom_backup_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    },
+
+    importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.students) this.students = data.students;
+          if (data.homeworkList) this.homeworkList = data.homeworkList;
+          if (data.logs) this.logs = data.logs;
+          if (data.gachaCardPool) this.gachaCardPool = data.gachaCardPool;
+          if (data.directItems) this.directItems = data.directItems;
+          if (data.customPets) this.presetAvatars = [...data.customPets, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
+          this.saveData();
+          alert('資料順利匯入完成！');
+        } catch (err) {
+          alert('檔案格式不正確，匯入失敗。');
+        }
+      };
+      reader.readAsText(file);
+    }
+  }
+}).mount('#app');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+// 寵物王國：雲端資料庫 + 作業檢核表讀取（執行在你自己的 Google 帳號）
+const PASSPHRASE = '請改成你自己的密語';   // ← 改掉它，網頁設定時要輸入同一個
+const SHEET_ID   = '1a3XhjDEUXXWPl1X9lRb7M2wNMII5cMhbuAadu5ORkJU';
+const SHEET_NAME = '作業檢核';
+const FILE_NAME  = 'pokemon_classroom_state.json';
+
+function out_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+function file_() {
+  const it = DriveApp.getFilesByName(FILE_NAME);
+  return it.hasNext() ? it.next() : null;
+}
+
+function doGet(e) {
+  try {
+    if (e.parameter.key !== PASSPHRASE) return out_({ error: '密語錯誤' });
+    const action = e.parameter.action;
+    if (action === 'load') {
+      const f = file_();
+      if (!f) return out_({ state: null, rev: 0 });
+      const o = JSON.parse(f.getBlob().getDataAsString());
+      return out_({ state: o.state, rev: o.rev });
+    }
+    if (action === 'sheet') {
+      const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+      const values = sh.getDataRange().getValues().map(r => r.map(c => String(c)));
+      return out_({ values: values });
+    }
+    return out_({ error: '未知的動作' });
+  } catch (err) {
+    return out_({ error: String(err) });
+  }
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  try {
+    if (e.parameter.key !== PASSPHRASE) return out_({ error: '密語錯誤' });
+    lock.waitLock(20000);
+    const body = JSON.parse(e.postData.contents);
+    const f = file_();
+    let rev = 1;
+    if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
+    const content = JSON.stringify({ rev: rev, state: body.state });
+    if (f) f.setContent(content); else DriveApp.createFile(FILE_NAME, content, MimeType.PLAIN_TEXT);
+    return out_({ ok: true, rev: rev });
+  } catch (err) {
+    return out_({ error: String(err) });
+  } finally {
+    try { lock.releaseLock(); } catch (x) {}
+  }
+}
