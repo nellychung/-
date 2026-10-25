@@ -1762,6 +1762,31 @@ const FULL_64_POKEMON_POOL = [
   { id: 'giratina', name: '騎拉帝納 (Giratina)', url: 'pk/487.png', bg: 'bg-gradient-to-br from-slate-800 to-yellow-900 border-amber-400 text-white' }
 ];
 
+const SHEET_ID = '1a3XhjDEUXXWPl1X9lRb7M2wNMII5cMhbuAadu5ORkJU';
+const SHEET_RANGE = "'作業檢核'!A1:AZ200";
+
+// 寵物屬性（依寶可夢主屬性）與邊框顏色
+const TYPE_COLORS = {
+  fire: '#ef4444', water: '#3b82f6', grass: '#22c55e', electric: '#facc15', normal: '#a8a29e',
+  ghost: '#7c3aed', dragon: '#4f46e5', psychic: '#ec4899', fighting: '#b45309', rock: '#a16207',
+  steel: '#94a3b8', dark: '#1f2937', fairy: '#f472b6', bug: '#84cc16', ground: '#d97706', flying: '#38bdf8'
+};
+const PET_TYPES = {
+  charmander_line: 'fire', bulbasaur_line: 'grass', squirtle_line: 'water', pikachu_line: 'electric',
+  eevee_line: [[1, 'normal'], [20, 'fairy']], gengar_line: 'ghost', garchomp_line: 'dragon', psyduck_line: 'water',
+  chikorita_line: 'grass', cyndaquil_line: 'fire', totodile_line: 'water', treecko_line: 'grass', torchic_line: 'fire',
+  mudkip_line: 'water', turtwig_line: 'grass', chimchar_line: 'fire', piplup_line: 'water', snivy_line: 'grass',
+  tepig_line: 'fire', oshawott_line: 'water', chespin_line: 'grass', fennekin_line: 'fire', froakie_line: 'water',
+  rowlet_line: 'grass', litten_line: 'fire', popplio_line: 'water', grookey_line: 'grass', scorbunny_line: 'fire',
+  sobble_line: 'water', sprigatito_line: 'grass', fuecoco_line: 'fire', quaxly_line: 'water', abra_line: 'psychic',
+  machop_line: 'fighting', dratini_line: 'dragon', larvitar_line: 'rock', beldum_line: 'steel', bagon_line: 'dragon',
+  goomy_line: 'dragon', dreepy_line: 'dragon', riolu_line: 'fighting', zorua_line: 'dark', charcadet_line: 'fire',
+  togepi_line: 'fairy', caterpie_line: 'bug', weedle_line: 'bug', pidgey_line: 'flying', magikarp_line: 'water',
+  cubone_line: 'ground', scyther_line: 'bug', jigglypuff_line: 'fairy', meowth_line: 'normal', slowpoke_line: 'water',
+  vulpix_line: 'fire', snorlax: 'normal', mewtwo: 'psychic', mew: 'psychic', mimikyu: 'ghost', rayquaza: 'dragon',
+  kyogre: 'water', groudon: 'ground', palkia: 'dragon', dialga: 'steel', giratina: 'ghost'
+};
+
 const __app = createApp({
   data() {
     return {
@@ -2853,7 +2878,7 @@ const __app = createApp({
   __app.config.errorHandler = function (err, inst, info) { show('[Vue ' + info + '] ' + (err && err.stack ? err.stack.split('\n').slice(0, 3).join('\n') : err)); console.error(err); };
   window.addEventListener('error', function (e) { show('[JS] ' + e.message + ' @' + (e.lineno || '?') + ':' + (e.colno || '?')); });
   window.addEventListener('unhandledrejection', function (e) { show('[Promise] ' + (e.reason && e.reason.message || e.reason)); });
-  try { __app.mount('#app'); show('版本 v3：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v3：啟動完成') b.remove(); }, 4000); }
+  try { __app.mount('#app'); show('版本 v4：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v4：啟動完成') b.remove(); }, 4000); }
   catch (e) { show('[mount] ' + (e && e.stack || e)); }
 })();
 </script>
