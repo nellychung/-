@@ -1903,9 +1903,13 @@ createApp({
     this.updateClock();
     setInterval(this.updateClock, 1000);
 
-    this.loadLocalData();
-    this.initCloud();
-    this.startSheetSync();
+    const step = (name, fn) => {
+      try { const r = fn(); if (r && r.catch) r.catch(e => this.reportError(name, e)); }
+      catch (e) { this.reportError(name, e); }
+    };
+    step('讀取本機資料', () => this.loadLocalData());
+    step('雲端同步', () => this.initCloud());
+    step('作業檢核', () => this.startSheetSync());
   },
 
   methods: {
@@ -2713,7 +2717,7 @@ createApp({
 
     applyRemoteState(st) {
       if (!st) return;
-      if (st.students) this.students = st.students;
+      if (Array.isArray(st.students) && st.students.length) this.students = st.students;
       if (st.homework) this.homeworkList = st.homework;
       if (st.logs) this.logs = st.logs;
       if (st.gacha) this.gachaCardPool = st.gacha;
@@ -2765,28 +2769,34 @@ createApp({
       setInterval(() => { if (document.visibilityState === 'visible') this.pullFromCloud(false); }, 20000);
     },
 
+    reportError(where, e) {
+      console.error(where, e);
+      this.syncStatus.isSyncing = false;
+      this.syncStatus.text = `錯誤（${where}）：${(e && e.message) || e}`;
+    },
+
     loadLocalData() {
       const get = k => { try { return localStorage.getItem('pk_' + k); } catch (e) { return null; } };
-      const s = get('students'), h = get('homework'), l = get('logs'), g = get('gacha'), i = get('items'), p = get('pets');
+      const parse = (k, ok) => {
+        const raw = get(k);
+        if (!raw || raw === 'undefined') return null;
+        try { const v = JSON.parse(raw); return ok(v) ? v : null; } catch (e) { return null; }
+      };
       this._last = {};
-      if (s) this.students = JSON.parse(s);
-      else {
-        this.students = [
-          { id: 's1', seatNumber: 1, name: '朱邑笙', group: 1, role: '組長', score: 0, petId: 'charmander_line', customAvatar: '', cards: [], homeworks: {} },
-          { id: 's2', seatNumber: 2, name: '林小霸', group: 1, role: '副組長', score: 0, petId: 'bulbasaur_line', customAvatar: '', cards: [], homeworks: {} },
-          { id: 's3', seatNumber: 3, name: '陳宇豪', group: 2, role: '組長', score: 0, petId: 'squirtle_line', customAvatar: '', cards: [], homeworks: {} },
-          { id: 's4', seatNumber: 4, name: '黃婷婷', group: 2, role: '組員', score: 0, petId: 'pikachu_line', customAvatar: '', cards: [], homeworks: {} },
-          { id: 's5', seatNumber: 5, name: '張家豪', group: 3, role: '組長', score: 0, petId: 'eevee_line', customAvatar: '', cards: [], homeworks: {} }
-        ];
-      }
-      if (h) this.homeworkList = JSON.parse(h);
-      if (l) this.logs = JSON.parse(l);
-      if (g) this.gachaCardPool = JSON.parse(g);
-      if (i) this.directItems = JSON.parse(i);
-      if (p) {
-        const custom = JSON.parse(p);
-        this.presetAvatars = [...custom, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
-      }
+      const students = parse('students', Array.isArray);
+      this.students = (students && students.length) ? students : [
+        { id: 's1', seatNumber: 1, name: '朱邑笙', group: 1, role: '組長', score: 0, petId: 'charmander_line', customAvatar: '', cards: [], homeworks: {} },
+        { id: 's2', seatNumber: 2, name: '林小霸', group: 1, role: '副組長', score: 0, petId: 'bulbasaur_line', customAvatar: '', cards: [], homeworks: {} },
+        { id: 's3', seatNumber: 3, name: '陳宇豪', group: 2, role: '組長', score: 0, petId: 'squirtle_line', customAvatar: '', cards: [], homeworks: {} },
+        { id: 's4', seatNumber: 4, name: '黃婷婷', group: 2, role: '組員', score: 0, petId: 'pikachu_line', customAvatar: '', cards: [], homeworks: {} },
+        { id: 's5', seatNumber: 5, name: '張家豪', group: 3, role: '組長', score: 0, petId: 'eevee_line', customAvatar: '', cards: [], homeworks: {} }
+      ];
+      const h = parse('homework', Array.isArray); if (h) this.homeworkList = h;
+      const l = parse('logs', Array.isArray); if (l) this.logs = l;
+      const g = parse('gacha', Array.isArray); if (g && g.length) this.gachaCardPool = g;
+      const i = parse('items', Array.isArray); if (i) this.directItems = i;
+      const p = parse('pets', Array.isArray);
+      if (p) this.presetAvatars = [...p, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
     },
 
     exportData() {
