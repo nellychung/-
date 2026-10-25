@@ -224,6 +224,9 @@
             <span class="text-xs font-black text-indigo-950 flex items-center gap-1.5">
               <i class="fa-solid fa-crown text-amber-500"></i> 全班名單 (共 {{ filteredStudents.length }} / {{ students.length }} 人)
             </span>
+            <button @click="addClassScore(1)" class="px-3 py-1 bg-gradient-to-b from-emerald-400 to-emerald-600 text-white text-xs font-black rounded-xl shadow active:scale-95 transition">
+              全班 +1
+            </button>
             
             <div class="flex bg-indigo-100 p-0.5 rounded-xl text-[11px] font-bold">
               <button @click="viewMode = 'all'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'all' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">全班座號</button>
@@ -258,7 +261,7 @@
                  :key="student.anim.key" 
                  class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num drop-shadow-lg"
                  :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
-              {{ student.anim.type }}
+              {{ student.anim.label || student.anim.type }}
             </div>
 
             <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-lg sm:text-xl drop-shadow-md z-20 animate-bounce" title="全班經驗值王者 👑">
@@ -308,6 +311,11 @@
                 -1
               </button>
             </div>
+            <div class="flex items-center gap-1 pt-1" @click.stop>
+              <input type="number" min="1" inputmode="numeric" v-model.number="customAmounts[student.id]" placeholder="自訂經驗值" @keyup.enter="addCustom(student, 1)" class="min-w-0 flex-1 w-full px-1.5 py-1 border-2 border-indigo-200 rounded-lg text-xs font-black text-slate-800 outline-none focus:border-indigo-500" />
+              <button @click.stop="addCustom(student, 1)" class="shrink-0 px-2 py-1 bg-emerald-500 text-white text-xs font-black rounded-lg active:scale-95">加</button>
+              <button @click.stop="addCustom(student, -1)" class="shrink-0 px-2 py-1 bg-rose-500 text-white text-xs font-black rounded-lg active:scale-95">扣</button>
+            </div>
           </div>
         </div>
 
@@ -332,7 +340,7 @@
                      :key="student.anim.key" 
                      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-xl animate-float-num drop-shadow-md"
                      :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
-                  {{ student.anim.type }}
+                  {{ student.anim.label || student.anim.type }}
                 </div>
 
                 <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-sm z-20 animate-bounce" title="全班經驗值王者">
@@ -354,6 +362,9 @@
                 <div class="flex space-x-1" @click.stop>
                   <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] font-black rounded active:scale-95">+1</button>
                   <button @click="addScore(student, -1)" class="px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded active:scale-95">-1</button>
+                  <input type="number" min="1" inputmode="numeric" v-model.number="customAmounts[student.id]" placeholder="自訂" @keyup.enter="addCustom(student, 1)" class="w-14 px-1 py-0.5 border border-indigo-200 rounded text-[10px] font-black text-slate-800 outline-none focus:border-indigo-500" />
+                  <button @click="addCustom(student, 1)" class="px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-black rounded active:scale-95">加</button>
+                  <button @click="addCustom(student, -1)" class="px-1.5 py-0.5 bg-rose-600 text-white text-[10px] font-black rounded active:scale-95">扣</button>
                 </div>
               </div>
             </div>
@@ -1875,6 +1886,7 @@ const __app = createApp({
       showCardSelectModal: false,
       selectedWildcardTarget: null,
       wildcardSelectId: '',
+      customAmounts: {},
       sheetState: { kind: 'idle', text: '尚未同步', busy: false },
 
       showPickerModal: false,
@@ -2129,6 +2141,7 @@ const __app = createApp({
       // 設定飄浮數字動畫與閃爍
       student.anim = {
         type: val > 0 ? '+1' : '-1',
+        label: diff > 0 ? '+' + diff : String(diff),
         key: Date.now() + Math.random()
       };
 
@@ -2142,6 +2155,19 @@ const __app = createApp({
 
     getStudentsByGroup(gNum) {
       return this.sortedStudents.filter(s => (s.group || 1) === gNum);
+    },
+
+    addClassScore(val) {
+      if (!this.students.length) return;
+      if (!window.confirm(`確定全班 ${this.students.length} 人每人 ${val > 0 ? '+' : ''}${val} 經驗值？`)) return;
+      this.students.forEach(s => this.addScore(s, val, '全班獎懲'));
+    },
+
+    addCustom(student, sign) {
+      const n = Math.floor(Math.abs(Number(this.customAmounts[student.id])));
+      if (!n) { window.alert('請先輸入要加或扣的經驗值（正整數）'); return; }
+      this.addScore(student, sign * n, sign > 0 ? '自訂加經驗值' : '自訂扣經驗值');
+      this.customAmounts[student.id] = '';
     },
 
     addGroupScore(gNum, val) {
