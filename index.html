@@ -359,7 +359,7 @@
             <h2 class="text-lg font-black flex items-center gap-2">
               <i class="fa-solid fa-book-open text-yellow-300"></i> 全班作業繳交與追蹤管理中心
             </h2>
-            <p class="text-xs text-purple-100 font-medium">按「完成」時，訂正燈號將自動熄滅！</p>
+            <p class="text-xs text-purple-100 font-medium">按「完成」加 1 分，再按一次取消並扣回 1 分。</p>
           </div>
 
           <div class="flex items-center space-x-2 bg-white/10 p-2 rounded-2xl border border-white/20">
@@ -376,7 +376,7 @@
               <i class="fa-solid fa-rotate" :class="sheetState.busy ? 'fa-spin' : ''"></i> 作業檢核表自動同步（Google 試算表）
             </h3>
             <p class="text-xs font-black" :class="sheetState.kind === 'ok' ? 'text-emerald-700' : sheetState.kind === 'error' ? 'text-rose-600' : 'text-slate-500'">{{ sheetState.text }}</p>
-            <p class="text-[11px] text-slate-500 font-bold">開啟頁面時自動讀取，之後每 3 分鐘再讀一次。TRUE 加 1 分並標為「已交」；同一項作業不重複加分，FALSE 不扣分。</p>
+            <p class="text-[11px] text-slate-500 font-bold">開啟頁面時自動讀取，之後每 3 分鐘再讀一次。TRUE 就標為「完成」並加 1 分；同一項作業不重複加分，FALSE 不扣分。</p>
           </div>
           <button @click="syncSheet(true)" :disabled="sheetState.busy" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-black rounded-xl shadow transition active:scale-95 disabled:opacity-50">
             <i class="fa-solid fa-rotate mr-1"></i> 立即同步
@@ -394,11 +394,11 @@
               <tr class="border-b-2 border-purple-200 text-xs font-black text-purple-900 bg-purple-50/70">
                 <th class="p-3 w-16">座號</th>
                 <th class="p-3 w-28 border-r-2 border-purple-200">學生姓名</th>
-                <th v-for="hw in homeworkList" :key="hw.id" class="p-3 min-w-[200px] border-r-2 border-purple-200 bg-purple-100/50">
+                <th v-for="hw in homeworkList" :key="hw.id" class="p-3 min-w-[150px] border-r-2 border-purple-200 bg-purple-100/50">
                   <div class="flex justify-between items-center gap-1">
                     <span class="truncate font-black text-purple-950">{{ hw.title }}</span>
                     <div class="flex items-center space-x-1 shrink-0">
-                      <button @click="batchSetHwStatus(hw.id, 'submitted')" title="一鍵將全班設為已繳交" class="px-1.5 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] rounded font-extrabold shadow-xs">全交</button>
+                      <button @click="batchSetHwStatus(hw.id, 'completed')" title="一鍵將全班設為完成（尚未完成的每人 +1）" class="px-1.5 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] rounded font-extrabold shadow-xs">全部完成</button>
                       <button @click="removeHomework(hw.id)" class="text-rose-400 hover:text-rose-600 p-0.5"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                   </div>
@@ -416,23 +416,11 @@
                   </div>
                 </td>
                 <td v-for="hw in homeworkList" :key="hw.id" class="p-2 border-r-2 border-purple-200 bg-purple-50/20">
-                  <div class="flex items-center space-x-1 bg-white p-1 rounded-xl border border-purple-100 shadow-xs">
-                    <button @click="setHomeworkStatus(student, hw.id, 'submitted')"
-                            :class="['px-2 py-1 rounded-lg text-[11px] font-black transition flex-1 text-center', 
-                                    getHwStatus(student, hw.id, 'submitted') ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 text-slate-500 hover:bg-emerald-100']">
-                      已交 (+1)
-                    </button>
-                    <button @click="setHomeworkStatus(student, hw.id, 'completed')"
-                            :class="['px-2 py-1 rounded-lg text-[11px] font-black transition flex-1 text-center', 
-                                    getHwStatus(student, hw.id, 'completed') ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-500 hover:bg-indigo-100']">
-                      完成 (+1)
-                    </button>
-                    <button @click="setHomeworkStatus(student, hw.id, 'revision')"
-                            :class="['px-2 py-1 rounded-lg text-[11px] font-black transition text-center px-2', 
-                                    getHwStatus(student, hw.id, 'revision') ? 'bg-amber-500 text-white shadow-xs animate-pulse' : 'bg-slate-100 text-slate-400 hover:bg-amber-100']">
-                      訂正
-                    </button>
-                  </div>
+                  <button @click="setHomeworkStatus(student, hw.id, 'completed')"
+                          :class="['w-full px-2 py-1.5 rounded-xl text-[11px] font-black transition text-center border',
+                                  getHwStatus(student, hw.id, 'completed') ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs' : 'bg-white text-slate-500 border-purple-100 hover:bg-indigo-50']">
+                    {{ getHwStatus(student, hw.id, 'completed') ? '✔ 完成' : '未完成' }}
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -887,10 +875,8 @@
                 <div v-for="hw in homeworkList" :key="hw.id" class="p-1.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[11px] shadow-xs">
                   <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
                   <div class="flex items-center space-x-1 shrink-0">
-                    <span v-if="getHwStatus(profileStudent, hw.id, 'submitted') && getHwStatus(profileStudent, hw.id, 'completed')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-indigo-600 text-white">完成</span>
-                    <span v-else-if="getHwStatus(profileStudent, hw.id, 'submitted') && getHwStatus(profileStudent, hw.id, 'revision')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-500 text-white">待訂正</span>
-                    <span v-else-if="getHwStatus(profileStudent, hw.id, 'submitted')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-500 text-white">已交</span>
-                    <span v-else class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-600">未交</span>
+                    <span v-if="getHwStatus(profileStudent, hw.id, 'completed')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-indigo-600 text-white">完成</span>
+                    <span v-else class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-600">未完成</span>
                   </div>
                 </div>
               </div>
@@ -2179,47 +2165,28 @@ const __app = createApp({
     },
 
     // 作業管理：按已完成時，訂正燈號自動熄滅
-    setHomeworkStatus(student, hwId, statusType) {
+    setHomeworkStatus(student, hwId) {
       if (!student.homeworks) student.homeworks = {};
       if (!student.homeworks[hwId]) {
         student.homeworks[hwId] = { submitted: false, completed: false, revision: false };
       }
-      const hwData = student.homeworks[hwId];
-
-      if (statusType === 'submitted') {
-        hwData.submitted = !hwData.submitted;
-        this.addScore(student, hwData.submitted ? 1 : -1, '作業已交變更');
-      } else if (statusType === 'completed') {
-        hwData.completed = !hwData.completed;
-        if (hwData.completed) {
-          // 只要按已完成，訂正的燈號要自動熄滅！
-          hwData.revision = false;
-        }
-        this.addScore(student, hwData.completed ? 1 : -1, '作業完成變更');
-      } else if (statusType === 'revision') {
-        hwData.revision = !hwData.revision;
-      }
-
+      const d = student.homeworks[hwId];
+      d.completed = !d.completed;
+      d.submitted = d.completed;
+      d.revision = false;
+      this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成');
       this.saveData();
     },
-
-    getHwStatus(student, hwId, statusType) {
-      if (!student.homeworks || !student.homeworks[hwId]) return false;
-      return !!student.homeworks[hwId][statusType];
-    },
-
-    batchSetHwStatus(hwId, statusType) {
+    batchSetHwStatus(hwId) {
       this.students.forEach(student => {
         if (!student.homeworks) student.homeworks = {};
         if (!student.homeworks[hwId]) {
           student.homeworks[hwId] = { submitted: false, completed: false, revision: false };
         }
-        if (!student.homeworks[hwId][statusType]) {
-          student.homeworks[hwId][statusType] = true;
-          if (statusType === 'completed') {
-            student.homeworks[hwId].revision = false; // 按已完成自動熄滅訂正燈
-          }
-          this.addScore(student, 1, '批次設定作業已交');
+        const d = student.homeworks[hwId];
+        if (!d.completed) {
+          d.completed = true; d.submitted = true; d.revision = false;
+          this.addScore(student, 1, '批次設定作業完成');
         }
       });
       this.saveData();
@@ -2299,9 +2266,10 @@ const __app = createApp({
           if (!st.homeworks) st.homeworks = {};
           if (!st.homeworks[hw.id]) st.homeworks[hw.id] = { submitted: false, completed: false, revision: false };
           const d = st.homeworks[hw.id];
-          if (d.submitted && d.completed) { skipped++; return; }
-          if (!d.submitted) { d.submitted = true; this.addScore(st, 1, `作業已交（試算表）：${label}`); added++; }
-          if (!d.completed) { d.completed = true; d.revision = false; this.addScore(st, 1, `作業完成（試算表）：${label}`); added++; }
+          if (d.completed) { skipped++; return; }
+          d.completed = true; d.submitted = true; d.revision = false;
+          this.addScore(st, 1, `作業完成（試算表）：${label}`);
+          added++;
         });
       }
       // 試算表已刪除的作業：同步從作業管理移除，已加的分數不變
