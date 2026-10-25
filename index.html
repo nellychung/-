@@ -1762,7 +1762,7 @@ const FULL_64_POKEMON_POOL = [
   { id: 'giratina', name: '騎拉帝納 (Giratina)', url: 'pk/487.png', bg: 'bg-gradient-to-br from-slate-800 to-yellow-900 border-amber-400 text-white' }
 ];
 
-createApp({
+const __app = createApp({
   data() {
     return {
       currentTab: 'dashboard',
@@ -2838,7 +2838,24 @@ createApp({
       reader.readAsText(file);
     }
   }
-}).mount('#app');
+});
+(function () {
+  function show(msg) {
+    let el = document.getElementById('pk-err');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'pk-err';
+      el.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#7f1d1d;color:#fff;font:12px/1.5 monospace;padding:8px 12px;white-space:pre-wrap;max-height:40vh;overflow:auto;user-select:text';
+      document.body.appendChild(el);
+    }
+    el.textContent += msg + '\n';
+  }
+  __app.config.errorHandler = function (err, inst, info) { show('[Vue ' + info + '] ' + (err && err.stack ? err.stack.split('\n').slice(0, 3).join('\n') : err)); console.error(err); };
+  window.addEventListener('error', function (e) { show('[JS] ' + e.message + ' @' + (e.lineno || '?') + ':' + (e.colno || '?')); });
+  window.addEventListener('unhandledrejection', function (e) { show('[Promise] ' + (e.reason && e.reason.message || e.reason)); });
+  try { __app.mount('#app'); show('版本 v3：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v3：啟動完成') b.remove(); }, 4000); }
+  catch (e) { show('[mount] ' + (e && e.stack || e)); }
+})();
 </script>
 
 </body>
