@@ -166,6 +166,13 @@
     @media (prefers-reduced-motion: reduce) { .pet-flow { animation: none; } }
     html,body{background-color:#f0f3ff}
     .page-wrap{padding-block:4px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+    /* 全班一頁：欄數依螢幕寬度，27 人剛好 3 列（寬螢幕） */
+    .student-grid{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media (min-width:700px){.student-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+    @media (min-width:1000px){.student-grid{grid-template-columns:repeat(7,minmax(0,1fr))}}
+    @media (min-width:1400px){.student-grid{grid-template-columns:repeat(9,minmax(0,1fr))}}
+    .pet-thumb{width:3.5rem;height:3.5rem;border-radius:0.9rem}
     .pet-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:900;color:#4338ca;background:#eef2ff;border-radius:12px;font-size:1.2em}
 </style>
 </head>
@@ -175,8 +182,8 @@
   
   <div>
     <!-- 頂部導覽列 -->
-    <header class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-600 text-white px-3 sm:px-5 py-2.5 flex flex-wrap justify-between items-center gap-2 shadow-md">
-      <div class="flex items-center space-x-2.5">
+    <header class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-600 text-white px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md xl:grid xl:grid-cols-[1fr_auto_1fr]">
+      <div class="flex items-center space-x-2.5 min-w-0 xl:justify-self-start">
         <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide">
           <i class="fa-solid fa-gamepad text-yellow-300"></i>
           <span>智慧班級經營-寵物王國 (寶可夢特別版)</span>
@@ -189,13 +196,14 @@
         </div>
       </div>
 
-      <!-- 右側即時時間與頁面切換按鈕 -->
-      <div class="flex items-center space-x-2">
-        <div class="flex items-center space-x-1.5 bg-black/25 px-3 py-1 rounded-2xl border border-white/20 text-xs font-black text-cyan-200 shadow-inner">
-          <i class="fa-solid fa-clock text-cyan-300"></i>
-          <span>{{ currentDateStr }} {{ currentDayStr }} {{ currentTimeStr }}</span>
-        </div>
+      <!-- 中間：即時時間（全班都看得到） -->
+      <div class="flex items-center gap-2 bg-black/30 px-5 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-base sm:text-xl xl:justify-self-center tabular-nums">
+        <i class="fa-solid fa-clock text-cyan-300"></i>
+        <span>{{ currentDateStr }} {{ currentDayStr }} {{ currentTimeStr }}</span>
+      </div>
 
+      <!-- 右側：隨機抽籤與頁面切換 -->
+      <div class="flex items-center space-x-2 xl:justify-self-end">
         <div class="flex items-center space-x-1 bg-white/20 p-1 rounded-2xl border border-white/20">
           <button @click="showPickerModal = true" class="px-2.5 py-1 rounded-xl text-xs font-black bg-amber-400 text-slate-900 hover:bg-amber-300 transition flex items-center gap-1 shadow-sm">
             <i class="fa-solid fa-dice"></i> 隨機抽籤
@@ -250,121 +258,91 @@
           </div>
         </div>
 
-        <!-- 模式 A：全班高密度 3D 卡片網格 -->
-        <div v-if="viewMode === 'all'" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
-          <div v-for="student in sortedStudents" :key="student.id" 
-               class="bg-gradient-to-b from-white to-slate-50 rounded-2xl p-2 card-touch flex flex-col justify-between relative group border"
+        <!-- 模式 A：全班緊湊卡片（27 人一頁看完） -->
+        <div v-if="viewMode === 'all'" class="student-grid">
+          <div v-for="student in sortedStudents" :key="student.id"
+               class="bg-gradient-to-b from-white to-slate-50 rounded-xl p-1.5 card-touch flex flex-col gap-1 relative border min-w-0"
                :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
-            
-            <!-- 1秒飄浮數字 (+1 / -1) -->
-            <div v-if="student.anim" 
-                 :key="student.anim.key" 
-                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num drop-shadow-lg"
+
+            <div v-if="student.anim" :key="student.anim.key"
+                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-xl animate-float-num drop-shadow-lg"
                  :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
               {{ student.anim.label || student.anim.type }}
             </div>
 
-            <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-lg sm:text-xl drop-shadow-md z-20 animate-bounce" title="全班經驗值王者 👑">
+            <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-base drop-shadow-md z-20 animate-bounce" title="全班經驗值王者">
               <i class="fa-solid fa-crown text-amber-400"></i>
             </div>
 
-            <div class="absolute top-1.5 left-1.5 bg-slate-900/90 text-white font-black text-[10px] px-1.5 py-0.2 rounded-full z-10 shadow-sm">
-              #{{ student.seatNumber }}
+            <div class="flex items-center gap-1 min-w-0">
+              <span class="bg-slate-900/90 text-white font-black text-[10px] px-1.5 rounded-full shrink-0">#{{ student.seatNumber }}</span>
+              <span class="font-black text-slate-800 text-xs truncate">{{ student.name }}</span>
+              <span class="ml-auto text-[9px] font-black text-indigo-700 bg-indigo-100 px-1 rounded-full border border-indigo-200 shrink-0 whitespace-nowrap">{{ getStageName(student).replace(' (最終形態)', '') }}</span>
             </div>
 
-            <div class="absolute top-1.5 right-1.5 text-[9px] font-black text-indigo-700 bg-indigo-100/90 backdrop-blur-xs px-1.5 py-0.2 rounded-full border border-indigo-200 z-10 shadow-xs max-w-[62px] truncate">
-              {{ getStageName(student) }}
-            </div>
-
-            <div @click="openProfileModal(student)" class="cursor-pointer text-center pt-2.5 group-hover:scale-105 transition-transform">
-              <div class="w-13 h-13 sm:w-15 sm:h-15 mx-auto p-1 animal-sphere flex items-center justify-center overflow-hidden transition-all relative"
+            <div @click="openProfileModal(student)" class="cursor-pointer flex items-center gap-1.5 min-w-0">
+              <div class="pet-thumb shrink-0 p-0.5 animal-sphere flex items-center justify-center overflow-hidden relative"
                    :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
                 <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
               </div>
-
-              <div class="font-black text-slate-800 text-xs mt-1 truncate flex items-center justify-center gap-1">
-                <span>{{ student.name }}</span>
-                <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[11px]" title="經驗值王冠"></i>
-              </div>
-              
-              <div class="text-[10px] font-bold text-amber-700 my-0.5 truncate bg-amber-50/80 px-1.5 py-0.2 rounded-full border border-amber-200/60">
-                🐾 {{ getPetName(student) }}
-              </div>
-
-              <div class="px-0.5">
-                <div class="flex justify-between items-center text-[9px] font-black mb-0.5">
+              <div class="min-w-0 flex-1">
+                <div class="text-[10px] font-bold text-amber-700 truncate">🐾 {{ getPetName(student) }}</div>
+                <div class="flex justify-between items-center text-[10px] font-black leading-tight">
                   <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span>
-                  <span class="text-indigo-600 font-extrabold">{{ student.score }} EXP</span>
+                  <span class="text-indigo-600">{{ student.score }} EXP</span>
                 </div>
                 <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300" title="升級進度">
-                  <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-300" 
+                  <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-300"
                        :style="{ width: getStudentLevelData(student.score).progressPercent + '%' }"></div>
                 </div>
               </div>
             </div>
 
-            <div class="pt-1.5 mt-1 border-t border-slate-200/80 grid grid-cols-2 gap-1">
-              <button @click.stop="addScore(student, 1)" class="bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black py-1 rounded-lg text-xs btn-3d-emerald active:scale-95 transition">
-                +1
-              </button>
-              <button @click.stop="addScore(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-1 rounded-lg text-xs btn-3d-rose active:scale-95 transition">
-                -1
-              </button>
-            </div>
-            <div class="flex items-center gap-1 pt-1" @click.stop>
-              <input type="number" min="1" inputmode="numeric" v-model.number="customAmounts[student.id]" placeholder="自訂經驗值" @keyup.enter="addCustom(student, 1)" class="min-w-0 flex-1 w-full px-1.5 py-1 border-2 border-indigo-200 rounded-lg text-xs font-black text-slate-800 outline-none focus:border-indigo-500" />
-              <button @click.stop="addCustom(student, 1)" class="shrink-0 px-2 py-1 bg-emerald-500 text-white text-xs font-black rounded-lg active:scale-95">加</button>
-              <button @click.stop="addCustom(student, -1)" class="shrink-0 px-2 py-1 bg-rose-500 text-white text-xs font-black rounded-lg active:scale-95">扣</button>
+            <div class="grid grid-cols-2 gap-1">
+              <button @click.stop="addScore(student, 1)" class="bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-emerald active:scale-95 transition">+1</button>
+              <button @click.stop="addScore(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-rose active:scale-95 transition">-1</button>
             </div>
           </div>
         </div>
 
-        <!-- 模式 B：小組分區 -->
-        <div v-else class="space-y-2">
-          <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-2.5 rounded-2xl border-2 border-slate-200">
-            <div class="flex justify-between items-center mb-2 pb-1 border-b">
-              <span class="bg-indigo-600 text-white font-black text-xs px-2.5 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
+        <!-- 模式 B：小組分區（各組並排） -->
+        <div v-else class="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0">
+            <div class="flex justify-between items-center mb-1 pb-1 border-b">
+              <span class="bg-indigo-600 text-white font-black text-xs px-2 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
               <div class="flex space-x-1">
-                <button @click="addGroupScore(gNum, 1)" class="px-2.5 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black rounded-lg transition">+1 全組</button>
-                <button @click="addGroupScore(gNum, -1)" class="px-2.5 py-0.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black rounded-lg transition">-1 全組</button>
+                <button @click="addGroupScore(gNum, 1)" class="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black rounded-lg transition">+1 全組</button>
+                <button @click="addGroupScore(gNum, -1)" class="px-2 py-0.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded-lg transition">-1 全組</button>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-              <div v-for="student in getStudentsByGroup(gNum)" :key="student.id" 
+            <div class="space-y-1">
+              <div v-for="student in getStudentsByGroup(gNum)" :key="student.id"
                    @click="openProfileModal(student)"
-                   class="bg-white p-2 rounded-xl border-2 border-slate-200 flex items-center justify-between cursor-pointer hover:border-indigo-400 transition relative"
+                   class="bg-white p-1 rounded-lg border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:border-indigo-400 transition relative min-w-0"
                    :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
-                
-                <div v-if="student.anim" 
-                     :key="student.anim.key" 
-                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-xl animate-float-num drop-shadow-md"
+
+                <div v-if="student.anim" :key="student.anim.key"
+                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-lg animate-float-num drop-shadow-md"
                      :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
                   {{ student.anim.label || student.anim.type }}
                 </div>
 
-                <div v-if="isTopStudent(student)" class="absolute -top-2 -right-1 text-amber-400 text-sm z-20 animate-bounce" title="全班經驗值王者">
-                  <i class="fa-solid fa-crown"></i>
+                <div class="w-11 h-11 rounded-lg p-0.5 animal-sphere shrink-0 overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
+                  <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
                 </div>
-
-                <div class="flex items-center space-x-2 min-w-0">
-                  <div class="w-9 h-9 rounded-xl p-0.5 animal-sphere shrink-0 overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
-                    <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1">
+                    <span class="bg-slate-900/90 text-white text-[10px] px-1.5 rounded-full shrink-0">#{{ student.seatNumber }}</span>
+                    <span class="truncate">{{ student.name }}</span>
+                    <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
                   </div>
-                  <div class="min-w-0">
-                    <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1">
-                      <span>{{ student.name }}</span>
-                      <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
-                    </div>
-                    <div class="text-[10px] text-amber-700 font-bold truncate">🐾 {{ getPetName(student) }}</div>
-                  </div>
+                  <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
                 </div>
-                <div class="flex space-x-1" @click.stop>
-                  <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] font-black rounded active:scale-95">+1</button>
-                  <button @click="addScore(student, -1)" class="px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded active:scale-95">-1</button>
-                  <input type="number" min="1" inputmode="numeric" v-model.number="customAmounts[student.id]" placeholder="自訂" @keyup.enter="addCustom(student, 1)" class="w-14 px-1 py-0.5 border border-indigo-200 rounded text-[10px] font-black text-slate-800 outline-none focus:border-indigo-500" />
-                  <button @click="addCustom(student, 1)" class="px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-black rounded active:scale-95">加</button>
-                  <button @click="addCustom(student, -1)" class="px-1.5 py-0.5 bg-rose-600 text-white text-[10px] font-black rounded active:scale-95">扣</button>
+                <div class="flex gap-1 shrink-0" @click.stop>
+                  <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[11px] font-black rounded active:scale-95">+1</button>
+                  <button @click="addScore(student, -1)" class="px-1.5 py-0.5 bg-rose-500 text-white text-[11px] font-black rounded active:scale-95">-1</button>
+                  <button @click="openCustom(student)" class="px-1.5 py-0.5 bg-indigo-500 text-white text-[11px] font-black rounded active:scale-95" title="自訂加減經驗值">±</button>
                 </div>
               </div>
             </div>
@@ -833,6 +811,24 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- 自訂加減經驗值 -->
+  <div v-if="customModal.student" class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4" @click.self="customModal.student = null">
+    <div class="bg-white rounded-2xl shadow-2xl p-4 w-full max-w-xs space-y-3 border-2 border-indigo-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-indigo-900">#{{ customModal.student.seatNumber }} {{ customModal.student.name }}：自訂經驗值</h3>
+        <button @click="customModal.student = null" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
+      </div>
+      <input id="custom-exp-input" type="number" min="1" inputmode="numeric" v-model.number="customModal.value" @keyup.enter="applyCustom(1)" placeholder="輸入經驗值（正整數）" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-xl text-base font-black text-slate-800 outline-none focus:border-indigo-500" />
+      <div class="flex flex-wrap gap-1.5">
+        <button v-for="n in [2, 5, 10, 20, 50]" :key="n" @click="customModal.value = n" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-lg border border-indigo-200">{{ n }}</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button @click="applyCustom(1)" class="py-2 bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black rounded-xl text-sm active:scale-95">加</button>
+        <button @click="applyCustom(-1)" class="py-2 bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black rounded-xl text-sm active:scale-95">扣</button>
+      </div>
+    </div>
   </div>
 
   <!-- 彈窗 1：🎒 學生個人頁面 -->
@@ -1777,6 +1773,10 @@ const SHEET_ID = '1a3XhjDEUXXWPl1X9lRb7M2wNMII5cMhbuAadu5ORkJU';
 const SHEET_RANGE = "'作業檢核'!A1:AZ200";
 
 // 寵物屬性（依寶可夢主屬性）與邊框顏色
+const TYPE_EMOJI = {
+  fire: '🔥', water: '💧', grass: '🌿', electric: '⚡', normal: '⭐', ghost: '👻', dragon: '🐉', psychic: '🔮',
+  fighting: '🥊', rock: '🪨', steel: '⚙️', dark: '🌙', fairy: '🌸', bug: '🐛', ground: '⛰️', flying: '🕊️'
+};
 const TYPE_COLORS = {
   fire: '#ef4444', water: '#3b82f6', grass: '#22c55e', electric: '#facc15', normal: '#a8a29e',
   ghost: '#7c3aed', dragon: '#4f46e5', psychic: '#ec4899', fighting: '#b45309', rock: '#a16207',
@@ -1886,7 +1886,7 @@ const __app = createApp({
       showCardSelectModal: false,
       selectedWildcardTarget: null,
       wildcardSelectId: '',
-      customAmounts: {},
+      customModal: { student: null, value: '' },
       sheetState: { kind: 'idle', text: '尚未同步', busy: false },
 
       showPickerModal: false,
@@ -1961,51 +1961,16 @@ const __app = createApp({
     // 梯度經驗值計算精確實作
     getStudentLevelData(score) {
       const s = Math.max(0, Number(score) || 0);
-
-      // LV0：0 ~ 49 EXP (達到 50 EXP 升至 LV1 並孵化)
-      if (s < 50) {
-        return {
-          level: 0,
-          minExpForLevel: 0,
-          nextLevelExp: 50,
-          progressPercent: Math.floor((s / 50) * 100),
-          stageName: '寵物蛋'
-        };
-      }
-
-      // LV1 ~ LV10：每級 50 EXP
-      // LV11 ~ LV20：每級 100 EXP
-      // LV21 ~ LV30：每級 150 EXP
-      // LV31 ~ LV40：每級 200 EXP (依此類推，每 10 級多 50 EXP)
-      let currentExpThreshold = 50;
-      let lvl = 1;
-
-      while (true) {
-        const block = Math.floor((lvl - 1) / 10);
-        const reqForThisLevel = 50 * (block + 1);
-
-        const nextExpThreshold = currentExpThreshold + reqForThisLevel;
-
-        if (s < nextExpThreshold || lvl >= 100) {
-          const expInCurrentLvl = s - currentExpThreshold;
-          const progressPercent = Math.min(100, Math.max(0, Math.floor((expInCurrentLvl / reqForThisLevel) * 100)));
-          
-          let stageName = '第 1 階段';
-          if (lvl >= 36) stageName = '第 3 階段 (最終形態)';
-          else if (lvl >= 16) stageName = '第 2 階段';
-
-          return {
-            level: lvl,
-            minExpForLevel: currentExpThreshold,
-            nextLevelExp: nextExpThreshold,
-            progressPercent: progressPercent,
-            stageName: stageName
-          };
-        }
-
-        currentExpThreshold = nextExpThreshold;
-        lvl++;
-      }
+      const lvl = Math.min(100, Math.floor(s / 50));
+      const base = lvl * 50;
+      const progressPercent = lvl >= 100 ? 100 : Math.floor(((s - base) / 50) * 100);
+      return {
+        level: lvl,
+        minExpForLevel: base,
+        nextLevelExp: base + 50,
+        progressPercent,
+        stageName: lvl < 1 ? '寵物蛋' : '第 1 階段'
+      };
     },
 
     // 取得學生選取的寶可夢範本
@@ -2095,18 +2060,47 @@ const __app = createApp({
       if (level < 1) return { border: '3px solid #fcd34d' };
       const c = this.getPetTypeColor(student);
       const light = `color-mix(in srgb, ${c} 30%, #ffffff)`;
-      let glow = `0 0 4px ${c}80`;
-      if (level >= 50) glow = `0 0 22px ${c}, 0 0 8px ${c}`;
-      else if (level >= 36) glow = `0 0 16px ${c}cc`;
-      else if (level >= 16) glow = `0 0 10px ${c}b3`;
+      const dark = `color-mix(in srgb, ${c} 70%, #000000)`;
       // 等級越高流動越快
-      const dur = level >= 50 ? 1.2 : level >= 36 ? 1.8 : level >= 16 ? 2.4 : 3.2;
+      const dur = level >= 50 ? 1.2 : level >= 40 ? 1.6 : level >= 20 ? 2.2 : 3.2;
+      // 1~19 級：細邊框；20~39 級：加深加粗；40 級起：更粗並鑲上屬性花樣
+      if (level >= 40) {
+        const emoji = TYPE_EMOJI[this.getPetTypeKey(student)] || '⭐';
+        const tile = 'data:image/svg+xml,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11"><text x="5.5" y="9" font-size="9" text-anchor="middle">${emoji}</text></svg>`);
+        return {
+          border: '7px solid transparent',
+          background: `linear-gradient(#ffffff, #ffffff) padding-box, url("${tile}") border-box, conic-gradient(from var(--pet-ang), ${dark}, ${c}, ${dark}, ${c}, ${dark}) border-box`,
+          boxShadow: `0 0 16px ${c}, 0 0 5px ${dark}`,
+          animationDuration: dur + 's'
+        };
+      }
+      if (level >= 20) {
+        return {
+          border: '5px solid transparent',
+          background: `linear-gradient(#ffffff, #ffffff) padding-box, conic-gradient(from var(--pet-ang), ${dark}, ${c}, ${dark}, ${c}, ${dark}) border-box`,
+          boxShadow: `0 0 10px ${c}cc`,
+          animationDuration: dur + 's'
+        };
+      }
       return {
         border: '3px solid transparent',
         background: `linear-gradient(#ffffff, #ffffff) padding-box, conic-gradient(from var(--pet-ang), ${c}, ${light}, ${c}, ${light}, ${c}) border-box`,
-        boxShadow: glow,
+        boxShadow: `0 0 4px ${c}80`,
         animationDuration: dur + 's'
       };
+    },
+
+    getPetTypeKey(student) {
+      const level = this.getStudentLevelData(student.score).level;
+      const pet = this.getStudentPetObj(student);
+      let t = pet ? PET_TYPES[pet.id] : null;
+      if (Array.isArray(t)) {
+        let cur = t[0][1];
+        for (const [lv, ty] of t) if (level >= lv) cur = ty;
+        t = cur;
+      }
+      return t || 'normal';
     },
 
     getPetBorderClass(level, student) {
@@ -2163,11 +2157,18 @@ const __app = createApp({
       this.students.forEach(s => this.addScore(s, val, '全班獎懲'));
     },
 
-    addCustom(student, sign) {
-      const n = Math.floor(Math.abs(Number(this.customAmounts[student.id])));
+    openCustom(student) {
+      this.customModal = { student, value: '' };
+      setTimeout(() => { const el = document.getElementById('custom-exp-input'); if (el) el.focus(); }, 50);
+    },
+
+    applyCustom(sign) {
+      const st = this.customModal.student;
+      if (!st) return;
+      const n = Math.floor(Math.abs(Number(this.customModal.value)));
       if (!n) { window.alert('請先輸入要加或扣的經驗值（正整數）'); return; }
-      this.addScore(student, sign * n, sign > 0 ? '自訂加經驗值' : '自訂扣經驗值');
-      this.customAmounts[student.id] = '';
+      this.addScore(st, sign * n, sign > 0 ? '自訂加經驗值' : '自訂扣經驗值');
+      this.customModal = { student: null, value: '' };
     },
 
     addGroupScore(gNum, val) {
@@ -2269,6 +2270,7 @@ const __app = createApp({
     applySheetRows(rows) {
       let seats = null, added = 0, skipped = 0, hwCount = 0;
       const missing = new Set();
+      const sheetTitles = new Set();
       for (const row of rows) {
         const cells = (row || []).map(c => String(c == null ? '' : c).trim());
         if (!seats) {
@@ -2279,11 +2281,13 @@ const __app = createApp({
         if (!label || label === '未完成') continue;
         const vals = cells.slice(1);
         if (!vals.some(v => /^(true|false)$/i.test(v))) continue;
+        sheetTitles.add(label);
         let hw = this.homeworkList.find(h => h.title === label);
         if (!hw) {
           hw = { id: 'hw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), title: label };
           this.homeworkList.push(hw);
         }
+        hw.fromSheet = true;
         hwCount++;
         vals.forEach((v, i) => {
           if (!/^true$/i.test(v)) return;
@@ -2292,14 +2296,26 @@ const __app = createApp({
           if (!st) { if (!isNaN(seat)) missing.add(seat); return; }
           if (!st.homeworks) st.homeworks = {};
           if (!st.homeworks[hw.id]) st.homeworks[hw.id] = { submitted: false, completed: false, revision: false };
-          if (st.homeworks[hw.id].submitted) { skipped++; return; }
-          st.homeworks[hw.id].submitted = true;
-          this.addScore(st, 1, `作業檢核：${label}`);
+          const d = st.homeworks[hw.id];
+          if (d.completed) { skipped++; return; }
+          d.submitted = true; d.completed = true; d.revision = false;
+          this.addScore(st, 1, `作業檢核完成：${label}`);
           added++;
         });
       }
-      if (hwCount > 0) this.saveData();
-      return { found: !!seats, added, skipped, hwCount, missing: [...missing] };
+      // 試算表已刪除的作業：同步從作業管理移除，已加的分數不變
+      let removed = 0;
+      if (seats) {
+        const gone = this.homeworkList.filter(h => h.fromSheet && !sheetTitles.has(h.title));
+        if (gone.length) {
+          const ids = new Set(gone.map(h => h.id));
+          this.homeworkList = this.homeworkList.filter(h => !ids.has(h.id));
+          this.students.forEach(st => { if (st.homeworks) ids.forEach(id => { delete st.homeworks[id]; }); });
+          removed = gone.length;
+        }
+      }
+      if (hwCount > 0 || removed > 0) this.saveData();
+      return { found: !!seats, added, skipped, hwCount, removed, missing: [...missing] };
     },
 
     async syncSheet(manual = false) {
@@ -2318,7 +2334,7 @@ const __app = createApp({
         const r = this.applySheetRows(values);
         const t = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         this.sheetState = r.found
-          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加分 ${r.added} 人次` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
+          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加分 ${r.added} 人次` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.removed ? `，已移除 ${r.removed} 項表上刪除的作業` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
           : { kind: 'error', text: `${t} 讀到資料，但找不到「座號」那一列。`, busy: false };
         this._sheetStop = false;
       } catch (e) {
@@ -2873,18 +2889,25 @@ const __app = createApp({
       const reader = new FileReader();
       reader.onload = (evt) => {
         try {
-          const data = JSON.parse(evt.target.result);
-          if (data.students) this.students = data.students;
-          if (data.homeworkList) this.homeworkList = data.homeworkList;
-          if (data.logs) this.logs = data.logs;
-          if (data.gachaCardPool) this.gachaCardPool = data.gachaCardPool;
-          if (data.directItems) this.directItems = data.directItems;
-          if (data.customPets) this.presetAvatars = [...data.customPets, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
+          let data = JSON.parse(evt.target.result);
+          if (data && data.state && !data.students) data = data.state;      // 雲端備份格式
+          if (!data || !Array.isArray(data.students)) throw new Error('no students');
+          this.students = data.students;
+          const hw = data.homeworkList || data.homework;
+          if (Array.isArray(hw)) this.homeworkList = hw;
+          if (Array.isArray(data.logs)) this.logs = data.logs;
+          const gp = data.gachaCardPool || data.gacha;
+          if (Array.isArray(gp) && gp.length) this.gachaCardPool = gp;
+          const di = data.directItems || data.items;
+          if (Array.isArray(di)) this.directItems = di;
+          const cp = data.customPets || data.pets;
+          if (Array.isArray(cp)) this.presetAvatars = [...cp, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
           this.saveData();
-          alert('資料順利匯入完成！');
+          window.alert(`資料匯入完成：${this.students.length} 位學生、${this.logs.length} 筆歷程。`);
         } catch (err) {
-          alert('檔案格式不正確，匯入失敗。');
+          window.alert('檔案格式不正確，匯入失敗。請選擇由系統「匯出備份」下載的 JSON 檔。');
         }
+        e.target.value = '';
       };
       reader.readAsText(file);
     }
