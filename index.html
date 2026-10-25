@@ -178,6 +178,17 @@
     @media (min-width:640px){.group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (min-width:900px){.group-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (min-width:1150px){.group-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    /* 40 級起的屬性小圖示：緩緩淡入，環繞寵物 */
+    .pet-wrap{position:relative;width:3.6rem;margin:7px auto}
+    .pet-wrap-sm{position:relative;width:2.5rem;height:2.5rem}
+    .pet-orbit{position:absolute;inset:0;pointer-events:none;animation:orbitIn 2s ease-out both, orbitSpin 12s linear infinite}
+    .pet-orbit-dot{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateY(calc(var(--r) * -1))}
+    .pet-orbit-dot i{position:absolute;left:-6px;top:-6px;width:12px;height:12px;font-size:10px;line-height:12px;text-align:center;font-style:normal;opacity:.9;
+      filter:drop-shadow(0 0 2px rgba(255,255,255,.95));animation:orbitCounter 12s linear infinite}
+    @keyframes orbitIn{from{opacity:0}to{opacity:1}}
+    @keyframes orbitSpin{to{transform:rotate(360deg)}}
+    @keyframes orbitCounter{from{transform:rotate(calc(var(--a) * -1))}to{transform:rotate(calc(var(--a) * -1 - 360deg))}}
+    @media (prefers-reduced-motion: reduce){.pet-orbit,.pet-orbit-dot i{animation:orbitIn 2s ease-out both}}
     .pet-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:900;color:#4338ca;background:#eef2ff;border-radius:12px;font-size:1.2em}
 </style>
 </head>
@@ -285,9 +296,14 @@
             </div>
 
             <div @click="openProfileModal(student)" class="cursor-pointer min-w-0 text-center">
-              <div class="pet-thumb mx-auto p-0.5 animal-sphere flex items-center justify-center overflow-hidden relative"
-                   :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
-                <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
+              <div class="pet-wrap">
+                <div class="pet-thumb p-0.5 animal-sphere flex items-center justify-center overflow-hidden relative"
+                     :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
+                  <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
+                </div>
+                <div v-if="getPetDeco(student)" class="pet-orbit" style="--r:32px">
+                  <span v-for="a in [0, 120, 240]" :key="a" class="pet-orbit-dot" :style="{ '--a': a + 'deg' }"><i>{{ getPetDeco(student) }}</i></span>
+                </div>
               </div>
               <div class="text-[10px] font-bold text-amber-700 truncate mt-0.5">🐾 {{ getPetName(student) }}</div>
               <div class="flex justify-between items-center text-[10px] font-black leading-tight px-0.5">
@@ -330,8 +346,13 @@
                   {{ student.anim.label || student.anim.type }}
                 </div>
 
-                <div class="w-10 h-10 rounded-lg p-0.5 animal-sphere shrink-0 overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
-                  <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+                <div class="pet-wrap-sm shrink-0">
+                  <div class="w-full h-full rounded-lg p-0.5 animal-sphere overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
+                    <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+                  </div>
+                  <div v-if="getPetDeco(student)" class="pet-orbit" style="--r:24px">
+                    <span v-for="a in [0, 120, 240]" :key="a" class="pet-orbit-dot" :style="{ '--a': a + 'deg' }"><i>{{ getPetDeco(student) }}</i></span>
+                  </div>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1">
@@ -1762,7 +1783,7 @@ const SHEET_RANGE = "'作業檢核'!A1:AZ200";
 
 // 寵物屬性（依寶可夢主屬性）與邊框顏色
 const TYPE_EMOJI = {
-  fire: '🔥', water: '💧', grass: '🌿', electric: '⚡', normal: '⭐', ghost: '👻', dragon: '🐉', psychic: '🔮',
+  fire: '🔥', water: '💧', grass: '🍃', electric: '⚡', normal: '✨', ghost: '👻', dragon: '🐉', psychic: '🔮',
   fighting: '🥊', rock: '🪨', steel: '⚙️', dark: '🌙', fairy: '🌸', bug: '🐛', ground: '⛰️', flying: '🕊️'
 };
 const TYPE_COLORS = {
@@ -2048,26 +2069,14 @@ const __app = createApp({
       if (level < 1) return { border: '3px solid #fcd34d' };
       const c = this.getPetTypeColor(student);
       const light = `color-mix(in srgb, ${c} 30%, #ffffff)`;
-      const dark = `color-mix(in srgb, ${c} 70%, #000000)`;
-      // 等級越高流動越快
-      const dur = level >= 50 ? 1.2 : level >= 40 ? 1.6 : level >= 20 ? 2.2 : 3.2;
-      // 1~19 級：細邊框；20~39 級：加深加粗；40 級起：更粗並鑲上屬性花樣
-      if (level >= 40) {
-        const emoji = TYPE_EMOJI[this.getPetTypeKey(student)] || '⭐';
-        const tile = 'data:image/svg+xml,' + encodeURIComponent(
-          `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11"><text x="5.5" y="9" font-size="9" text-anchor="middle">${emoji}</text></svg>`);
-        return {
-          border: '7px solid transparent',
-          background: `linear-gradient(#ffffff, #ffffff) padding-box, url("${tile}") border-box, conic-gradient(from var(--pet-ang), ${dark}, ${c}, ${dark}, ${c}, ${dark}) border-box`,
-          boxShadow: `0 0 16px ${c}, 0 0 5px ${dark}`,
-          animationDuration: dur + 's'
-        };
-      }
+      const dark = `color-mix(in srgb, ${c} 72%, #000000)`;
+      const dur = level >= 40 ? 2.4 : level >= 20 ? 2.8 : 3.4;
+      // 1~19 級：細邊框；20 級起：顏色加深；40 級起：光暈加強（另有環繞的屬性小圖示淡入）
       if (level >= 20) {
         return {
-          border: '5px solid transparent',
+          border: '4px solid transparent',
           background: `linear-gradient(#ffffff, #ffffff) padding-box, conic-gradient(from var(--pet-ang), ${dark}, ${c}, ${dark}, ${c}, ${dark}) border-box`,
-          boxShadow: `0 0 10px ${c}cc`,
+          boxShadow: level >= 40 ? `0 0 12px ${c}, 0 0 3px ${dark}` : `0 0 7px ${c}b3`,
           animationDuration: dur + 's'
         };
       }
@@ -2077,6 +2086,12 @@ const __app = createApp({
         boxShadow: `0 0 4px ${c}80`,
         animationDuration: dur + 's'
       };
+    },
+
+    // 40 級起：寵物旁環繞該屬性的小圖示
+    getPetDeco(student) {
+      if (this.getStudentLevelData(student.score).level < 40) return '';
+      return TYPE_EMOJI[this.getPetTypeKey(student)] || '✨';
     },
 
     getPetTypeKey(student) {
@@ -2164,7 +2179,12 @@ const __app = createApp({
       targets.forEach(s => this.addScore(s, val, `第 ${gNum} 組全組獎懲`));
     },
 
-    // 作業管理：按已完成時，訂正燈號自動熄滅
+    getHwStatus(student, hwId, statusType) {
+      if (!student.homeworks || !student.homeworks[hwId]) return false;
+      return !!student.homeworks[hwId][statusType];
+    },
+
+    // 作業管理：按完成加 1 分，再按取消
     setHomeworkStatus(student, hwId) {
       if (!student.homeworks) student.homeworks = {};
       if (!student.homeworks[hwId]) {
