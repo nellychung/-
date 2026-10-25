@@ -210,38 +210,38 @@
   
   <div>
     <!-- 頂部導覽列 -->
-    <header class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-600 text-white px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md xl:grid xl:grid-cols-[1fr_auto_1fr]">
-      <div class="flex items-center space-x-2.5 min-w-0 xl:justify-self-start">
-        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide">
+    <header class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-600 text-white px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md 2xl:grid 2xl:grid-cols-[1fr_auto_1fr]">
+      <div class="flex items-center space-x-2.5 min-w-0 2xl:justify-self-start">
+        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap">
           <i class="fa-solid fa-gamepad text-yellow-300"></i>
-          <span>智慧班級經營-寵物王國 (寶可夢特別版)</span>
+          <span>智慧班級經營-寵物王國<span class="hidden min-[1700px]:inline"> (寶可夢特別版)</span></span>
         </div>
 
-        <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shadow-inner"
+      <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shadow-inner"
              :class="syncStatus.isSyncing ? 'bg-amber-400/30 text-amber-200 border-amber-300' : 'bg-emerald-400/30 text-emerald-200 border-emerald-300'">
           <i class="fa-solid" :class="syncStatus.isSyncing ? 'fa-spin fa-rotate' : 'fa-cloud-check'"></i>
-          <span @click="configureCloud" class="cursor-pointer underline decoration-dotted">{{ syncStatus.text }}</span>
+          <span @click="configureCloud" class="cursor-pointer underline decoration-dotted whitespace-nowrap">{{ syncStatus.text }}</span>
         </div>
       </div>
 
       <!-- 中間：即時時間（全班都看得到） -->
-      <div class="flex items-center gap-2 bg-black/30 px-5 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-base sm:text-xl xl:justify-self-center tabular-nums">
+      <div class="flex items-center gap-2 bg-black/30 px-4 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
         <i class="fa-solid fa-clock text-cyan-300"></i>
         <span>{{ currentDateStr }} {{ currentDayStr }} {{ currentTimeStr }}</span>
       </div>
 
       <!-- 右側：隨機抽籤與頁面切換 -->
-      <div class="flex items-center space-x-2 xl:justify-self-end">
+      <div class="flex items-center space-x-2 flex-nowrap 2xl:justify-self-end">
         <div class="flex items-center space-x-1 bg-white/20 p-1 rounded-2xl border border-white/20">
-          <button @click="showPickerModal = true" class="px-2.5 py-1 rounded-xl text-xs font-black bg-amber-400 text-slate-900 hover:bg-amber-300 transition flex items-center gap-1 shadow-sm">
+          <button @click="showPickerModal = true" class="whitespace-nowrap px-2.5 py-1 rounded-xl text-xs font-black bg-amber-400 text-slate-900 hover:bg-amber-300 transition flex items-center gap-1 shadow-sm">
             <i class="fa-solid fa-dice"></i> 隨機抽籤
           </button>
         </div>
 
-        <nav class="flex items-center space-x-1 bg-black/30 p-1 rounded-2xl border border-white/10">
+        <nav class="flex flex-wrap items-center gap-1 bg-black/30 p-1 rounded-2xl border border-white/10">
           <button v-for="menu in pages" :key="menu.id" 
                   @click="currentTab = menu.id"
-                  :class="['px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
+                  :class="['whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
                           currentTab === menu.id ? 'bg-white text-indigo-800 shadow-md scale-105' : 'text-indigo-100 hover:text-white hover:bg-white/10']">
             <i :class="menu.icon"></i>
             <span>{{ menu.name }}</span>
@@ -377,9 +377,10 @@
                   <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1">
                     <span class="bg-slate-900/90 text-white text-[10px] px-1.5 rounded-full shrink-0">#{{ student.seatNumber }}</span>
                     <span class="truncate">{{ student.name }}</span>
+                    <span class="text-[10px] font-black px-1.5 rounded-full border shrink-0 whitespace-nowrap" :class="roleChipClass(student.role)">{{ student.role || '組員' }}</span>
                     <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
                   </div>
-                  <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
+                  <div class="text-[10px] font-bold truncate"><span class="text-slate-500">第{{ student.group || 1 }}組</span> <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
                 </div>
                 <div class="flex gap-1 shrink-0" @click.stop>
                   <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[11px] font-black rounded active:scale-95">+1</button>
@@ -2185,6 +2186,12 @@ const __app = createApp({
 
     getStudentsByGroup(gNum) {
       return this.sortedStudents.filter(s => (s.group || 1) === gNum);
+    },
+
+    roleChipClass(role) {
+      if (role === '組長') return 'bg-amber-100 text-amber-700 border-amber-300';
+      if (role === '副組長') return 'bg-sky-100 text-sky-700 border-sky-300';
+      return 'bg-slate-100 text-slate-600 border-slate-300';
     },
 
     showToast(text) {
