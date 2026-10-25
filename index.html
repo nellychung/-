@@ -380,7 +380,7 @@
                     <span class="text-[10px] font-black px-1.5 rounded-full border shrink-0 whitespace-nowrap" :class="roleChipClass(student.role)">{{ student.role || '組員' }}</span>
                     <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
                   </div>
-                  <div class="text-[10px] font-bold truncate"><span class="text-slate-500">第{{ student.group || 1 }}組</span> <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
+                  <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
                 </div>
                 <div class="flex gap-1 shrink-0" @click.stop>
                   <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[11px] font-black rounded active:scale-95">+1</button>
@@ -2189,8 +2189,10 @@ const __app = createApp({
     },
 
     roleChipClass(role) {
-      if (role === '組長') return 'bg-amber-100 text-amber-700 border-amber-300';
-      if (role === '副組長') return 'bg-sky-100 text-sky-700 border-sky-300';
+      if (role === '組長') return 'bg-amber-100 text-amber-700 border-amber-400';
+      if (role === '副組長') return 'bg-sky-100 text-sky-700 border-sky-400';
+      if (role === '秩序長') return 'bg-rose-100 text-rose-700 border-rose-400';
+      if (role === '座位長') return 'bg-emerald-100 text-emerald-700 border-emerald-400';
       return 'bg-slate-100 text-slate-600 border-slate-300';
     },
 
