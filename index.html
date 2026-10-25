@@ -91,8 +91,9 @@
       100% { opacity: 0; transform: translate(-50%, -50px) scale(0.9); }
     }
     .animate-float-num {
-      animation: floatUp 1s ease-out forwards;
+      animation: floatUp 1.2s ease-out forwards;
       pointer-events: none;
+      text-shadow: 0 0 6px #fff, 0 2px 6px rgba(0,0,0,.25);
     }
 
     /* 邊框閃爍特效 */
@@ -189,6 +190,7 @@
     @keyframes orbitSpin{to{transform:rotate(360deg)}}
     @keyframes orbitCounter{from{transform:rotate(calc(var(--a) * -1))}to{transform:rotate(calc(var(--a) * -1 - 360deg))}}
     @media (prefers-reduced-motion: reduce){.pet-orbit,.pet-orbit-dot i{animation:orbitIn 2s ease-out both}}
+    .fade-enter-active,.fade-leave-active{transition:opacity .3s}.fade-enter-from,.fade-leave-to{opacity:0}
     .pet-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:900;color:#4338ca;background:#eef2ff;border-radius:12px;font-size:1.2em}
 </style>
 </head>
@@ -251,6 +253,9 @@
             <button @click="addClassScore(1)" class="px-3 py-1 bg-gradient-to-b from-emerald-400 to-emerald-600 text-white text-xs font-black rounded-xl shadow active:scale-95 transition">
               全班 +1
             </button>
+            <button @click="addClassScore(-1)" class="px-3 py-1 bg-gradient-to-b from-rose-400 to-rose-600 text-white text-xs font-black rounded-xl shadow active:scale-95 transition">
+              全班 -1
+            </button>
             
             <div class="flex bg-indigo-100 p-0.5 rounded-xl text-[11px] font-bold">
               <button @click="viewMode = 'all'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'all' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">全班座號</button>
@@ -281,7 +286,7 @@
                :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
 
             <div v-if="student.anim" :key="student.anim.key"
-                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-xl animate-float-num drop-shadow-lg"
+                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-3xl animate-float-num"
                  :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
               {{ student.anim.label || student.anim.type }}
             </div>
@@ -345,7 +350,7 @@
                    :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
 
                 <div v-if="student.anim" :key="student.anim.key"
-                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-lg animate-float-num drop-shadow-md"
+                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num"
                      :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
                   {{ student.anim.label || student.anim.type }}
                 </div>
@@ -828,6 +833,13 @@
     </main>
   </div>
 
+  <!-- 加分提示 -->
+  <transition name="fade">
+    <div v-if="toast.text" :key="toast.key" class="fixed left-1/2 -translate-x-1/2 z-[95] px-4 py-2 rounded-2xl bg-slate-900/90 text-white text-sm font-black shadow-2xl pointer-events-none" style="bottom:calc(24px + env(safe-area-inset-bottom,0px))">
+      {{ toast.text }}
+    </div>
+  </transition>
+
   <!-- 自訂加減經驗值 -->
   <div v-if="customModal.student" class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4" @click.self="customModal.student = null">
     <div class="bg-white rounded-2xl shadow-2xl p-4 w-full max-w-xs space-y-3 border-2 border-indigo-200">
@@ -1082,7 +1094,13 @@
       </h3>
 
       <div class="py-6 bg-amber-50 rounded-2xl border-2 border-amber-200 flex flex-col items-center justify-center min-h-[160px]">
-        <div v-if="pickedStudent" class="space-y-2">
+        <div v-if="pickedStudent" class="space-y-2 relative w-full">
+          <div v-if="pickedStudent.anim" :key="pickedStudent.anim.key"
+               class="absolute left-1/2 top-2 z-40 font-black text-5xl animate-float-num"
+               :class="pickedStudent.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'"
+               style="text-shadow:0 0 8px #fff,0 2px 6px rgba(0,0,0,.25)">
+            {{ pickedStudent.anim.label || pickedStudent.anim.type }}
+          </div>
           <div class="w-20 h-20 mx-auto rounded-2xl p-1 animal-sphere overflow-hidden relative" :style="getPetBorderStyle(pickedStudent)" :class="[getPetBorderClass(getStudentLevelData(pickedStudent.score).level, pickedStudent), getStudentLevelData(pickedStudent.score).level < 1 ? 'animate-egg-wobble' : '']">
             <img :src="getAvatarUrl(pickedStudent)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
             <div v-if="isTopStudent(pickedStudent)" class="absolute -top-2 -right-1 text-amber-400 text-base drop-shadow-md z-20">
@@ -1096,7 +1114,7 @@
           <div class="text-xs font-bold text-amber-700">第 {{ pickedStudent.group }} 組 · {{ pickedStudent.role || '組員' }}</div>
 
           <div class="pt-2">
-            <button @click="addScore(pickedStudent, 1)" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95 inline-flex items-center gap-1">
+            <button @click="givePickedScore" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95 inline-flex items-center gap-1">
               <i class="fa-solid fa-plus"></i> 給予 {{ pickedStudent.name }} +1 EXP
             </button>
           </div>
@@ -1900,6 +1918,7 @@ const __app = createApp({
       selectedWildcardTarget: null,
       wildcardSelectId: '',
       customModal: { student: null, value: '' },
+      toast: { text: '', key: 0 },
       sheetState: { kind: 'idle', text: '尚未同步', busy: false },
 
       showPickerModal: false,
@@ -2158,10 +2177,24 @@ const __app = createApp({
       return this.sortedStudents.filter(s => (s.group || 1) === gNum);
     },
 
+    showToast(text) {
+      this.toast = { text, key: Date.now() };
+      clearTimeout(this._toastTimer);
+      this._toastTimer = setTimeout(() => { this.toast = { text: '', key: 0 }; }, 2200);
+    },
+
+    givePickedScore() {
+      const st = this.pickedStudent;
+      if (!st) return;
+      this.addScore(st, 1, '隨機抽籤獎勵');
+      this.showToast(`✔ 已給予 ${st.name} +1 EXP（目前 ${st.score} EXP）`);
+    },
+
     addClassScore(val) {
       if (!this.students.length) return;
       if (!window.confirm(`確定全班 ${this.students.length} 人每人 ${val > 0 ? '+' : ''}${val} 經驗值？`)) return;
       this.students.forEach(s => this.addScore(s, val, '全班獎懲'));
+      this.showToast(`✔ 全班 ${this.students.length} 人 ${val > 0 ? '+' : ''}${val} 完成`);
     },
 
     openCustom(student) {
