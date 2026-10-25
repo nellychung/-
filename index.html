@@ -2194,6 +2194,7 @@ const __app = createApp({
       d.completed = !d.completed;
       d.submitted = d.completed;
       d.revision = false;
+      d.fromSheet = false;
       this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成');
       this.saveData();
     },
@@ -2257,7 +2258,7 @@ const __app = createApp({
     // ---------- 作業檢核表（Google 試算表）同步 ----------
     // rows：第一列「座號」+座號，其後每列為 作業名稱 + TRUE/FALSE
     applySheetRows(rows) {
-      let seats = null, added = 0, skipped = 0, hwCount = 0;
+      let seats = null, added = 0, skipped = 0, hwCount = 0, revoked = 0;
       const missing = new Set();
       const sheetTitles = new Set();
       for (const row of rows) {
@@ -2279,7 +2280,19 @@ const __app = createApp({
         hw.fromSheet = true;
         hwCount++;
         vals.forEach((v, i) => {
-          if (!/^true$/i.test(v)) return;
+          const isTrue = /^true$/i.test(v), isFalse = /^false$/i.test(v);
+          if (!isTrue && !isFalse) return;
+          if (isFalse) {
+            // 試算表改回 FALSE：若這個完成是由試算表帶來的，就取消完成並扣回 1 分
+            const stF = this.students.find(x => x.seatNumber === seats[i]);
+            const dF = stF && stF.homeworks && stF.homeworks[hw.id];
+            if (dF && dF.completed && dF.fromSheet) {
+              dF.completed = false; dF.submitted = false; dF.fromSheet = false;
+              this.addScore(stF, -1, `試算表取消完成：${label}`);
+              revoked++;
+            }
+            return;
+          }
           const seat = seats[i];
           const st = this.students.find(x => x.seatNumber === seat);
           if (!st) { if (!isNaN(seat)) missing.add(seat); return; }
@@ -2287,7 +2300,7 @@ const __app = createApp({
           if (!st.homeworks[hw.id]) st.homeworks[hw.id] = { submitted: false, completed: false, revision: false };
           const d = st.homeworks[hw.id];
           if (d.completed) { skipped++; return; }
-          d.completed = true; d.submitted = true; d.revision = false;
+          d.completed = true; d.submitted = true; d.revision = false; d.fromSheet = true;
           this.addScore(st, 1, `作業完成（試算表）：${label}`);
           added++;
         });
@@ -2303,8 +2316,8 @@ const __app = createApp({
           removed = gone.length;
         }
       }
-      if (hwCount > 0 || removed > 0) this.saveData();
-      return { found: !!seats, added, skipped, hwCount, removed, missing: [...missing] };
+      if (hwCount > 0 || removed > 0 || revoked > 0) this.saveData();
+      return { found: !!seats, added, skipped, hwCount, removed, revoked, missing: [...missing] };
     },
 
     async syncSheet(manual = false) {
@@ -2323,7 +2336,7 @@ const __app = createApp({
         const r = this.applySheetRows(values);
         const t = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         this.sheetState = r.found
-          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加 ${r.added} 分` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.removed ? `，已移除 ${r.removed} 項表上刪除的作業` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
+          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加 ${r.added} 分` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.revoked ? `，表上改回 FALSE 取消 ${r.revoked} 人次（已扣回）` : '') + (r.removed ? `，已移除 ${r.removed} 項表上刪除的作業` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
           : { kind: 'error', text: `${t} 讀到資料，但找不到「座號」那一列。`, busy: false };
         this._sheetStop = false;
       } catch (e) {
