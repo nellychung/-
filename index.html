@@ -167,12 +167,17 @@
     html,body{background-color:#f0f3ff}
     .page-wrap{padding-block:4px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
-    /* 全班一頁：欄數依螢幕寬度，27 人剛好 3 列（寬螢幕） */
+    /* 全班一頁：寬螢幕一排 10 人，27 人剛好 3 排 */
     .student-grid{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(0,1fr))}
-    @media (min-width:700px){.student-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
-    @media (min-width:1000px){.student-grid{grid-template-columns:repeat(7,minmax(0,1fr))}}
-    @media (min-width:1400px){.student-grid{grid-template-columns:repeat(9,minmax(0,1fr))}}
-    .pet-thumb{width:3.5rem;height:3.5rem;border-radius:0.9rem}
+    @media (min-width:520px){.student-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    @media (min-width:800px){.student-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+    @media (min-width:1050px){.student-grid{grid-template-columns:repeat(10,minmax(0,1fr))}}
+    .pet-thumb{width:3.6rem;height:3.6rem;border-radius:0.9rem}
+    /* 依組分區：6~7 組並排，兩排放完 */
+    .group-grid{display:grid;gap:6px;grid-template-columns:repeat(1,minmax(0,1fr))}
+    @media (min-width:640px){.group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (min-width:900px){.group-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (min-width:1150px){.group-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     .pet-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:900;color:#4338ca;background:#eef2ff;border-radius:12px;font-size:1.2em}
 </style>
 </head>
@@ -277,24 +282,21 @@
             <div class="flex items-center gap-1 min-w-0">
               <span class="bg-slate-900/90 text-white font-black text-[10px] px-1.5 rounded-full shrink-0">#{{ student.seatNumber }}</span>
               <span class="font-black text-slate-800 text-xs truncate">{{ student.name }}</span>
-              <span class="ml-auto text-[9px] font-black text-indigo-700 bg-indigo-100 px-1 rounded-full border border-indigo-200 shrink-0 whitespace-nowrap">{{ getStageName(student).replace(' (最終形態)', '') }}</span>
             </div>
 
-            <div @click="openProfileModal(student)" class="cursor-pointer flex items-center gap-1.5 min-w-0">
-              <div class="pet-thumb shrink-0 p-0.5 animal-sphere flex items-center justify-center overflow-hidden relative"
+            <div @click="openProfileModal(student)" class="cursor-pointer min-w-0 text-center">
+              <div class="pet-thumb mx-auto p-0.5 animal-sphere flex items-center justify-center overflow-hidden relative"
                    :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
                 <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="text-[10px] font-bold text-amber-700 truncate">🐾 {{ getPetName(student) }}</div>
-                <div class="flex justify-between items-center text-[10px] font-black leading-tight">
-                  <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span>
-                  <span class="text-indigo-600">{{ student.score }} EXP</span>
-                </div>
-                <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300" title="升級進度">
-                  <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-300"
-                       :style="{ width: getStudentLevelData(student.score).progressPercent + '%' }"></div>
-                </div>
+              <div class="text-[10px] font-bold text-amber-700 truncate mt-0.5">🐾 {{ getPetName(student) }}</div>
+              <div class="flex justify-between items-center text-[10px] font-black leading-tight px-0.5">
+                <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span>
+                <span class="text-indigo-600">{{ student.score }}</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden border border-slate-300" title="升級進度">
+                <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full transition-all duration-300"
+                     :style="{ width: getStudentLevelData(student.score).progressPercent + '%' }"></div>
               </div>
             </div>
 
@@ -306,7 +308,7 @@
         </div>
 
         <!-- 模式 B：小組分區（各組並排） -->
-        <div v-else class="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div v-else class="group-grid">
           <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0">
             <div class="flex justify-between items-center mb-1 pb-1 border-b">
               <span class="bg-indigo-600 text-white font-black text-xs px-2 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
@@ -316,10 +318,10 @@
               </div>
             </div>
 
-            <div class="space-y-1">
+            <div class="space-y-0.5">
               <div v-for="student in getStudentsByGroup(gNum)" :key="student.id"
                    @click="openProfileModal(student)"
-                   class="bg-white p-1 rounded-lg border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:border-indigo-400 transition relative min-w-0"
+                   class="bg-white px-1 py-0.5 rounded-lg border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:border-indigo-400 transition relative min-w-0"
                    :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
 
                 <div v-if="student.anim" :key="student.anim.key"
@@ -328,7 +330,7 @@
                   {{ student.anim.label || student.anim.type }}
                 </div>
 
-                <div class="w-11 h-11 rounded-lg p-0.5 animal-sphere shrink-0 overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
+                <div class="w-10 h-10 rounded-lg p-0.5 animal-sphere shrink-0 overflow-hidden" :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
                   <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
                 </div>
                 <div class="min-w-0 flex-1">
@@ -2297,10 +2299,9 @@ const __app = createApp({
           if (!st.homeworks) st.homeworks = {};
           if (!st.homeworks[hw.id]) st.homeworks[hw.id] = { submitted: false, completed: false, revision: false };
           const d = st.homeworks[hw.id];
-          if (d.completed) { skipped++; return; }
-          d.submitted = true; d.completed = true; d.revision = false;
-          this.addScore(st, 1, `作業檢核完成：${label}`);
-          added++;
+          if (d.submitted && d.completed) { skipped++; return; }
+          if (!d.submitted) { d.submitted = true; this.addScore(st, 1, `作業已交（試算表）：${label}`); added++; }
+          if (!d.completed) { d.completed = true; d.revision = false; this.addScore(st, 1, `作業完成（試算表）：${label}`); added++; }
         });
       }
       // 試算表已刪除的作業：同步從作業管理移除，已加的分數不變
@@ -2334,7 +2335,7 @@ const __app = createApp({
         const r = this.applySheetRows(values);
         const t = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         this.sheetState = r.found
-          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加分 ${r.added} 人次` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.removed ? `，已移除 ${r.removed} 項表上刪除的作業` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
+          ? { kind: 'ok', text: `${t} 已同步：${r.hwCount} 項作業，本次加 ${r.added} 分` + (r.skipped ? `，已計過 ${r.skipped} 人次` : '') + (r.removed ? `，已移除 ${r.removed} 項表上刪除的作業` : '') + (r.missing.length ? `，名單中找不到座號 ${r.missing.join('、')}` : ''), busy: false }
           : { kind: 'error', text: `${t} 讀到資料，但找不到「座號」那一列。`, busy: false };
         this._sheetStop = false;
       } catch (e) {
