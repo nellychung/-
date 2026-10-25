@@ -305,7 +305,11 @@
                   <span v-for="a in [0, 120, 240]" :key="a" class="pet-orbit-dot" :style="{ '--a': a + 'deg' }"><i>{{ getPetDeco(student) }}</i></span>
                 </div>
               </div>
-              <div class="text-[10px] font-bold text-amber-700 truncate mt-0.5">🐾 {{ getPetName(student) }}</div>
+              <div class="flex items-center justify-between gap-1 mt-0.5 min-w-0">
+                <span class="text-[10px] font-bold text-amber-700 truncate">🐾 {{ getPetName(student) }}</span>
+                <span class="text-[9px] font-black px-1 rounded-full border shrink-0 whitespace-nowrap"
+                      :class="getStageName(student).includes('最終') ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-indigo-100 text-indigo-700 border-indigo-200'">{{ getStageName(student).replace(/\s/g, '').replace('(最終形態)', '') }}</span>
+              </div>
               <div class="flex justify-between items-center text-[10px] font-black leading-tight px-0.5">
                 <span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span>
                 <span class="text-indigo-600">{{ student.score }}</span>
