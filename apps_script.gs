@@ -12,8 +12,30 @@ function file_() {
   return it.hasNext() ? it.next() : null;
 }
 
+// 家長專屬連結：只憑「孩子專屬的長密碼」回傳那一位孩子的資料，其他同學的資料完全不會送出
+function parent_(t) {
+  t = String(t || '');
+  if (t.length < 16) return out_({ error: 'invalid' });
+  const f = file_();
+  if (!f) return out_({ error: 'invalid' });
+  const st = (JSON.parse(f.getBlob().getDataAsString()).state) || {};
+  const kid = (st.students || []).find(s => s.token && s.token === t);
+  if (!kid) return out_({ error: 'invalid' });
+  const hw = (st.homework || []).map(h => ({
+    title: h.title,
+    completed: !!(kid.homeworks && kid.homeworks[h.id] && kid.homeworks[h.id].completed)
+  }));
+  const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
+  return out_({
+    student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
+    homework: hw,
+    pets: pets
+  });
+}
+
 function doGet(e) {
   try {
+    if (e.parameter.action === 'parent') return parent_(e.parameter.t);
     if (e.parameter.key !== PASSPHRASE) return out_({ error: '密語錯誤' });
     const action = e.parameter.action;
     if (action === 'load') {
