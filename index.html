@@ -226,9 +226,10 @@
       </div>
 
       <!-- 中間：即時時間（全班都看得到） -->
-      <div class="flex items-center gap-2 bg-black/30 px-4 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-xl sm:text-2xl xl:text-3xl whitespace-nowrap 2xl:justify-self-center tabular-nums">
+      <div class="flex items-center gap-2 bg-black/30 px-4 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
         <i class="fa-solid fa-clock text-cyan-300"></i>
-        <span>{{ currentDateStr }} {{ currentDayStr }} {{ currentTimeStr }}</span>
+        <span>{{ currentDateStr }} {{ currentDayStr }}</span>
+        <span class="text-2xl sm:text-3xl xl:text-4xl text-white leading-none">{{ currentTimeStr }}</span>
       </div>
 
       <!-- 右側：隨機抽籤與頁面切換 -->
