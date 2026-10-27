@@ -308,7 +308,7 @@
             </div>
 
             <div class="flex items-center gap-1 min-w-0">
-              <span class="bg-slate-900/90 text-white font-black text-[10px] px-1.5 rounded-full shrink-0">#{{ student.seatNumber }}</span>
+              <span class="bg-slate-900/90 text-white font-black text-[15px] leading-5 min-w-[1.5rem] text-center px-1.5 rounded-full shrink-0">{{ student.seatNumber }}</span>
               <span class="font-black text-slate-800 text-xs truncate">{{ student.name }}</span>
             </div>
 
@@ -377,7 +377,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1">
-                    <span class="bg-slate-900/90 text-white text-[10px] px-1.5 rounded-full shrink-0">#{{ student.seatNumber }}</span>
+                    <span class="bg-slate-900/90 text-white font-black text-sm leading-5 min-w-[1.4rem] text-center px-1.5 rounded-full shrink-0">{{ student.seatNumber }}</span>
                     <span class="truncate">{{ student.name }}</span>
                     <span class="text-[10px] font-black px-1.5 rounded-full border shrink-0 whitespace-nowrap" :class="roleChipClass(student.role)">{{ student.role || '組員' }}</span>
                     <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
@@ -450,7 +450,7 @@
             </thead>
             <tbody class="divide-y divide-purple-100 text-xs font-bold">
               <tr v-for="student in sortedStudents" :key="student.id" class="hover:bg-purple-50/30 transition">
-                <td class="p-3 font-mono text-slate-500">#{{ student.seatNumber }}</td>
+                <td class="p-3 font-mono text-slate-500">{{ student.seatNumber }}</td>
                 <td class="p-3 font-black text-slate-800 border-r-2 border-purple-200">
                   <div class="flex items-center space-x-2">
                     <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-6 h-6 object-contain" />
@@ -494,7 +494,7 @@
 
             <select v-model="tradePartyA.studentId" @change="onTradeStudentAChange" class="w-full p-2 border-2 rounded-xl text-xs font-bold outline-none border-pink-200">
               <option :value="null">-- 請選擇學生 --</option>
-              <option v-for="s in students" :key="s.id" :value="s.id">#{{ s.seatNumber }} {{ s.name }} ({{ s.score }} EXP)</option>
+              <option v-for="s in students" :key="s.id" :value="s.id">{{ s.seatNumber }} {{ s.name }} ({{ s.score }} EXP)</option>
             </select>
 
             <div v-if="tradePartyA.student" class="space-y-2">
@@ -528,7 +528,7 @@
 
             <select v-model="tradePartyB.studentId" @change="onTradeStudentBChange" class="w-full p-2 border-2 rounded-xl text-xs font-bold outline-none border-purple-200">
               <option :value="null">-- 請選擇學生 --</option>
-              <option v-for="s in students" :key="s.id" :value="s.id">#{{ s.seatNumber }} {{ s.name }} ({{ s.score }} EXP)</option>
+              <option v-for="s in students" :key="s.id" :value="s.id">{{ s.seatNumber }} {{ s.name }} ({{ s.score }} EXP)</option>
             </select>
 
             <div v-if="tradePartyB.student" class="space-y-2">
@@ -554,7 +554,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-72 overflow-y-auto custom-scroll p-1">
             <div v-for="student in studentsWithCards" :key="student.id" class="p-2.5 bg-slate-50 rounded-2xl border text-xs space-y-1.5">
               <div class="font-black text-slate-800 flex justify-between items-center border-b pb-1">
-                <span>#{{ student.seatNumber }} {{ student.name }}</span>
+                <span>{{ student.seatNumber }} {{ student.name }}</span>
                 <span class="text-[10px] text-pink-600 bg-pink-100 px-1.5 py-0.2 rounded-full font-bold">{{ student.cards.length }} 張卡</span>
               </div>
               <div class="flex flex-wrap gap-1">
@@ -644,7 +644,7 @@
                 <div class="text-[11px] font-black text-emerald-600">成功解析 {{ parsedBatchList.length }} 筆學生資料：</div>
                 <div class="max-h-28 overflow-y-auto border rounded-xl p-1 bg-slate-50 space-y-1 text-[11px]">
                   <div v-for="(item, idx) in parsedBatchList" :key="idx" class="flex justify-between px-1.5 py-0.5 bg-white rounded border">
-                    <span>#{{ item.seatNumber }} {{ item.name }}</span>
+                    <span>{{ item.seatNumber }} {{ item.name }}</span>
                     <span class="text-indigo-600">第 {{ item.group }} 組</span>
                   </div>
                 </div>
@@ -764,7 +764,7 @@
               <div class="max-h-60 overflow-y-auto custom-scroll space-y-1.5 pr-1">
                 <div v-for="student in students" :key="student.id" class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border text-xs gap-2">
                   <div class="flex items-center space-x-2.5 flex-wrap gap-y-1">
-                    <span class="font-black text-slate-700 w-7">#{{ student.seatNumber }}</span>
+                    <span class="font-black text-slate-700 w-7">{{ student.seatNumber }}</span>
                     <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-7 h-7 object-contain" />
                     <span class="font-black text-slate-900 min-w-[55px] flex items-center gap-1">
                       <span>{{ student.name }}</span>
@@ -857,7 +857,7 @@
   <div v-if="customModal.student" class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4" @click.self="customModal.student = null">
     <div class="bg-white rounded-2xl shadow-2xl p-4 w-full max-w-xs space-y-3 border-2 border-indigo-200">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-black text-indigo-900">#{{ customModal.student.seatNumber }} {{ customModal.student.name }}：自訂經驗值</h3>
+        <h3 class="text-sm font-black text-indigo-900">{{ customModal.student.seatNumber }} {{ customModal.student.name }}：自訂經驗值</h3>
         <button @click="customModal.student = null" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
       </div>
       <input id="custom-exp-input" type="number" min="1" inputmode="numeric" v-model.number="customModal.value" @keyup.enter="applyCustom(1)" placeholder="輸入經驗值（正整數）" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-xl text-base font-black text-slate-800 outline-none focus:border-indigo-500" />
@@ -891,7 +891,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-center">
               <div class="text-base font-black text-slate-800 truncate flex items-center gap-1.5">
-                <span>#{{ profileStudent.seatNumber }} {{ profileStudent.name }}</span>
+                <span>{{ profileStudent.seatNumber }} {{ profileStudent.name }}</span>
                 <span v-if="isTopStudent(profileStudent)" class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-black border border-amber-300 flex items-center gap-1">
                   <i class="fa-solid fa-crown text-amber-500"></i> 全班經驗第一王者
                 </span>
@@ -1121,7 +1121,7 @@
             </div>
           </div>
           <div class="text-2xl font-black text-indigo-900 flex items-center justify-center gap-1.5">
-            <span>#{{ pickedStudent.seatNumber }} {{ pickedStudent.name }}</span>
+            <span>{{ pickedStudent.seatNumber }} {{ pickedStudent.name }}</span>
             <i v-if="isTopStudent(pickedStudent)" class="fa-solid fa-crown text-amber-400 text-lg"></i>
           </div>
           <div class="text-xs font-bold text-amber-700">第 {{ pickedStudent.group }} 組 · {{ pickedStudent.role || '組員' }}</div>
@@ -1153,7 +1153,7 @@
           <i class="fa-solid fa-paw text-teal-500"></i> {{ isTeacherFreeChange ? '教師手動更換學生寵物' : '兌換更換寵物 (扣除 25 EXP)' }}
         </h3>
         <p class="text-xs text-slate-500 font-bold" v-if="petSelectingStudent">
-          正在為 <span class="text-indigo-600 font-black">#{{ petSelectingStudent.seatNumber }} {{ petSelectingStudent.name }}</span> 選擇新寶可夢/自訂造型 (共 {{ presetAvatars.length }} 款)
+          正在為 <span class="text-indigo-600 font-black">{{ petSelectingStudent.seatNumber }} {{ petSelectingStudent.name }}</span> 選擇新寶可夢/自訂造型 (共 {{ presetAvatars.length }} 款)
         </p>
       </div>
 

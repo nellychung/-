@@ -24,7 +24,17 @@ function doGet(e) {
     }
     if (action === 'sheet') {
       const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
-      const values = sh.getDataRange().getValues().map(r => r.map(c => String(c)));
+      const range = sh.getDataRange();
+      // 新增作業（多出列／欄）時自動補上格線，只在表格大小改變時才做
+      try {
+        const dim = range.getNumRows() + 'x' + range.getNumColumns();
+        const props = PropertiesService.getScriptProperties();
+        if (props.getProperty('gridDim') !== dim) {
+          range.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+          props.setProperty('gridDim', dim);
+        }
+      } catch (x) {}
+      const values = range.getValues().map(r => r.map(c => String(c)));
       return out_({ values: values });
     }
     return out_({ error: '未知的動作' });
