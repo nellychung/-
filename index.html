@@ -743,7 +743,6 @@
                     </select>
                     <button @click="addGachaCard" class="px-2 py-1 bg-amber-600 text-white font-black rounded-lg">新增</button>
                   </div>
-                  <button @click="addWildcardCard" class="w-full py-1 bg-purple-100 hover:bg-purple-200 text-purple-900 font-black rounded-lg border border-purple-300">✨ 新增「自選券」（抽中後用下拉選單自選一張卡）</button>
                   <div class="flex flex-wrap gap-1 mt-1">
                     <span v-for="card in gachaCardPool" :key="card.id" class="bg-white border text-[11px] px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                       [{{ card.rarity }}] {{ card.name }}
