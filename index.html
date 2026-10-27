@@ -743,6 +743,7 @@
                     </select>
                     <button @click="addGachaCard" class="px-2 py-1 bg-amber-600 text-white font-black rounded-lg">新增</button>
                   </div>
+                  <button @click="addWildcardCard" class="w-full py-1 bg-purple-100 hover:bg-purple-200 text-purple-900 font-black rounded-lg border border-purple-300">✨ 新增「自選券」（抽中後用下拉選單自選一張卡）</button>
                   <div class="flex flex-wrap gap-1 mt-1">
                     <span v-for="card in gachaCardPool" :key="card.id" class="bg-white border text-[11px] px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                       [{{ card.rarity }}] {{ card.name }}
@@ -2724,11 +2725,35 @@ const __app = createApp({
       this.saveData();
     },
 
+    withIcon(name) {
+      name = String(name || '').trim();
+      if (/^\p{Extended_Pictographic}/u.test(name)) return name;
+      const map = { '口罩': '😷', '髮帽': '🧢', '鉛筆': '✏️', '尺': '📏', '橡皮擦': '🧼' };
+      return (map[name] || '🎁') + ' ' + name;
+    },
+    // 禮品名稱補上圖案；扭蛋池若沒有「自選卡」就補一張（只補一次）
+    normalizeCatalog() {
+      if (Array.isArray(this.directItems)) this.directItems.forEach(it => { if (it && it.name) it.name = this.withIcon(it.name); });
+      if (Array.isArray(this.gachaCardPool) && !this.gachaCardPool.some(c => c.isWildcard)) {
+        let done = false;
+        try { done = localStorage.getItem('pk_wc_added') === '1'; } catch (e) {}
+        if (!done) {
+          this.gachaCardPool.unshift({ id: 'c0', name: '✨ 指定卡片自選券 (自選任一張)', rarity: 'SSR', isWildcard: true });
+          try { localStorage.setItem('pk_wc_added', '1'); } catch (e) {}
+        }
+      }
+    },
+    addWildcardCard() {
+      if (this.gachaCardPool.some(c => c.isWildcard)) { alert('扭蛋池裡已經有「自選券」了'); return; }
+      this.gachaCardPool.unshift({ id: 'c0', name: '✨ 指定卡片自選券 (自選任一張)', rarity: this.newGachaCard.rarity, isWildcard: true });
+      this.saveData();
+    },
+
     addDirectItem() {
       if (!this.newDirectItem.name.trim() || !this.newDirectItem.cost) return;
       this.directItems.push({
         id: 'p_' + Date.now(),
-        name: this.newDirectItem.name.trim(),
+        name: this.withIcon(this.newDirectItem.name),
         cost: Number(this.newDirectItem.cost)
       });
       this.newDirectItem.name = '';
@@ -2848,6 +2873,7 @@ const __app = createApp({
       if (st.logs) this.logs = st.logs;
       if (st.gacha) this.gachaCardPool = st.gacha;
       if (st.items) this.directItems = st.items;
+      this.normalizeCatalog();
       if (st.pets) this.presetAvatars = [...st.pets, ...FULL_64_POKEMON_POOL.filter(p => !p.isCustom)];
       if (this.profileStudent) {
         this.profileStudent = this.students.find(s => s.id === this.profileStudent.id) || null;
@@ -2921,6 +2947,7 @@ const __app = createApp({
       const l = parse('logs', Array.isArray); if (l) this.logs = l;
       const g = parse('gacha', Array.isArray); if (g && g.length) this.gachaCardPool = g;
       const i = parse('items', Array.isArray); if (i) this.directItems = i;
+      this.normalizeCatalog();
       const p = parse('pets', Array.isArray);
       if (p) this.presetAvatars = [...p, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
     },
