@@ -173,14 +173,15 @@
     @media (min-width:520px){.student-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     @media (min-width:800px){.student-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
     @media (min-width:1050px){.student-grid{grid-template-columns:repeat(10,minmax(0,1fr))}}
-    .pet-thumb{width:3.6rem;height:3.6rem;border-radius:0.9rem}
+    .pet-thumb{width:var(--ps);height:var(--ps);border-radius:1rem}
     /* 依組分區：6~7 組並排，兩排放完 */
     .group-grid{display:grid;gap:6px;grid-template-columns:repeat(1,minmax(0,1fr))}
     @media (min-width:640px){.group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (min-width:900px){.group-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (min-width:1150px){.group-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     /* 40 級起的屬性小圖示：緩緩淡入，環繞寵物 */
-    .pet-wrap{position:relative;width:3.6rem;margin:7px auto}
+    :root{--ps:clamp(3.6rem,5.4vw,6.4rem)}
+    .pet-wrap{position:relative;width:var(--ps);margin:8px auto}
     .pet-wrap-sm{position:relative;width:2.5rem;height:2.5rem}
     .pet-orbit{position:absolute;inset:0;pointer-events:none;animation:orbitIn 2s ease-out both, orbitSpin 12s linear infinite}
     .pet-orbit-dot{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateY(calc(var(--r) * -1))}
@@ -225,7 +226,7 @@
       </div>
 
       <!-- 中間：即時時間（全班都看得到） -->
-      <div class="flex items-center gap-2 bg-black/30 px-4 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
+      <div class="flex items-center gap-2 bg-black/30 px-4 py-1 rounded-2xl border border-white/25 font-black text-cyan-200 shadow-inner text-xl sm:text-2xl xl:text-3xl whitespace-nowrap 2xl:justify-self-center tabular-nums">
         <i class="fa-solid fa-clock text-cyan-300"></i>
         <span>{{ currentDateStr }} {{ currentDayStr }} {{ currentTimeStr }}</span>
       </div>
@@ -316,7 +317,7 @@
                      :style="getPetBorderStyle(student)" :class="[getPetBorderClass(getStudentLevelData(student.score).level, student), getStudentLevelData(student.score).level < 1 ? 'animate-egg-wobble' : '']">
                   <img :src="getAvatarUrl(student)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" />
                 </div>
-                <div v-if="getPetDeco(student)" class="pet-orbit" style="--r:32px">
+                <div v-if="getPetDeco(student)" class="pet-orbit" style="--r:calc(var(--ps) * .5 + 3px)">
                   <span v-for="a in [0, 120, 240]" :key="a" class="pet-orbit-dot" :style="{ '--a': a + 'deg' }"><i>{{ getPetDeco(student) }}</i></span>
                 </div>
               </div>
@@ -2407,7 +2408,7 @@ const __app = createApp({
         this.syncSheet();
         setInterval(() => {
           if (document.visibilityState === 'visible' && !this._sheetStop) this.syncSheet();
-        }, 180000);
+        }, 60000);
       };
       // 等雲端資料載入完成再同步，避免用預設資料重複計分
       let waited = 0;
@@ -2891,7 +2892,7 @@ const __app = createApp({
       }
       this.syncStatus.text = '連線雲端中…';
       await this.pullFromCloud(true);
-      setInterval(() => { if (document.visibilityState === 'visible') this.pullFromCloud(false); }, 20000);
+      setInterval(() => { if (document.visibilityState === 'visible') this.pullFromCloud(false); }, 60000);
     },
 
     reportError(where, e) {
