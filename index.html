@@ -914,16 +914,24 @@
     </main>
   </div>
 
-  <!-- 確認視窗（底部） -->
-  <div v-if="confirmState.show" class="fixed inset-0 z-[200] bg-black/45 flex items-end justify-center p-3 sm:p-6" @click.self="answerConfirm(false)">
-    <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-amber-300 p-4 sm:p-5 space-y-3 mb-2">
-      <div class="text-base sm:text-lg font-black text-slate-800 text-center" style="white-space:pre-line">{{ confirmState.msg }}</div>
-      <div class="grid grid-cols-2 gap-3">
-        <button @click="answerConfirm(false)" class="py-3 sm:py-4 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg">取消</button>
-        <button @click="answerConfirm(true)" class="py-3 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-black text-lg shadow-md">確定</button>
+  <!-- 確認與提示視窗：搬到 body 底部，固定浮在畫面最下方（不受頁面捲動影響） -->
+  <teleport to="body">
+    <div v-if="confirmState.show" class="fixed inset-0 z-[300] bg-black/45 flex items-end justify-center px-3 pb-3 sm:pb-6" @click.self="answerConfirm(false)">
+      <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-amber-300 p-4 sm:p-5 space-y-3">
+        <div class="text-lg sm:text-xl font-black text-slate-800 text-center" style="white-space:pre-line">{{ confirmState.msg }}</div>
+        <div class="grid grid-cols-2 gap-3">
+          <button @click="answerConfirm(false)" class="py-4 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xl">取消</button>
+          <button @click="answerConfirm(true)" class="py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-black text-xl shadow-md">確定</button>
+        </div>
       </div>
     </div>
-  </div>
+    <div v-if="alertState.show" class="fixed inset-0 z-[310] bg-black/45 flex items-end justify-center px-3 pb-3 sm:pb-6" @click.self="alertState.show = false">
+      <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-sky-300 p-4 sm:p-5 space-y-3">
+        <div class="text-lg sm:text-xl font-black text-slate-800 text-center" style="white-space:pre-line">{{ alertState.msg }}</div>
+        <button @click="alertState.show = false" class="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-500 hover:to-indigo-600 text-white font-black text-xl shadow-md">好</button>
+      </div>
+    </div>
+  </teleport>
 
   <!-- 加分提示 -->
   <transition name="fade">
@@ -2037,6 +2045,7 @@ const __app = createApp({
       syncStatus: { isSyncing: false, text: '連線中…' },
       cloudReady: false,
 
+      alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
       parentState: { child: null, top: false, homework: [], error: '', updated: '' },
@@ -2228,10 +2237,11 @@ const __app = createApp({
       return APPS_SCRIPT_TEMPLATE.replace('__KEY__', () => key);
     },
     copyAppsScript() {
-      if (!this.cfg().key) { alert('找不到密語：請先點頁首的同步狀態文字，設定好 Apps Script 網址與密語。'); return; }
+      if (!this.cfg().key) { this.notify('找不到密語：請先點頁首的同步狀態文字，設定好 Apps Script 網址與密語。'); return; }
       this.copyText(this.buildAppsScript(), '已複製！到 Apps Script 全選貼上、存檔、重新部署即可');
     },
     // 確認視窗：固定顯示在畫面底部，方便學生在平板上按
+    notify(msg) { this.alertState = { show: true, msg: String(msg) }; },
     askConfirm(msg) {
       return new Promise(resolve => { this.confirmState = { show: true, msg: String(msg), resolve }; });
     },
@@ -2494,7 +2504,7 @@ const __app = createApp({
       const st = this.customModal.student;
       if (!st) return;
       const n = Math.floor(Math.abs(Number(this.customModal.value)));
-      if (!n) { window.alert('請先輸入要加或扣的經驗值（正整數）'); return; }
+      if (!n) { this.notify('請先輸入要加或扣的經驗值（正整數）'); return; }
       this.addScore(st, sign * n, sign > 0 ? '自訂加經驗值' : '自訂扣經驗值');
       this.customModal = { student: null, value: '' };
     },
@@ -2557,7 +2567,7 @@ const __app = createApp({
     // 抽卡扭蛋
     drawGacha(student) {
       if (student.score < 50) {
-        alert('經驗值不足 50 EXP，無法啟動扭蛋機！');
+        this.notify('經驗值不足 50 EXP，無法啟動扭蛋機！');
         return;
       }
       this.addScore(student, -50, '消耗 EXP 啟動扭蛋機');
@@ -2738,7 +2748,7 @@ const __app = createApp({
     // 實體禮品與更換寵物
     async redeemDirectItem(student, item) {
       if (student.score < item.cost) {
-        alert(`經驗值不足！兌換 ${item.name} 需要 ${item.cost} EXP。`);
+        this.notify(`經驗值不足！兌換 ${item.name} 需要 ${item.cost} EXP。`);
         return;
       }
       if (item.isPetChange) {
@@ -2764,7 +2774,7 @@ const __app = createApp({
       
       if (!this.isTeacherFreeChange) {
         if (this.petSelectingStudent.score < 25) {
-          alert('經驗值不足 25 EXP！');
+          this.notify('經驗值不足 25 EXP！');
           return;
         }
         this.addScore(this.petSelectingStudent, -25, '更換寵物造型');
@@ -2793,15 +2803,15 @@ const __app = createApp({
       const sA = this.tradePartyA.student;
       const sB = this.tradePartyB.student;
       if (!sA || !sB) {
-        alert('請先選擇交易雙方學生！');
+        this.notify('請先選擇交易雙方學生！');
         return;
       }
       if (sA.id === sB.id) {
-        alert('交易雙方不能為同一人！');
+        this.notify('交易雙方不能為同一人！');
         return;
       }
       if (this.tradePartyA.cardIndex === null) {
-        alert('甲方必須選擇一張要交易或贈與的卡片！');
+        this.notify('甲方必須選擇一張要交易或贈與的卡片！');
         return;
       }
 
@@ -2821,7 +2831,7 @@ const __app = createApp({
 
       this.tradePartyA.cardIndex = null;
       this.tradePartyB.cardIndex = null;
-      alert('卡片交易完成！');
+      this.notify('卡片交易完成！');
     },
 
     // 自訂上傳寵物
@@ -2848,7 +2858,7 @@ const __app = createApp({
 
     addCustomPet() {
       if (!this.newCustomPet.name.trim() || !this.newCustomPet.url.trim()) {
-        alert('請輸入寵物名稱並提供圖片！');
+        this.notify('請輸入寵物名稱並提供圖片！');
         return;
       }
       const newPet = {
@@ -2862,7 +2872,7 @@ const __app = createApp({
       this.newCustomPet.name = '';
       this.newCustomPet.url = '';
       this.saveData();
-      alert('成功新增自訂寵物！');
+      this.notify('成功新增自訂寵物！');
     },
 
     removeCustomPet(petId) {
@@ -2873,7 +2883,7 @@ const __app = createApp({
     // 新增學生
     createStudent() {
       if (!this.newStudent.name.trim() || !this.newStudent.seatNumber) {
-        alert('請輸入座號與姓名！');
+        this.notify('請輸入座號與姓名！');
         return;
       }
       const pet = this.presetAvatars.find(p => p.id === this.newStudent.petId) || this.presetAvatars[0];
@@ -2934,7 +2944,7 @@ const __app = createApp({
       this.batchStudentInput = '';
       this.parsedBatchList = [];
       this.saveData();
-      alert('批次匯入完成！');
+      this.notify('批次匯入完成！');
     },
 
     async deleteStudent(studentId) {
@@ -3011,7 +3021,7 @@ const __app = createApp({
       }
     },
     addWildcardCard() {
-      if (this.gachaCardPool.some(c => c.isWildcard)) { alert('扭蛋池裡已經有「自選券」了'); return; }
+      if (this.gachaCardPool.some(c => c.isWildcard)) { this.notify('扭蛋池裡已經有「自選券」了'); return; }
       this.gachaCardPool.unshift({ id: 'c0', name: '✨ 指定卡片自選券 (自選任一張)', rarity: this.newGachaCard.rarity, isWildcard: true });
       this.saveData();
     },
@@ -3259,9 +3269,9 @@ const __app = createApp({
           const cp = data.customPets || data.pets;
           if (Array.isArray(cp)) this.presetAvatars = [...cp, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
           this.saveData();
-          window.alert(`資料匯入完成：${this.students.length} 位學生、${this.logs.length} 筆歷程。`);
+          this.notify(`資料匯入完成：${this.students.length} 位學生、${this.logs.length} 筆歷程。`);
         } catch (err) {
-          window.alert('檔案格式不正確，匯入失敗。請選擇由系統「匯出備份」下載的 JSON 檔。');
+          this.notify('檔案格式不正確，匯入失敗。請選擇由系統「匯出備份」下載的 JSON 檔。');
         }
         e.target.value = '';
       };
