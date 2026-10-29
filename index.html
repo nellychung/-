@@ -225,6 +225,20 @@
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
       </div>
 
+      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
+        <div class="flex items-end justify-between">
+          <div><div class="text-xs font-black text-slate-500">經驗值</div><div class="text-3xl font-black text-amber-600 leading-none">{{ parentState.child.score }} <span class="text-sm">EXP</span></div></div>
+          <div class="text-right"><div class="text-xs font-black text-slate-500">等級</div><div class="text-3xl font-black text-indigo-600 leading-none">Lv.{{ getStudentLevelData(parentState.child.score).level }}</div></div>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden border border-slate-300">
+          <div class="bg-gradient-to-r from-amber-400 via-indigo-500 to-purple-600 h-full rounded-full" :style="{ width: getStudentLevelData(parentState.child.score).progressPercent + '%' }"></div>
+        </div>
+        <div class="text-xs font-bold text-slate-600 text-center">
+          <template v-if="getStudentLevelData(parentState.child.score).level >= 100">已達最高等級 🎉</template>
+          <template v-else>再 {{ getStudentLevelData(parentState.child.score).nextLevelExp - parentState.child.score }} EXP 升到 Lv.{{ getStudentLevelData(parentState.child.score).level + 1 }}</template>
+        </div>
+      </div>
+
       <div class="bg-white rounded-3xl border border-emerald-200 shadow p-4 space-y-2">
         <div class="flex items-center justify-between">
           <div class="font-black text-emerald-900 text-sm">📚 作業繳交狀況</div>
