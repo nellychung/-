@@ -865,6 +865,16 @@
           <h3 class="font-black text-sky-900 text-sm">👪 家長專屬連結</h3>
           <button @click="copyAllParentLinks" :disabled="!hasCloud()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-lg text-xs disabled:opacity-50">複製全班連結（座號＋姓名＋連結）</button>
         </div>
+        <p class="text-[11px] font-bold text-slate-500">每位孩子一個專屬連結，家長只看得到自己孩子的經驗值、寵物成長與作業狀況，看不到其他同學。請把各自的連結傳給對應的家長；連結外流時按「重設」即可讓舊連結失效。</p>
+        <div v-if="!hasCloud()" class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-xs font-black text-amber-800">需要先設定雲端同步（點頁首的同步狀態文字）才能產生連結。</div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+          <div v-for="student in [...students].sort((a, b) => a.seatNumber - b.seatNumber)" :key="student.id" class="flex items-center gap-1.5 p-1.5 bg-sky-50/60 border border-sky-100 rounded-xl text-xs">
+            <span class="font-black text-slate-800 w-28 truncate">{{ student.seatNumber }} {{ student.name }}</span>
+            <button @click="copyParentLink(student)" class="px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-800 font-black rounded-lg">複製連結</button>
+            <a :href="parentLink(student)" target="_blank" rel="noopener" class="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-black rounded-lg">預覽</a>
+            <button @click="resetParentToken(student)" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-black rounded-lg">重設</button>
+          </div>
+        </div>
       </div>
 
       <!-- 頁面 5：歷史紀錄與資料備份 -->
