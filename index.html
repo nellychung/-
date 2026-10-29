@@ -181,7 +181,9 @@
     @media (min-width:1150px){.group-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
     /* 40 級起的屬性小圖示：緩緩淡入，環繞寵物 */
     :root{--ps:clamp(3.6rem,5.4vw,6.4rem)}
-    .pet-wrap{position:relative;width:var(--ps);margin:8px auto}
+    /* 寬螢幕（每排 10 人、共 3 排）：寵物大小跟著視窗高度，盡量放大又不用往下捲 */
+    @media (min-width:1050px){:root{--ps:clamp(3.6rem,min(7.4vw,calc((100vh - 185px) / 3 - 114px)),12rem)}}
+    .pet-wrap{position:relative;width:var(--ps);margin:5px auto}
     .pet-wrap-sm{position:relative;width:2.5rem;height:2.5rem}
     .pet-orbit{position:absolute;inset:0;pointer-events:none;animation:orbitIn 2s ease-out both, orbitSpin 12s linear infinite}
     .pet-orbit-dot{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateY(calc(var(--r) * -1))}
