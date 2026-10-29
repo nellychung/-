@@ -914,6 +914,17 @@
     </main>
   </div>
 
+  <!-- 確認視窗（底部） -->
+  <div v-if="confirmState.show" class="fixed inset-0 z-[200] bg-black/45 flex items-end justify-center p-3 sm:p-6" @click.self="answerConfirm(false)">
+    <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-amber-300 p-4 sm:p-5 space-y-3 mb-2">
+      <div class="text-base sm:text-lg font-black text-slate-800 text-center" style="white-space:pre-line">{{ confirmState.msg }}</div>
+      <div class="grid grid-cols-2 gap-3">
+        <button @click="answerConfirm(false)" class="py-3 sm:py-4 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg">取消</button>
+        <button @click="answerConfirm(true)" class="py-3 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-black text-lg shadow-md">確定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 加分提示 -->
   <transition name="fade">
     <div v-if="toast.text" :key="toast.key" class="fixed left-1/2 -translate-x-1/2 z-[95] px-4 py-2 rounded-2xl bg-slate-900/90 text-white text-sm font-black shadow-2xl pointer-events-none" style="bottom:calc(24px + env(safe-area-inset-bottom,0px))">
@@ -2026,6 +2037,7 @@ const __app = createApp({
       syncStatus: { isSyncing: false, text: '連線中…' },
       cloudReady: false,
 
+      confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
       parentState: { child: null, top: false, homework: [], error: '', updated: '' },
       students: [],
@@ -2219,6 +2231,15 @@ const __app = createApp({
       if (!this.cfg().key) { alert('找不到密語：請先點頁首的同步狀態文字，設定好 Apps Script 網址與密語。'); return; }
       this.copyText(this.buildAppsScript(), '已複製！到 Apps Script 全選貼上、存檔、重新部署即可');
     },
+    // 確認視窗：固定顯示在畫面底部，方便學生在平板上按
+    askConfirm(msg) {
+      return new Promise(resolve => { this.confirmState = { show: true, msg: String(msg), resolve }; });
+    },
+    answerConfirm(ok) {
+      const res = this.confirmState.resolve;
+      this.confirmState = { show: false, msg: '', resolve: null };
+      if (res) res(!!ok);
+    },
     hasCloud() { return !!this.cfg().endpoint; },
     parentLink(st) {
       const ep = this.cfg().endpoint;
@@ -2235,8 +2256,8 @@ const __app = createApp({
         .map(st => `${st.seatNumber}號 ${st.name}：${this.parentLink(st)}`);
       this.copyText(lines.join('\n'), '已複製全班的家長連結');
     },
-    resetParentToken(st) {
-      if (!confirm(`確定要重設 ${st.seatNumber} 號 ${st.name} 的連結嗎？\n舊連結會立刻失效，需要重新傳給家長。`)) return;
+    async resetParentToken(st) {
+      if (!(await this.askConfirm(`確定要重設 ${st.seatNumber} 號 ${st.name} 的連結嗎？\n舊連結會立刻失效，需要重新傳給家長。`))) return;
       st.token = this.genToken();
       this.saveData();
       this.showToast('已重設，舊連結已失效');
@@ -2457,9 +2478,9 @@ const __app = createApp({
       this.showToast(`✔ 已給予 ${st.name} +1 EXP（目前 ${st.score} EXP）`);
     },
 
-    addClassScore(val) {
+    async addClassScore(val) {
       if (!this.students.length) return;
-      if (!window.confirm(`確定全班 ${this.students.length} 人每人 ${val > 0 ? '+' : ''}${val} 經驗值？`)) return;
+      if (!(await this.askConfirm(`確定全班 ${this.students.length} 人每人 ${val > 0 ? '+' : ''}${val} 經驗值？`))) return;
       this.students.forEach(s => this.addScore(s, val, '全班獎懲'));
       this.showToast(`✔ 全班 ${this.students.length} 人 ${val > 0 ? '+' : ''}${val} 完成`);
     },
@@ -2527,8 +2548,8 @@ const __app = createApp({
       this.saveData();
     },
 
-    removeHomework(hwId) {
-      if (!confirm('確定要刪除這項作業紀錄嗎？')) return;
+    async removeHomework(hwId) {
+      if (!(await this.askConfirm('確定要刪除這項作業紀錄嗎？'))) return;
       this.homeworkList = this.homeworkList.filter(h => h.id !== hwId);
       this.saveData();
     },
@@ -2707,15 +2728,15 @@ const __app = createApp({
       this.showCardSelectModal = false;
     },
 
-    useCard(student, cardIndex) {
-      if (!confirm(`確定要使用卡片【${student.cards[cardIndex].name}】嗎？`)) return;
+    async useCard(student, cardIndex) {
+      if (!(await this.askConfirm(`確定要使用卡片【${student.cards[cardIndex].name}】嗎？`))) return;
       const used = student.cards.splice(cardIndex, 1)[0];
       this.addLog(student.name, `使用了特權卡片【${used.name}】`, 0);
       this.saveData();
     },
 
     // 實體禮品與更換寵物
-    redeemDirectItem(student, item) {
+    async redeemDirectItem(student, item) {
       if (student.score < item.cost) {
         alert(`經驗值不足！兌換 ${item.name} 需要 ${item.cost} EXP。`);
         return;
@@ -2727,7 +2748,7 @@ const __app = createApp({
         this.showPetSelectModal = true;
         return;
       }
-      if (!confirm(`確定要消耗 ${item.cost} EXP 兌換【${item.name}】嗎？`)) return;
+      if (!(await this.askConfirm(`確定要消耗 ${item.cost} EXP 兌換【${item.name}】嗎？`))) return;
       this.addScore(student, -item.cost, `實體兌換【${item.name}】`);
     },
 
@@ -2916,8 +2937,8 @@ const __app = createApp({
       alert('批次匯入完成！');
     },
 
-    deleteStudent(studentId) {
-      if (!confirm('確定要刪除這位學生嗎？')) return;
+    async deleteStudent(studentId) {
+      if (!(await this.askConfirm('確定要刪除這位學生嗎？'))) return;
       this.students = this.students.filter(s => s.id !== studentId);
       this.saveData();
     },
@@ -3033,8 +3054,8 @@ const __app = createApp({
       if (this.logs.length > 200) this.logs.pop();
     },
 
-    clearLogs() {
-      if (!confirm('確定要清空歷程紀錄嗎？')) return;
+    async clearLogs() {
+      if (!(await this.askConfirm('確定要清空歷程紀錄嗎？'))) return;
       this.logs = [];
       this.saveData();
     },
