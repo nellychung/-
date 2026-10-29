@@ -26,7 +26,11 @@ function parent_(t) {
     completed: !!(kid.homeworks && kid.homeworks[h.id] && kid.homeworks[h.id].completed)
   }));
   const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
+  // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
+  const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
+  const top = maxScore > 0 && Number(kid.score) === maxScore;
   return out_({
+    top: top,
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
     pets: pets

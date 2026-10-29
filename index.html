@@ -221,8 +221,10 @@
     <div v-if="parentState.error" class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 font-black text-sm text-center">{{ parentState.error }}</div>
     <div v-else-if="!parentState.child" class="p-6 text-center text-slate-500 font-black text-sm">載入中…</div>
     <template v-else>
-      <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-3xl border border-indigo-100 shadow p-5 text-center">
+      <div class="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : ''">
+        <div v-if="parentState.top" class="top-crown absolute -top-5 left-1/2 -translate-x-1/2 z-20 animate-bounce" style="font-size:2.6rem" title="全班經驗值第一名"><i class="fa-solid fa-crown"></i></div>
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
+        <div v-if="parentState.top" class="mt-1 inline-block bg-amber-100 text-amber-800 text-xs px-3 py-0.5 rounded-full font-black border border-amber-300">👑 全班經驗值第一名</div>
       </div>
 
       <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
@@ -1304,7 +1306,11 @@ function parent_(t) {
     completed: !!(kid.homeworks && kid.homeworks[h.id] && kid.homeworks[h.id].completed)
   }));
   const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
+  // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
+  const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
+  const top = maxScore > 0 && Number(kid.score) === maxScore;
   return out_({
+    top: top,
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
     pets: pets
@@ -2025,7 +2031,7 @@ const __app = createApp({
       cloudReady: false,
 
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { child: null, homework: [], error: '', updated: '' },
+      parentState: { child: null, top: false, homework: [], error: '', updated: '' },
       students: [],
       homeworkList: [],
       logs: [],
@@ -2173,6 +2179,7 @@ const __app = createApp({
         if (!j || j.error || !j.student) throw new Error('bad');
         this.presetAvatars = [...(j.pets || []), ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
         this.parentState.child = j.student;
+        this.parentState.top = !!j.top;
         this.parentState.homework = j.homework || [];
         this.parentState.error = '';
         this.parentState.updated = new Date().toLocaleTimeString('zh-TW', { hour12: false });
