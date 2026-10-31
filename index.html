@@ -348,9 +348,11 @@
                :class="[student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : '', isTopStudent(student) ? 'top-card' : '']">
 
             <div v-if="student.anim" :key="student.anim.key"
-                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-3xl animate-float-num"
+                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-3xl animate-float-num flex flex-col items-center whitespace-nowrap leading-tight text-center"
+                 :style="student.anim.tag ? 'animation-duration:1.9s;text-shadow:0 0 6px #fff,0 0 3px #fff' : ''"
                  :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
-              {{ student.anim.label || student.anim.type }}
+              <span v-if="student.anim.tag" class="text-base sm:text-lg bg-white/90 rounded-full px-2 border-2 border-current">{{ student.anim.tag }}</span>
+              <span>{{ student.anim.label || student.anim.type }}</span>
             </div>
 
             <div v-if="isTopStudent(student)" class="top-crown absolute -top-4 -right-3 z-20 animate-bounce" title="全班經驗值王者">
@@ -412,9 +414,11 @@
                    :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
 
                 <div v-if="student.anim" :key="student.anim.key"
-                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num"
+                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num flex flex-col items-center whitespace-nowrap leading-tight text-center"
+                     :style="student.anim.tag ? 'animation-duration:1.9s;text-shadow:0 0 6px #fff,0 0 3px #fff' : ''"
                      :class="student.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
-                  {{ student.anim.label || student.anim.type }}
+                  <span v-if="student.anim.tag" class="text-xs bg-white/90 rounded-full px-1.5 border-2 border-current">{{ student.anim.tag }}</span>
+                  <span>{{ student.anim.label || student.anim.type }}</span>
                 </div>
 
                 <div class="pet-wrap-sm shrink-0">
@@ -2543,7 +2547,7 @@ const __app = createApp({
     },
 
     // 加減分邏輯 + 1秒即時飄浮數字 (+1 / -1) 與綠/紅邊框閃爍
-    addScore(student, val, reason = '手動調整經驗值') {
+    addScore(student, val, reason = '手動調整經驗值', tag = '') {
       const oldScore = student.score;
       student.score = Math.max(0, student.score + val);
       const diff = student.score - oldScore;
@@ -2552,12 +2556,14 @@ const __app = createApp({
       student.anim = {
         type: val > 0 ? '+1' : '-1',
         label: diff > 0 ? '+' + diff : String(diff),
+        tag: tag,
         key: Date.now() + Math.random()
       };
 
+      const animObj = student.anim;
       setTimeout(() => {
-        student.anim = null;
-      }, 1000);
+        if (student.anim === animObj) student.anim = null;
+      }, tag ? 1900 : 1000);
 
       this.addLog(student.name, `${reason} (${diff > 0 ? '+' + diff : diff})`, diff);
       this.saveData();
@@ -2630,7 +2636,7 @@ const __app = createApp({
       d.submitted = d.completed;
       d.revision = false;
       d.fromSheet = false;
-      this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成');
+      this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成', d.completed ? '✅ 作業完成' : '取消完成');
       this.saveData();
     },
     batchSetHwStatus(hwId) {
@@ -2642,7 +2648,7 @@ const __app = createApp({
         const d = student.homeworks[hwId];
         if (!d.completed) {
           d.completed = true; d.submitted = true; d.revision = false;
-          this.addScore(student, 1, '批次設定作業完成');
+          this.addScore(student, 1, '批次設定作業完成', '✅ 作業完成');
         }
       });
       this.saveData();
@@ -2723,7 +2729,7 @@ const __app = createApp({
             const dF = stF && stF.homeworks && stF.homeworks[hw.id];
             if (dF && dF.completed && dF.fromSheet) {
               dF.completed = false; dF.submitted = false; dF.fromSheet = false;
-              this.addScore(stF, -1, `試算表取消完成：${label}`);
+              this.addScore(stF, -1, `試算表取消完成：${label}`, '取消完成');
               revoked++;
             }
             return;
@@ -2736,7 +2742,7 @@ const __app = createApp({
           const d = st.homeworks[hw.id];
           if (d.completed) { skipped++; return; }
           d.completed = true; d.submitted = true; d.revision = false; d.fromSheet = true;
-          this.addScore(st, 1, `作業完成（試算表）：${label}`);
+          this.addScore(st, 1, `作業完成（試算表）：${label}`, '✅ 作業完成');
           added++;
         });
       }
