@@ -106,6 +106,8 @@
       0%, 100% { border-color: transparent; }
       20%, 80% { border-color: #f43f5e; box-shadow: 0 0 16px rgba(244, 63, 94, 0.8); }
     }
+    @keyframes bigFx{0%{opacity:0;transform:translateY(24px) scale(.7)}12%{opacity:1;transform:translateY(0) scale(1.08)}22%{transform:scale(1)}82%{opacity:1}100%{opacity:0;transform:translateY(-30px) scale(1)}}
+    .bigfx{animation:bigFx 2.6s ease-out forwards}
     .flash-green { animation: flashGreen 0.9s ease-in-out; }
     .flash-red { animation: flashRed 0.9s ease-in-out; }
 
@@ -927,6 +929,13 @@
           <button @click="answerConfirm(false)" class="py-4 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xl">取消</button>
           <button @click="answerConfirm(true)" class="py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-black text-xl shadow-md">確定</button>
         </div>
+      </div>
+    </div>
+    <div v-if="bigFx.show" :key="bigFx.key" class="fixed inset-0 z-[320] pointer-events-none flex items-center justify-center px-4">
+      <div class="bigfx rounded-3xl border-4 px-6 py-4 sm:px-10 sm:py-6 text-center shadow-2xl bg-white/95"
+           :class="bigFx.kind === 'minus' ? 'border-rose-400' : 'border-emerald-400'">
+        <div class="text-2xl sm:text-4xl font-black text-slate-800">{{ bigFx.title }}</div>
+        <div class="text-4xl sm:text-6xl font-black mt-1" :class="bigFx.kind === 'minus' ? 'text-rose-500' : 'text-emerald-500'">{{ bigFx.sub }}</div>
       </div>
     </div>
     <div v-if="alertState.show" class="fixed inset-0 z-[310] bg-black/45 flex items-end justify-center px-3 pb-3 sm:pb-6" @click.self="alertState.show = false">
@@ -2149,6 +2158,7 @@ const __app = createApp({
       syncStatus: { isSyncing: false, text: '連線中…' },
       cloudReady: false,
 
+      bigFx: { show: false, title: '', sub: '', kind: 'plus', key: 0 },
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
@@ -2345,6 +2355,36 @@ const __app = createApp({
       this.copyText(this.buildAppsScript(), '已複製！到 Apps Script 全選貼上、存檔、重新部署即可');
     },
     // 確認視窗：固定顯示在畫面底部，方便學生在平板上按
+    showBigFx(title, sub, kind) {
+      this.bigFx = { show: true, title, sub, kind: kind || 'plus', key: Date.now() };
+      clearTimeout(this._bigFxTimer);
+      this._bigFxTimer = setTimeout(() => { this.bigFx.show = false; }, 2600);
+    },
+    giftTag(name) { return /^\p{Extended_Pictographic}/u.test(name) ? name : '🎁 ' + name; },
+    tagFromAction(action) {
+      action = String(action || '');
+      if (action.includes('取消') && action.includes('作業')) return '取消完成';
+      if (action.includes('作業完成')) return '✅ 作業完成';
+      const m = action.match(/實體兌換【(.+?)】/);
+      if (m) return this.giftTag(m[1]);
+      if (action.includes('更換寵物')) return '🐾 更換寵物';
+      return '';
+    },
+    // 別台裝置（例如平板）加減分後，教室電腦同步到新資料時，也在學生卡片上顯示特效
+    animateRemoteChanges(oldScores, oldLogKeys) {
+      const key = l => `${l.time}|${l.name}|${l.action}`;
+      const fresh = (this.logs || []).filter(l => !oldLogKeys.has(key(l)));
+      this.students.forEach(st => {
+        const before = oldScores[st.id];
+        if (before === undefined || before === st.score) return;
+        const diff = st.score - before;
+        const lg = fresh.find(l => l.name === st.name && l.change);
+        const tag = lg ? this.tagFromAction(lg.action) : '';
+        const anim = { type: diff > 0 ? '+1' : '-1', label: diff > 0 ? '+' + diff : String(diff), tag, key: Date.now() + Math.random() };
+        st.anim = anim;
+        setTimeout(() => { if (st.anim === anim) st.anim = null; }, 1900);
+      });
+    },
     notify(msg) { this.alertState = { show: true, msg: String(msg) }; },
     askConfirm(msg) {
       return new Promise(resolve => { this.confirmState = { show: true, msg: String(msg), resolve }; });
@@ -2637,6 +2677,7 @@ const __app = createApp({
       d.revision = false;
       d.fromSheet = false;
       this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成', d.completed ? '✅ 作業完成' : '取消完成');
+      if (d.completed) this.showBigFx(`${student.name} 作業完成`, '+1 EXP', 'plus');
       this.saveData();
     },
     batchSetHwStatus(hwId) {
@@ -2676,7 +2717,7 @@ const __app = createApp({
         this.notify('經驗值不足 50 EXP，無法啟動扭蛋機！');
         return;
       }
-      this.addScore(student, -50, '消耗 EXP 啟動扭蛋機');
+      this.addScore(student, -50, '消耗 EXP 啟動扭蛋機', '🎲 扭蛋');
       this.gachaDrawingStudent = student;
       this.showGachaModal = true;
       this.isGachaSpinning = true;
@@ -2865,7 +2906,8 @@ const __app = createApp({
         return;
       }
       if (!(await this.askConfirm(`確定要消耗 ${item.cost} EXP 兌換【${item.name}】嗎？`))) return;
-      this.addScore(student, -item.cost, `實體兌換【${item.name}】`);
+      this.addScore(student, -item.cost, `實體兌換【${item.name}】`, this.giftTag(item.name));
+      this.showBigFx(`${student.name} 兌換了 ${item.name}`, `-${item.cost} EXP`, 'minus');
     },
 
     openTeacherPetModal(student) {
@@ -2883,7 +2925,7 @@ const __app = createApp({
           this.notify('經驗值不足 25 EXP！');
           return;
         }
-        this.addScore(this.petSelectingStudent, -25, '更換寵物造型');
+        this.addScore(this.petSelectingStudent, -25, '更換寵物造型', '🐾 更換寵物');
       }
 
       this.petSelectingStudent.petId = this.selectedPetForExchange.id;
@@ -3250,8 +3292,11 @@ const __app = createApp({
       }
     },
 
-    applyRemoteState(st) {
+    applyRemoteState(st, animate) {
       if (!st) return;
+      const oldScores = {};
+      (this.students || []).forEach(x => { oldScores[x.id] = x.score; });
+      const oldLogKeys = new Set((this.logs || []).map(l => `${l.time}|${l.name}|${l.action}`));
       if (Array.isArray(st.students) && st.students.length) { this.students = st.students; this.ensureTokens(); }
       if (st.homework) this.homeworkList = st.homework;
       if (st.logs) this.logs = st.logs;
@@ -3266,6 +3311,7 @@ const __app = createApp({
       try {
         ['students','homework','logs','gacha','items','pets'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
       } catch (e) {}
+      if (animate) this.animateRemoteChanges(oldScores, oldLogKeys);
     },
 
     async pullFromCloud(first) {
@@ -3273,7 +3319,7 @@ const __app = createApp({
       try {
         const r = await this.gas('GET', { action: 'load' });
         if (r.state && (first || r.rev !== this._rev)) {
-          this.applyRemoteState(r.state);
+          this.applyRemoteState(r.state, !first);
           if (this._tokNew && !first) { this._tokNew = false; this.saveData(); }
         } else if (!r.state && first) {
           // 雲端還是空的：把這台的資料當作初始資料上傳
