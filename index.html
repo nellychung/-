@@ -184,7 +184,7 @@
     html,body{background-color:#f6f0ff}
     body{background:linear-gradient(135deg,#ffe7f1 0%,#ece6ff 35%,#dff2ff 68%,#e3f9ec 100%) fixed}
     /* 馬卡龍配色 */
-    .macaron-header{background:linear-gradient(100deg,#ffd3e6 0%,#e7d8ff 35%,#cfe9ff 68%,#d4f6e2 100%);box-shadow:0 2px 10px rgba(167,139,250,.25)}
+    .macaron-header{background:linear-gradient(100deg,#ff9cc6 0%,#c4a2ff 45%,#86cfff 100%);box-shadow:0 4px 14px rgba(168,85,247,.35)}
     .btn-3d-emerald{background:linear-gradient(#b9f6d8,#7ee8b5) !important;color:#065f46 !important;box-shadow:0 3px 0 #4ade9a !important}
     .btn-3d-rose{background:linear-gradient(#ffd6dc,#ffa9b8) !important;color:#9f1239 !important;box-shadow:0 3px 0 #fb8ca1 !important}
     .btn-3d-emerald:active,.btn-3d-rose:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15) !important}
@@ -284,20 +284,20 @@
     <!-- 頂部導覽列 -->
     <header class="macaron-header text-purple-900 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md 2xl:grid 2xl:grid-cols-[1fr_auto_1fr]">
       <div class="flex items-center space-x-2.5 min-w-0 2xl:justify-self-start">
-        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap">
+        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap bg-white/90 text-purple-800 px-3 py-1 rounded-2xl shadow-sm">
           <i class="fa-solid fa-gamepad"></i>
           <span>智慧班級經營-寵物王國<span class="hidden min-[1700px]:inline"> (寶可夢特別版)</span></span>
         </div>
 
       <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shadow-inner"
-             :class="syncStatus.isSyncing ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white/70 text-emerald-700 border-emerald-300'">
+             :class="syncStatus.isSyncing ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white/90 text-emerald-700 border-emerald-300'">
           <i class="fa-solid" :class="syncStatus.isSyncing ? 'fa-spin fa-rotate' : 'fa-cloud-check'"></i>
           <span @click="configureCloud" class="cursor-pointer underline decoration-dotted whitespace-nowrap">{{ syncStatus.text }}</span>
         </div>
       </div>
 
       <!-- 中間：即時時間（全班都看得到） -->
-      <div class="flex items-center gap-2 bg-white/60 px-4 py-1 rounded-2xl border-2 border-white font-black text-purple-700 shadow-sm text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
+      <div class="flex items-center gap-2 bg-white/90 px-4 py-1 rounded-2xl border-2 border-white font-black text-purple-700 shadow-md text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
         <i class="fa-solid fa-clock"></i>
         <span>{{ currentDateStr }} {{ currentDayStr }}</span>
         <span class="text-2xl sm:text-3xl xl:text-4xl text-pink-500 leading-none" style="text-shadow:0 1px 0 #fff">{{ currentTimeStr }}</span>
@@ -305,17 +305,17 @@
 
       <!-- 右側：隨機抽籤與頁面切換 -->
       <div class="flex items-center space-x-2 flex-nowrap 2xl:justify-self-end">
-        <div class="flex items-center space-x-1 bg-white/50 p-1 rounded-2xl border-2 border-white">
+        <div class="flex items-center space-x-1 bg-white/90 p-1 rounded-2xl border-2 border-white shadow-sm">
           <button @click="showPickerModal = true" class="whitespace-nowrap px-2.5 py-1 rounded-xl text-xs font-black bg-amber-200 text-amber-900 hover:bg-amber-300 transition flex items-center gap-1 shadow-sm">
             <i class="fa-solid fa-dice"></i> 隨機抽籤
           </button>
         </div>
 
-        <nav class="flex flex-wrap items-center gap-1 bg-white/50 p-1 rounded-2xl border-2 border-white">
+        <nav class="flex flex-wrap items-center gap-1 bg-white/90 p-1 rounded-2xl border-2 border-white shadow-sm">
           <button v-for="menu in pages" :key="menu.id" 
                   @click="currentTab = menu.id"
                   :class="['whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
-                          currentTab === menu.id ? 'bg-gradient-to-r from-pink-200 to-purple-200 text-purple-900 shadow-md scale-105' : 'text-purple-700 hover:bg-white/80']">
+                          currentTab === menu.id ? 'bg-gradient-to-r from-pink-400 to-purple-500 text-white shadow-md scale-105' : 'text-purple-700 hover:bg-purple-50']">
             <i :class="menu.icon"></i>
             <span>{{ menu.name }}</span>
           </button>
