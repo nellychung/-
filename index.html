@@ -1356,6 +1356,17 @@ function doGet(e) {
       const o = JSON.parse(f.getBlob().getDataAsString());
       return out_({ state: o.state, rev: o.rev });
     }
+    if (action === 'rev') {
+      // 很輕量的「資料有沒有更新」查詢，讓其他裝置可以幾秒內同步
+      const props = PropertiesService.getScriptProperties();
+      let rev = props.getProperty('rev');
+      if (rev === null) {
+        const f = file_();
+        rev = f ? String(JSON.parse(f.getBlob().getDataAsString()).rev || 0) : '0';
+        props.setProperty('rev', rev);
+      }
+      return out_({ rev: Number(rev) });
+    }
     if (action === 'sheet') {
       const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
       const range = sh.getDataRange();
@@ -1388,6 +1399,7 @@ function doPost(e) {
     if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
     const content = JSON.stringify({ rev: rev, state: body.state });
     if (f) f.setContent(content); else DriveApp.createFile(FILE_NAME, content, MimeType.PLAIN_TEXT);
+    PropertiesService.getScriptProperties().setProperty('rev', String(rev));
     return out_({ ok: true, rev: rev });
   } catch (err) {
     return out_({ error: String(err) });
@@ -2364,7 +2376,7 @@ const __app = createApp({
     tagFromAction(action) {
       action = String(action || '');
       if (action.includes('取消') && action.includes('作業')) return '取消完成';
-      if (action.includes('作業完成')) return '✅ 作業完成';
+      if (action.includes('作業完成')) return '作業完成';
       const m = action.match(/實體兌換【(.+?)】/);
       if (m) return this.giftTag(m[1]);
       if (action.includes('更換寵物')) return '🐾 更換寵物';
@@ -2676,7 +2688,7 @@ const __app = createApp({
       d.submitted = d.completed;
       d.revision = false;
       d.fromSheet = false;
-      this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成', d.completed ? '✅ 作業完成' : '取消完成');
+      this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成', d.completed ? '作業完成' : '取消完成');
       if (d.completed) this.showBigFx(`${student.name} 作業完成`, '+1 EXP', 'plus');
       this.saveData();
     },
@@ -2689,7 +2701,7 @@ const __app = createApp({
         const d = student.homeworks[hwId];
         if (!d.completed) {
           d.completed = true; d.submitted = true; d.revision = false;
-          this.addScore(student, 1, '批次設定作業完成', '✅ 作業完成');
+          this.addScore(student, 1, '批次設定作業完成', '作業完成');
         }
       });
       this.saveData();
@@ -2783,7 +2795,7 @@ const __app = createApp({
           const d = st.homeworks[hw.id];
           if (d.completed) { skipped++; return; }
           d.completed = true; d.submitted = true; d.revision = false; d.fromSheet = true;
-          this.addScore(st, 1, `作業完成（試算表）：${label}`, '✅ 作業完成');
+          this.addScore(st, 1, `作業完成（試算表）：${label}`, '作業完成');
           added++;
         });
       }
@@ -3349,7 +3361,24 @@ const __app = createApp({
       }
       this.syncStatus.text = '連線雲端中…';
       await this.pullFromCloud(true);
-      setInterval(() => { if (document.visibilityState === 'visible') this.pullFromCloud(false); }, 60000);
+      // 每 4 秒問一次「雲端有沒有新資料」（很輕量），有更新才下載；舊版後端不支援時退回每 60 秒一次
+      setInterval(async () => {
+        if (document.visibilityState !== 'visible' || this._polling) return;
+        this._polling = true;
+        try {
+          if (!this._noRev) {
+            try {
+              const r = await this.gas('GET', { action: 'rev' });
+              if (typeof r.rev !== 'number') throw new Error('未知的動作');
+              if (r.rev !== this._rev) await this.pullFromCloud(false);
+              return;
+            } catch (e) {
+              if (String(e && e.message).includes('未知的動作')) this._noRev = true; else return;
+            }
+          }
+          if (Date.now() - (this._lastFull || 0) >= 60000) { this._lastFull = Date.now(); await this.pullFromCloud(false); }
+        } finally { this._polling = false; }
+      }, 4000);
     },
 
     reportError(where, e) {

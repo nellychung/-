@@ -48,6 +48,17 @@ function doGet(e) {
       const o = JSON.parse(f.getBlob().getDataAsString());
       return out_({ state: o.state, rev: o.rev });
     }
+    if (action === 'rev') {
+      // 很輕量的「資料有沒有更新」查詢，讓其他裝置可以幾秒內同步
+      const props = PropertiesService.getScriptProperties();
+      let rev = props.getProperty('rev');
+      if (rev === null) {
+        const f = file_();
+        rev = f ? String(JSON.parse(f.getBlob().getDataAsString()).rev || 0) : '0';
+        props.setProperty('rev', rev);
+      }
+      return out_({ rev: Number(rev) });
+    }
     if (action === 'sheet') {
       const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
       const range = sh.getDataRange();
@@ -80,6 +91,7 @@ function doPost(e) {
     if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
     const content = JSON.stringify({ rev: rev, state: body.state });
     if (f) f.setContent(content); else DriveApp.createFile(FILE_NAME, content, MimeType.PLAIN_TEXT);
+    PropertiesService.getScriptProperties().setProperty('rev', String(rev));
     return out_({ ok: true, rev: rev });
   } catch (err) {
     return out_({ error: String(err) });
