@@ -184,6 +184,11 @@
     html,body{background-color:#f6f0ff}
     body{background:linear-gradient(135deg,#ffe7f1 0%,#ece6ff 35%,#dff2ff 68%,#e3f9ec 100%) fixed}
     /* 馬卡龍配色 */
+    .mc-mint{background:linear-gradient(#b9f6d8,#7ee8b5) !important;color:#065f46 !important;box-shadow:0 2px 0 #4ade9a}
+    .mc-rose{background:linear-gradient(#ffd6dc,#ffa9b8) !important;color:#9f1239 !important;box-shadow:0 2px 0 #fb8ca1}
+    .mc-lav{background:linear-gradient(#e6dcff,#c9b6ff) !important;color:#4c1d95 !important;box-shadow:0 2px 0 #a78bfa}
+    .mc-badge{background:linear-gradient(90deg,#ff9cc6,#c4a2ff) !important;color:#fff !important;text-shadow:0 1px 1px rgba(120,40,140,.35)}
+    .mc-mint:active,.mc-rose:active,.mc-lav:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.12)}
     .macaron-header{background:linear-gradient(100deg,#ff9cc6 0%,#c4a2ff 45%,#86cfff 100%);box-shadow:0 4px 14px rgba(168,85,247,.35)}
     .btn-3d-emerald{background:linear-gradient(#b9f6d8,#7ee8b5) !important;color:#065f46 !important;box-shadow:0 3px 0 #4ade9a !important}
     .btn-3d-rose{background:linear-gradient(#ffd6dc,#ffa9b8) !important;color:#9f1239 !important;box-shadow:0 3px 0 #fb8ca1 !important}
@@ -333,10 +338,10 @@
             <span class="text-xs font-black text-indigo-950 flex items-center gap-1.5">
               <i class="fa-solid fa-crown text-amber-500"></i> 全班名單 (共 {{ filteredStudents.length }} / {{ students.length }} 人)
             </span>
-            <button @click="addClassScore(1)" class="px-3 py-1 bg-gradient-to-b from-emerald-400 to-emerald-600 text-white text-xs font-black rounded-xl shadow active:scale-95 transition">
+            <button @click="addClassScore(1)" class="mc-mint px-3 py-1 text-xs font-black rounded-xl active:scale-95 transition">
               全班 +1
             </button>
-            <button @click="addClassScore(-1)" class="px-3 py-1 bg-gradient-to-b from-rose-400 to-rose-600 text-white text-xs font-black rounded-xl shadow active:scale-95 transition">
+            <button @click="addClassScore(-1)" class="mc-rose px-3 py-1 text-xs font-black rounded-xl active:scale-95 transition">
               全班 -1
             </button>
             
@@ -420,10 +425,10 @@
         <div v-else class="group-grid">
           <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0">
             <div class="flex justify-between items-center mb-1 pb-1 border-b">
-              <span class="bg-indigo-600 text-white font-black text-xs px-2 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
+              <span class="mc-badge font-black text-xs px-2 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
               <div class="flex space-x-1">
-                <button @click="addGroupScore(gNum, 1)" class="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black rounded-lg transition">+1 全組</button>
-                <button @click="addGroupScore(gNum, -1)" class="px-2 py-0.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black rounded-lg transition">-1 全組</button>
+                <button @click="addGroupScore(gNum, 1)" class="mc-mint px-2 py-0.5 text-[11px] font-black rounded-lg transition">+1 全組</button>
+                <button @click="addGroupScore(gNum, -1)" class="mc-rose px-2 py-0.5 text-[11px] font-black rounded-lg transition">-1 全組</button>
               </div>
             </div>
 
@@ -459,9 +464,9 @@
                   <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
                 </div>
                 <div class="flex gap-1 shrink-0" @click.stop>
-                  <button @click="addScore(student, 1)" class="px-1.5 py-0.5 bg-emerald-500 text-white text-[11px] font-black rounded active:scale-95">+1</button>
-                  <button @click="addScore(student, -1)" class="px-1.5 py-0.5 bg-rose-500 text-white text-[11px] font-black rounded active:scale-95">-1</button>
-                  <button @click="openCustom(student)" class="px-1.5 py-0.5 bg-indigo-500 text-white text-[11px] font-black rounded active:scale-95" title="自訂加減經驗值">±</button>
+                  <button @click="addScore(student, 1)" class="mc-mint px-1.5 py-0.5 text-[11px] font-black rounded active:scale-95">+1</button>
+                  <button @click="addScore(student, -1)" class="mc-rose px-1.5 py-0.5 text-[11px] font-black rounded active:scale-95">-1</button>
+                  <button @click="openCustom(student)" class="mc-lav px-1.5 py-0.5 text-[11px] font-black rounded active:scale-95" title="自訂加減經驗值">±</button>
                 </div>
               </div>
             </div>
