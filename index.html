@@ -149,6 +149,7 @@
     .fa-trash::before{content:"🗑"}
     .fa-magnifying-glass::before{content:"🔍"}
     .fa-dice::before{content:"🎲"}
+    .fa-chair::before{content:"💺"}
     .fa-check::before{content:"✔"}
     .fa-book-open::before{content:"📖"}
     .fa-arrows-rotate::before{content:"🔄"}
@@ -475,6 +476,67 @@
       </div>
 
       <!-- 頁面 2：作業管理頁面 -->
+      <!-- 座位表 -->
+      <div v-if="currentTab === 'seatMap'" class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-gradient-to-r from-orange-50 via-rose-50 to-amber-50 px-3 py-2 rounded-2xl border border-orange-100">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-black text-[#8a3b12]">💺 座位表</span>
+            <button @click="toggleSwapMode" class="px-3 py-1 rounded-xl text-xs font-black shadow-sm transition active:scale-95"
+                    :class="seatSwapMode ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white' : 'bg-white text-[#a8481a] border border-orange-200'">{{ seatSwapMode ? '完成換座位' : '🔀 更換座位' }}</button>
+            <span v-if="seatSwapMode" class="text-[11px] font-bold text-orange-700">先點一位學生，再點要交換的座位（點空位就是移過去）</span>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap text-[11px] font-black text-slate-600">
+            <input v-model="seatSearch" placeholder="🔍 找學生座位（姓名或座號）" class="px-2.5 py-1 rounded-xl border border-orange-200 bg-white text-xs font-bold outline-none w-48" />
+            <label class="flex items-center gap-1">共<input type="number" min="1" max="12" :value="seatPlan.rows" @change="setSeatDims($event.target.value, seatPlan.cols)" class="w-12 px-1 py-0.5 text-center rounded-lg border border-orange-200 bg-white font-black" />排</label>
+            <label class="flex items-center gap-1">每排<input type="number" min="1" max="12" :value="seatPlan.cols" @change="setSeatDims(seatPlan.rows, $event.target.value)" class="w-12 px-1 py-0.5 text-center rounded-lg border border-orange-200 bg-white font-black" />個</label>
+            <button @click="resetSeatsBySeatNumber" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 font-black">依座號重排</button>
+          </div>
+        </div>
+        <div class="text-center"><span class="inline-block px-10 py-0.5 rounded-b-2xl bg-slate-200 text-slate-600 text-xs font-black tracking-widest">講　台</span></div>
+        <div class="grid gap-1.5" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
+          <div v-for="(stu, idx) in seatCells" :key="idx" @click="onSeatCellClick(idx, stu)"
+               class="relative rounded-xl min-w-0 transition select-none"
+               :class="[
+                 stu ? 'bg-white border-2 border-slate-200 shadow-sm' : 'border-2 border-dashed border-slate-300 bg-white/40',
+                 seatSwapMode ? 'cursor-pointer hover:border-orange-400' : (stu ? 'cursor-pointer' : ''),
+                 seatSelected === idx ? 'ring-4 ring-orange-400 border-orange-400' : '',
+                 seatMatch(stu) ? 'ring-4 ring-pink-400 animate-pulse' : '',
+                 stu && stu.anim ? (stu.anim.type === '+1' ? 'flash-green' : 'flash-red') : '']">
+            <span class="absolute top-0.5 right-1 text-[9px] font-bold text-slate-300">{{ Math.floor(idx / seatPlan.cols) + 1 }}-{{ idx % seatPlan.cols + 1 }}</span>
+            <template v-if="stu">
+              <div v-if="stu.anim" :key="stu.anim.key"
+                   class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 font-black text-2xl animate-float-num flex flex-col items-center whitespace-nowrap leading-tight text-center pointer-events-none"
+                   :style="stu.anim.tag ? 'animation-duration:1.9s;text-shadow:0 0 6px #fff,0 0 3px #fff' : ''"
+                   :class="stu.anim.type === '+1' ? 'text-emerald-500' : 'text-rose-500'">
+                <span v-if="stu.anim.tag" class="text-xs bg-white/90 rounded-full px-1.5 border-2 border-current">{{ stu.anim.tag }}</span>
+                <span>{{ stu.anim.label || stu.anim.type }}</span>
+              </div>
+              <div class="flex items-center gap-1 px-1.5 pt-1 min-w-0">
+                <span class="bg-slate-900/90 text-white font-black text-sm leading-5 min-w-[1.4rem] text-center px-1 rounded-full shrink-0">{{ stu.seatNumber }}</span>
+                <span class="font-black text-slate-800 text-sm truncate">{{ stu.name }}</span>
+                <i v-if="isTopStudent(stu)" class="fa-solid fa-crown text-amber-400 text-xs shrink-0"></i>
+              </div>
+              <div class="flex items-center gap-1.5 px-1.5 py-1 min-w-0">
+                <div class="animal-sphere p-0.5 flex items-center justify-center overflow-hidden shrink-0"
+                     :style="[getPetBorderStyle(stu), { width: '3.2rem', height: '3.2rem', borderRadius: '0.8rem' }]"
+                     :class="[getPetBorderClass(getStudentLevelData(stu.score).level, stu), getStudentLevelData(stu.score).level < 1 ? 'animate-egg-wobble' : '']">
+                  <img :src="getAvatarUrl(stu)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain" />
+                </div>
+                <div class="min-w-0 leading-tight">
+                  <div class="text-[11px] font-black text-amber-600">Lv.{{ getStudentLevelData(stu.score).level }}</div>
+                  <div class="text-[11px] font-black text-indigo-600">{{ stu.score }} EXP</div>
+                </div>
+              </div>
+              <div v-if="!seatSwapMode" class="grid grid-cols-2 gap-1 px-1.5 pb-1.5" @click.stop>
+                <button @click="addScore(stu, 1)" class="mc-mint py-0.5 text-xs font-black rounded-lg active:scale-95 transition">+1</button>
+                <button @click="addScore(stu, -1)" class="mc-rose py-0.5 text-xs font-black rounded-lg active:scale-95 transition">-1</button>
+              </div>
+            </template>
+            <div v-else class="h-full min-h-[84px] flex items-center justify-center text-slate-300 text-xs font-black">{{ seatSwapMode ? '點此移到這裡' : '空位' }}</div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="currentTab === 'homework'" class="space-y-4 max-w-7xl mx-auto">
         <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-3xl shadow-lg flex flex-wrap justify-between items-center gap-3">
           <div class="space-y-1">
@@ -2328,6 +2390,7 @@ const __app = createApp({
 
       pages: [
         { id: 'dashboard', name: '全班主頁', icon: 'fa-solid fa-house' },
+        { id: 'seatMap', name: '座位表', icon: 'fa-solid fa-chair' },
         { id: 'homework', name: '作業管理', icon: 'fa-solid fa-book-open' },
         { id: 'cardMarket', name: '卡片中心', icon: 'fa-solid fa-arrows-rotate' },
         { id: 'addStudent', name: '名單與設定', icon: 'fa-solid fa-user-plus' },
@@ -2338,6 +2401,10 @@ const __app = createApp({
       cloudReady: false,
 
       bigFx: { show: false, title: '', sub: '', kind: 'plus', key: 0 },
+      seatPlan: { rows: 5, cols: 6 },
+      seatSwapMode: false,
+      seatSelected: null,
+      seatSearch: '',
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
@@ -2422,6 +2489,16 @@ const __app = createApp({
   },
 
   computed: {
+    // 座位表：index = 第幾排 × 每排人數 + 第幾個
+    seatCells() {
+      const total = (this.seatPlan.rows || 1) * (this.seatPlan.cols || 1);
+      const cells = new Array(total).fill(null);
+      (this.students || []).forEach(st => {
+        const i = st.deskIndex;
+        if (Number.isInteger(i) && i >= 0 && i < total && !cells[i]) cells[i] = st;
+      });
+      return cells;
+    },
     filteredStudents() {
       if (!this.searchQuery.trim()) return this.students;
       const q = this.searchQuery.trim().toLowerCase();
@@ -2534,6 +2611,80 @@ const __app = createApp({
       this.copyText(this.buildAppsScript(), '已複製！到 Apps Script 全選貼上、存檔、重新部署即可');
     },
     // 確認視窗：固定顯示在畫面底部，方便學生在平板上按
+    // ---------- 座位表 ----------
+    ensureDesks() {
+      const plan = this.seatPlan;
+      plan.rows = Math.min(12, Math.max(1, parseInt(plan.rows) || 5));
+      plan.cols = Math.min(12, Math.max(1, parseInt(plan.cols) || 6));
+      const sts = this.students || [];
+      let total = plan.rows * plan.cols;
+      while (total < sts.length && plan.rows < 12) { plan.rows++; total = plan.rows * plan.cols; }
+      const used = new Set();
+      const pending = [];
+      let changed = false;
+      sts.forEach(st => {
+        const i = st.deskIndex;
+        if (Number.isInteger(i) && i >= 0 && i < total && !used.has(i)) used.add(i); else pending.push(st);
+      });
+      pending.sort((a, b) => a.seatNumber - b.seatNumber);
+      let cur = 0;
+      pending.forEach(st => {
+        while (used.has(cur) && cur < total) cur++;
+        if (cur < total) { st.deskIndex = cur; used.add(cur); changed = true; }
+      });
+      if (changed) this._tokNew = true;
+      return changed;
+    },
+    seatMatch(st) {
+      const q = String(this.seatSearch || '').trim();
+      if (!q || !st) return false;
+      return st.name.includes(q) || String(st.seatNumber) === q;
+    },
+    toggleSwapMode() {
+      this.seatSwapMode = !this.seatSwapMode;
+      this.seatSelected = null;
+    },
+    onSeatCellClick(idx, stu) {
+      if (!this.seatSwapMode) { if (stu) this.openProfileModal(stu); return; }
+      if (this.seatSelected === null) {
+        if (stu) this.seatSelected = idx;
+        return;
+      }
+      if (this.seatSelected === idx) { this.seatSelected = null; return; }
+      const from = this.seatCells[this.seatSelected];
+      const to = stu;
+      if (!from) { this.seatSelected = null; return; }
+      from.deskIndex = idx;
+      if (to) to.deskIndex = this.seatSelected;
+      this.addLog(from.name, to ? `與 ${to.name} 調換座位` : '移動座位', 0);
+      this.seatSelected = null;
+      this.saveData();
+      this.showToast(to ? `${from.name} ⇄ ${to.name}` : `${from.name} 換到新座位`);
+    },
+    setSeatDims(rows, cols) {
+      rows = Math.min(12, Math.max(1, parseInt(rows) || 1));
+      cols = Math.min(12, Math.max(1, parseInt(cols) || 1));
+      const oldCols = this.seatPlan.cols;
+      // 每排人數改變時，保留每位學生原本的「第幾排、第幾個」位置
+      (this.students || []).forEach(st => {
+        if (!Number.isInteger(st.deskIndex)) return;
+        const r0 = Math.floor(st.deskIndex / oldCols), c0 = st.deskIndex % oldCols;
+        st.deskIndex = (r0 < rows && c0 < cols) ? r0 * cols + c0 : null;
+      });
+      this.seatPlan.rows = rows;
+      this.seatPlan.cols = cols;
+      this.seatSelected = null;
+      this.ensureDesks();
+      this.saveData();
+    },
+    async resetSeatsBySeatNumber() {
+      if (!(await this.askConfirm('確定要依座號重新排列所有座位嗎？\n目前換過的座位會被覆蓋。'))) return;
+      (this.students || []).forEach(st => { st.deskIndex = null; });
+      this.ensureDesks();
+      this.seatSelected = null;
+      this.saveData();
+    },
+
     showBigFx(title, sub, kind) {
       this.bigFx = { show: true, title, sub, kind: kind || 'plus', key: Date.now() };
       clearTimeout(this._bigFxTimer);
@@ -3407,7 +3558,7 @@ const __app = createApp({
 
     snapshotState() {
       const o = {};
-      ['students','homework','logs','gacha','items','pets'].forEach(k => { o[k] = JSON.parse(this.serializeKey(k)); });
+      ['students','homework','logs','gacha','items','pets','seatPlan'].forEach(k => { o[k] = JSON.parse(this.serializeKey(k)); });
       return o;
     },
 
@@ -3419,15 +3570,17 @@ const __app = createApp({
         logs: this.logs,
         gacha: this.gachaCardPool,
         items: this.directItems,
-        pets: this.presetAvatars.filter(p => p.isCustom)
+        pets: this.presetAvatars.filter(p => p.isCustom),
+        seatPlan: this.seatPlan
       };
       return JSON.stringify(map[key], replacer);
     },
 
     saveData() {
       this.ensureTokens();
+      this.ensureDesks();
       try {
-        ['students','homework','logs','gacha','items','pets'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
+        ['students','homework','logs','gacha','items','pets','seatPlan'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
       } catch (e) {}
       if (!this.cfg().endpoint) {
         this.syncStatus.isSyncing = false;
@@ -3481,14 +3634,16 @@ const __app = createApp({
       if (st.logs) this.logs = st.logs;
       if (st.gacha) this.gachaCardPool = st.gacha;
       if (st.items) this.directItems = st.items;
+      if (st.seatPlan && typeof st.seatPlan === 'object') this.seatPlan = st.seatPlan;
       this.normalizeCatalog();
+      this.ensureDesks();
       if (st.pets) this.presetAvatars = [...st.pets, ...FULL_64_POKEMON_POOL.filter(p => !p.isCustom)];
       if (this.profileStudent) {
         this.profileStudent = this.students.find(s => s.id === this.profileStudent.id) || null;
         if (!this.profileStudent) this.showProfileModal = false;
       }
       try {
-        ['students','homework','logs','gacha','items','pets'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
+        ['students','homework','logs','gacha','items','pets','seatPlan'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
       } catch (e) {}
       if (animate) this.animateRemoteChanges(oldScores, oldLogKeys);
     },
@@ -3574,7 +3729,9 @@ const __app = createApp({
       const l = parse('logs', Array.isArray); if (l) this.logs = l;
       const g = parse('gacha', Array.isArray); if (g && g.length) this.gachaCardPool = g;
       const i = parse('items', Array.isArray); if (i) this.directItems = i;
+      const sp = parse('seatPlan', o => o && typeof o === 'object' && !Array.isArray(o)); if (sp) this.seatPlan = sp;
       this.normalizeCatalog();
+      this.ensureDesks();
       this.ensureTokens();
       const p = parse('pets', Array.isArray);
       if (p) this.presetAvatars = [...p, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
@@ -3587,6 +3744,7 @@ const __app = createApp({
         logs: this.logs,
         gachaCardPool: this.gachaCardPool,
         directItems: this.directItems,
+        seatPlan: this.seatPlan,
         customPets: this.presetAvatars.filter(p => p.isCustom)
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -3614,6 +3772,7 @@ const __app = createApp({
           if (Array.isArray(gp) && gp.length) this.gachaCardPool = gp;
           const di = data.directItems || data.items;
           if (Array.isArray(di)) this.directItems = di;
+          if (data.seatPlan && typeof data.seatPlan === 'object') this.seatPlan = data.seatPlan;
           const cp = data.customPets || data.pets;
           if (Array.isArray(cp)) this.presetAvatars = [...cp, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
           this.saveData();
