@@ -527,6 +527,29 @@
                   <div class="text-[11px] font-black text-indigo-600">{{ stu.score }} EXP</div>
                 </div>
               </div>
+              <div v-if="!seatSwapMode" class="px-1.5 pb-1 space-y-1" @click.stop>
+                <div class="grid grid-cols-2 gap-1">
+                  <select :value="stu.group || 1" @change="setStudentGroup(stu, $event)" title="更換小組"
+                          class="min-w-0 px-1 py-0.5 rounded-lg border-2 border-indigo-200 bg-indigo-50 text-indigo-800 text-[11px] font-black outline-none">
+                    <option v-for="g in groupOptions" :key="g" :value="g">第{{ g }}組</option>
+                  </select>
+                  <select :value="getStudentRoleOption(stu)" @change="handleStudentRoleChange(stu, $event)" title="更換小組職務"
+                          class="min-w-0 px-1 py-0.5 rounded-lg border-2 text-[11px] font-black outline-none" :class="roleChipClass(stu.role)">
+                    <option value="組長">組長</option>
+                    <option value="副組長">副組長</option>
+                    <option value="秩序長">秩序長</option>
+                    <option value="座位長">座位長</option>
+                    <option value="組員">組員</option>
+                    <option value="custom">手動輸入...</option>
+                  </select>
+                </div>
+                <input v-if="isCustomStudentRole(stu)" v-model="stu.role" @change="saveData" type="text" placeholder="輸入職務"
+                       class="w-full px-1 py-0.5 text-center bg-white border-2 border-slate-200 rounded-lg text-[11px] font-bold outline-none" />
+              </div>
+              <div v-else class="flex items-center gap-1 px-1.5 pb-1">
+                <span class="text-[10px] font-black px-1.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 whitespace-nowrap">第{{ stu.group || 1 }}組</span>
+                <span class="text-[10px] font-black px-1.5 rounded-full border whitespace-nowrap truncate" :class="roleChipClass(stu.role)">{{ stu.role || '組員' }}</span>
+              </div>
               <div v-if="!seatSwapMode" class="grid grid-cols-2 gap-1 px-1.5 pb-1.5" @click.stop>
                 <button @click="addScore(stu, 1)" class="mc-mint py-0.5 text-xs font-black rounded-lg active:scale-95 transition">+1</button>
                 <button @click="addScore(stu, -1)" class="mc-rose py-0.5 text-xs font-black rounded-lg active:scale-95 transition">-1</button>
@@ -925,6 +948,7 @@
                         <option value="副組長">副組長</option>
                         <option value="秩序長">秩序長</option>
                         <option value="座位長">座位長</option>
+                        <option value="組員">組員</option>
                         <option value="custom">手動輸入...</option>
                       </select>
                       <input v-if="isCustomStudentRole(student)" v-model="student.role" @change="saveData" type="text" placeholder="手動輸入" class="w-16 px-1 py-0.5 text-center bg-white border border-purple-300 rounded font-bold text-purple-900 text-xs outline-none focus:border-purple-600 shadow-inner" />
@@ -2390,10 +2414,10 @@ const __app = createApp({
 
       pages: [
         { id: 'dashboard', name: '全班主頁', icon: 'fa-solid fa-house' },
-        { id: 'seatMap', name: '座位表', icon: 'fa-solid fa-chair' },
         { id: 'homework', name: '作業管理', icon: 'fa-solid fa-book-open' },
         { id: 'cardMarket', name: '卡片中心', icon: 'fa-solid fa-arrows-rotate' },
         { id: 'addStudent', name: '名單與設定', icon: 'fa-solid fa-user-plus' },
+        { id: 'seatMap', name: '座位表', icon: 'fa-solid fa-chair' },
         { id: 'logs', name: '歷程備份', icon: 'fa-solid fa-clock-rotate-left' }
       ],
 
@@ -2490,6 +2514,10 @@ const __app = createApp({
 
   computed: {
     // 座位表：index = 第幾排 × 每排人數 + 第幾個
+    groupOptions() {
+      const mx = Math.max(8, ...(this.students || []).map(s => parseInt(s.group) || 1));
+      return Array.from({ length: Math.min(mx, 30) }, (_, i) => i + 1);
+    },
     seatCells() {
       const total = (this.seatPlan.rows || 1) * (this.seatPlan.cols || 1);
       const cells = new Array(total).fill(null);
@@ -3461,12 +3489,12 @@ const __app = createApp({
     },
 
     getStudentRoleOption(student) {
-      const presets = ['組長', '副組長', '秩序長', '座位長'];
+      const presets = ['組長', '副組長', '秩序長', '座位長', '組員'];
       return presets.includes(student.role) ? student.role : 'custom';
     },
 
     isCustomStudentRole(student) {
-      const presets = ['組長', '副組長', '秩序長', '座位長'];
+      const presets = ['組長', '副組長', '秩序長', '座位長', '組員'];
       return !presets.includes(student.role);
     },
 
@@ -3475,8 +3503,12 @@ const __app = createApp({
       if (val !== 'custom') {
         student.role = val;
       } else {
-        student.role = '秩序長';
+        student.role = '';
       }
+      this.saveData();
+    },
+    setStudentGroup(student, e) {
+      student.group = parseInt(e.target.value) || 1;
       this.saveData();
     },
 
