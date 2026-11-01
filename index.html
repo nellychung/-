@@ -182,14 +182,14 @@
     .pet-flow { animation: petFlow 3s linear infinite; }
     @media (prefers-reduced-motion: reduce) { .pet-flow { animation: none; } }
     html,body{background-color:#f6f0ff}
-    body{background:linear-gradient(135deg,#ffe7f1 0%,#ece6ff 35%,#dff2ff 68%,#e3f9ec 100%) fixed}
+    body{background:linear-gradient(135deg,#fff0e0 0%,#ffe6e8 35%,#fff4d6 68%,#eef6dc 100%) fixed}
     /* 馬卡龍配色 */
     .mc-mint{background:linear-gradient(#b9f6d8,#7ee8b5) !important;color:#065f46 !important;box-shadow:0 2px 0 #4ade9a}
     .mc-rose{background:linear-gradient(#ffd6dc,#ffa9b8) !important;color:#9f1239 !important;box-shadow:0 2px 0 #fb8ca1}
-    .mc-lav{background:linear-gradient(#e6dcff,#c9b6ff) !important;color:#4c1d95 !important;box-shadow:0 2px 0 #a78bfa}
-    .mc-badge{background:linear-gradient(90deg,#ff9cc6,#c4a2ff) !important;color:#fff !important;text-shadow:0 1px 1px rgba(120,40,140,.35)}
+    .mc-lav{background:linear-gradient(#ffe9cf,#ffc995) !important;color:#7c2d12 !important;box-shadow:0 2px 0 #fdba74}
+    .mc-badge{background:linear-gradient(90deg,#ff9a62,#ff7f8a) !important;color:#fff !important;text-shadow:0 1px 1px rgba(150,50,20,.4)}
     .mc-mint:active,.mc-rose:active,.mc-lav:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.12)}
-    .macaron-header{background:linear-gradient(100deg,#ff9cc6 0%,#c4a2ff 45%,#86cfff 100%);box-shadow:0 4px 14px rgba(168,85,247,.35)}
+    .macaron-header{background:linear-gradient(100deg,#ffb07c 0%,#ff9aa2 50%,#ffd29a 100%);box-shadow:0 4px 14px rgba(234,88,12,.30)}
     .btn-3d-emerald{background:linear-gradient(#b9f6d8,#7ee8b5) !important;color:#065f46 !important;box-shadow:0 3px 0 #4ade9a !important}
     .btn-3d-rose{background:linear-gradient(#ffd6dc,#ffa9b8) !important;color:#9f1239 !important;box-shadow:0 3px 0 #fb8ca1 !important}
     .btn-3d-emerald:active,.btn-3d-rose:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15) !important}
@@ -247,7 +247,7 @@
     <div v-if="parentState.error" class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 font-black text-sm text-center">{{ parentState.error }}</div>
     <div v-else-if="!parentState.child" class="p-6 text-center text-slate-500 font-black text-sm">載入中…</div>
     <template v-else>
-      <div class="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : ''">
+      <div class="relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : ''">
         <div v-if="parentState.top" class="top-crown absolute -top-5 left-1/2 -translate-x-1/2 z-20 animate-bounce" style="font-size:2.6rem" title="全班經驗值第一名"><i class="fa-solid fa-crown"></i></div>
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
         <div v-if="parentState.top" class="mt-1 inline-block bg-amber-100 text-amber-800 text-xs px-3 py-0.5 rounded-full font-black border border-amber-300">👑 全班經驗值第一名</div>
@@ -287,9 +287,9 @@
 
   <div v-if="!parentMode">
     <!-- 頂部導覽列 -->
-    <header class="macaron-header text-purple-900 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md 2xl:grid 2xl:grid-cols-[1fr_auto_1fr]">
+    <header class="macaron-header text-[#8a3b12] px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md 2xl:grid 2xl:grid-cols-[1fr_auto_1fr]">
       <div class="flex items-center space-x-2.5 min-w-0 2xl:justify-self-start">
-        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap bg-white/90 text-purple-800 px-3 py-1 rounded-2xl shadow-sm">
+        <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap bg-white/90 text-[#8a3b12] px-3 py-1 rounded-2xl shadow-sm">
           <i class="fa-solid fa-gamepad"></i>
           <span>智慧班級經營-寵物王國<span class="hidden min-[1700px]:inline"> (寶可夢特別版)</span></span>
         </div>
@@ -302,10 +302,10 @@
       </div>
 
       <!-- 中間：即時時間（全班都看得到） -->
-      <div class="flex items-center gap-2 bg-white/90 px-4 py-1 rounded-2xl border-2 border-white font-black text-purple-700 shadow-md text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
+      <div class="flex items-center gap-2 bg-white/90 px-4 py-1 rounded-2xl border-2 border-white font-black text-[#a8481a] shadow-md text-base sm:text-lg whitespace-nowrap 2xl:justify-self-center tabular-nums">
         <i class="fa-solid fa-clock"></i>
         <span>{{ currentDateStr }} {{ currentDayStr }}</span>
-        <span class="text-2xl sm:text-3xl xl:text-4xl text-pink-500 leading-none" style="text-shadow:0 1px 0 #fff">{{ currentTimeStr }}</span>
+        <span class="text-2xl sm:text-3xl xl:text-4xl text-[#d9480f] leading-none" style="text-shadow:0 1px 0 #fff">{{ currentTimeStr }}</span>
       </div>
 
       <!-- 右側：隨機抽籤與頁面切換 -->
@@ -320,7 +320,7 @@
           <button v-for="menu in pages" :key="menu.id" 
                   @click="currentTab = menu.id"
                   :class="['whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
-                          currentTab === menu.id ? 'bg-gradient-to-r from-pink-400 to-purple-500 text-white shadow-md scale-105' : 'text-purple-700 hover:bg-purple-50']">
+                          currentTab === menu.id ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md scale-105' : 'text-[#a8481a] hover:bg-orange-50']">
             <i :class="menu.icon"></i>
             <span>{{ menu.name }}</span>
           </button>
@@ -333,7 +333,7 @@
       
       <!-- 頁面 1：全班學生列表 -->
       <div v-if="currentTab === 'dashboard'" class="space-y-2">
-        <div class="flex flex-wrap justify-between items-center gap-2 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 px-3 py-2 rounded-2xl border border-indigo-100 shadow-xs">
+        <div class="flex flex-wrap justify-between items-center gap-2 bg-gradient-to-r from-orange-50 via-rose-50 to-amber-50 px-3 py-2 rounded-2xl border border-indigo-100 shadow-xs">
           <div class="flex items-center space-x-3">
             <span class="text-xs font-black text-indigo-950 flex items-center gap-1.5">
               <i class="fa-solid fa-crown text-amber-500"></i> 全班名單 (共 {{ filteredStudents.length }} / {{ students.length }} 人)
@@ -1000,7 +1000,7 @@
       <button @click="showProfileModal = false" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
 
       <div v-if="profileStudent" class="space-y-2.5">
-        <div class="flex items-center space-x-3 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-2.5 rounded-2xl border border-indigo-100 relative">
+        <div class="flex items-center space-x-3 bg-gradient-to-r from-orange-50 via-rose-50 to-amber-50 p-2.5 rounded-2xl border border-indigo-100 relative">
           
           <div class="relative">
             <div class="w-14 h-14 rounded-2xl p-1 animal-sphere overflow-hidden shrink-0 relative flex items-center justify-center" :style="getPetBorderStyle(profileStudent)" :class="[getPetBorderClass(getStudentLevelData(profileStudent.score).level, profileStudent), getStudentLevelData(profileStudent.score).level < 1 ? 'animate-egg-wobble' : '']">
