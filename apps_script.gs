@@ -69,6 +69,10 @@ function doGet(e) {
         if (props.getProperty('gridDim') !== dim) {
           range.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
           props.setProperty('gridDim', dim);
+          // 作業名稱欄：自動調寬並換行，輸入較長的名稱也看得到
+          sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), 1).setWrap(true);
+          sh.autoResizeColumn(1);
+          if (sh.getColumnWidth(1) < 170) sh.setColumnWidth(1, 170);
         }
       } catch (x) {}
       const values = range.getValues().map(r => r.map(c => String(c)));
