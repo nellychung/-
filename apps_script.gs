@@ -69,10 +69,26 @@ function doGet(e) {
         if (props.getProperty('gridDim') !== dim) {
           range.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
           props.setProperty('gridDim', dim);
-          // 作業名稱欄：自動調寬並換行，輸入較長的名稱也看得到
-          sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), 1).setWrap(true);
-          sh.autoResizeColumn(1);
-          if (sh.getColumnWidth(1) < 170) sh.setColumnWidth(1, 170);
+        }
+      } catch (x) {}
+      // 作業名稱（A 欄）：依字數與欄寬自動縮放字級，單行顯示，不動欄寬
+      try {
+        const colA = sh.getRange(1, 1, range.getNumRows(), 1);
+        const names = colA.getValues().map(r => String(r[0]));
+        const sig = names.join('|') + '#' + sh.getColumnWidth(1);
+        const props2 = PropertiesService.getScriptProperties();
+        if (props2.getProperty('nameSig') !== sig) {
+          const w = sh.getColumnWidth(1) - 8; // 可用寬度（像素）
+          const sizes = names.map(function (t) {
+            let units = 0;
+            for (const ch of t) units += ch.charCodeAt(0) > 255 ? 1 : 0.55;
+            if (!units) return [10];
+            const pt = Math.floor(w / (units * 1.34)); // 1pt ≈ 1.34px
+            return [Math.max(7, Math.min(14, pt))];
+          });
+          colA.setWrap(false).setHorizontalAlignment('center').setVerticalAlignment('middle');
+          colA.setFontSizes(sizes);
+          props2.setProperty('nameSig', sig);
         }
       } catch (x) {}
       const values = range.getValues().map(r => r.map(c => String(c)));
