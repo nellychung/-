@@ -1574,6 +1574,53 @@ function doPost(e) {
 `;
 
 // 隨機換座位：同組過、隔壁過的盡量不要再同組／同桌，並遵守老師指定的「不要同組／不要同桌」
+// ---------- 多裝置同步：三方合併（base＝上次同步的狀態，local＝這台現在的，remote＝雲端現在的） ----------
+// 分數用「差額」合併：雲端分數 + (這台分數 − 上次同步分數)，平板和教室電腦同時加減都不會互相蓋掉
+function pkMergeStates(base, local, remote) {
+  const J = v => JSON.stringify(v === undefined ? null : v);
+  const clone = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+  const pick = (b, l, r) => (J(l) !== J(b) ? clone(l) : clone(r)); // 這台有改就用這台，否則用雲端
+  const byId = a => { const m = new Map(); (a || []).forEach(x => m.set(x.id, x)); return m; };
+  const mergeObj = (b, l, r) => { // 一層的物件（如 homeworks）逐項合併
+    b = b || {}; l = l || {}; r = r || {};
+    const out = {};
+    new Set([...Object.keys(l), ...Object.keys(r)]).forEach(k => {
+      if (!(k in l) && (k in b)) return;       // 這台刪除
+      if (!(k in r) && (k in b)) return;       // 別台刪除
+      out[k] = pick(b[k], l[k], r[k]);
+    });
+    return out;
+  };
+  const out = {};
+  const keys = ['students', 'homework', 'logs', 'gacha', 'items', 'pets', 'seatPlan'];
+  keys.forEach(k => { out[k] = pick(base && base[k], local[k], remote[k]); });
+  // 學生：逐人逐欄合併
+  const B = byId(base && base.students), L = byId(local.students), R = byId(remote.students);
+  const ids = [];
+  (remote.students || []).forEach(x => ids.push(x.id));
+  (local.students || []).forEach(x => { if (!R.has(x.id)) ids.push(x.id); });
+  out.students = [];
+  ids.forEach(id => {
+    const b = B.get(id), l = L.get(id), r = R.get(id);
+    if (!l) { if (!b && r) out.students.push(clone(r)); return; }   // 這台已刪除
+    if (!r) { if (!b) out.students.push(clone(l)); return; }         // 這台新增 / 別台已刪除
+    const m = {};
+    new Set([...Object.keys(l), ...Object.keys(r)]).forEach(f => {
+      if (f === 'anim') return;
+      if (f === 'score') { m.score = (Number(r.score) || 0) + ((Number(l.score) || 0) - (Number(b ? b.score : l.score) || 0)); return; }
+      if (f === 'homeworks') { m.homeworks = mergeObj(b && b.homeworks, l.homeworks, r.homeworks); return; }
+      const v = pick(b && b[f], l[f], r[f]); if (v !== undefined) m[f] = v;
+    });
+    out.students.push(m);
+  });
+  // 歷程：這台新增的排在最前面，其餘用雲端的
+  const bl = new Set(((base && base.logs) || []).map(J));
+  const fresh = (local.logs || []).filter(x => !bl.has(J(x)));
+  const rl = new Set((remote.logs || []).map(J));
+  out.logs = [...fresh.filter(x => !rl.has(J(x))), ...(remote.logs || [])].slice(0, 200);
+  return out;
+}
+
 function computeSeatShuffle(o) {
   const ids = o.students.map(s => s.id);
   const n = ids.length;
@@ -3886,6 +3933,7 @@ const __app = createApp({
         return;
       }
       this._dirty = true;
+      this._saveSeq = (this._saveSeq || 0) + 1;
       this.syncStatus.isSyncing = true;
       this.syncStatus.text = '同步儲存中...';
       clearTimeout(this._saveTimer);
@@ -3908,13 +3956,27 @@ const __app = createApp({
     async pushToCloud() {
       if (this._pushing) { this._again = true; return; }
       this._pushing = true;
+      const seq = this._saveSeq || 0;
       try {
-        const r = await this.gas('POST', { action: 'save' }, { state: this.snapshotState(), base: this._rev || 0 });
+        let payload = null, baseRev = this._rev || 0;
+        if (this._baseState) {
+          // 先看雲端有沒有別台改過；有的話合併（分數用差額），不會蓋掉別台的加減分
+          const cur = await this.gas('GET', { action: 'load' });
+          baseRev = cur.rev;
+          if (cur.state && cur.rev !== this._rev) {
+            payload = pkMergeStates(this._baseState, this.snapshotState(), cur.state);
+            this.applyRemoteState(payload, true);
+          }
+        }
+        if (!payload) payload = this.snapshotState();
+        const r = await this.gas('POST', { action: 'save' }, { state: payload, base: baseRev });
         this._rev = r.rev;
-        this._dirty = false;
+        this._baseState = JSON.parse(JSON.stringify(payload));
+        if ((this._saveSeq || 0) === seq) this._dirty = false;
         this.syncStatus.text = '已同步至雲端 ' + new Date().toLocaleTimeString('zh-TW', { hour12: false });
       } catch (e) {
         this.syncStatus.text = '雲端儲存失敗：' + (e.message || '網路錯誤');
+        this._saveTimer = setTimeout(() => this.pushToCloud(), 5000);
       } finally {
         this._pushing = false;
         this.syncStatus.isSyncing = false;
@@ -3951,6 +4013,7 @@ const __app = createApp({
       try {
         const r = await this.gas('GET', { action: 'load' });
         if (r.state && (first || r.rev !== this._rev)) {
+          this._baseState = JSON.parse(JSON.stringify(r.state));
           this.applyRemoteState(r.state, !first);
           if (this._tokNew && !first) { this._tokNew = false; this.saveData(); }
         } else if (!r.state && first) {
@@ -3981,6 +4044,7 @@ const __app = createApp({
       }
       this.syncStatus.text = '連線雲端中…';
       await this.pullFromCloud(true);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') this.pullFromCloud(false); });
       // 每 4 秒問一次「雲端有沒有新資料」（很輕量），有更新才下載；舊版後端不支援時退回每 60 秒一次
       setInterval(async () => {
         if (document.visibilityState !== 'visible' || this._polling) return;
