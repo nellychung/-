@@ -18,7 +18,7 @@ function fit_(sh, title) {
   let units = 0;
   for (const ch of String(title)) units += ch.charCodeAt(0) > 255 ? 1 : 0.55;
   if (!units) return 12;
-  return Math.max(8, Math.min(14, Math.floor((sh.getColumnWidth(1) - 20) / (units * 1.6))));
+  return Math.max(8, Math.min(14, Math.floor((sh.getColumnWidth(1) - 10) / (units * 1.9))));
 }
 
 function lastRow_(sh) {

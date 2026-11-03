@@ -78,16 +78,17 @@ function doGet(e) {
         const sig = names.join('|') + '#' + sh.getColumnWidth(1);
         const props2 = PropertiesService.getScriptProperties();
         if (props2.getProperty('nameSig') !== sig) {
-          const w = sh.getColumnWidth(1) - 20; // 可用寬度（像素）
+          const w = sh.getColumnWidth(1) - 10; // 可用寬度（像素）
           const sizes = names.map(function (t) {
             let units = 0;
             for (const ch of t) units += ch.charCodeAt(0) > 255 ? 1 : 0.55;
             if (!units) return [10];
-            const pt = Math.floor(w / (units * 1.6));
+            const pt = Math.floor(w / (units * 1.9));
             return [Math.max(7, Math.min(14, pt))];
           });
           colA.setWrap(false).setHorizontalAlignment('center').setVerticalAlignment('middle');
           colA.setFontSizes(sizes);
+          sh.setRowHeights(2, Math.max(range.getNumRows() - 1, 1), 21);
           props2.setProperty('nameSig', sig);
         }
       } catch (x) {}

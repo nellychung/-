@@ -15,16 +15,17 @@ function formatSheet() {
   if (props.getProperty('fmtSig') === sig) return; // 沒有變動就不做事
   range.setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
   if (rows > 1) {
-    const w = sh.getColumnWidth(1) - 20;
+    const w = sh.getColumnWidth(1) - 10;
     const sizes = names.slice(1).map(function (t) {
       let units = 0;
       for (const ch of t) units += ch.charCodeAt(0) > 255 ? 1 : 0.55;
       if (!units) return [12];
-      return [Math.max(8, Math.min(14, Math.floor(w / (units * 1.6))))];
+      return [Math.max(8, Math.min(14, Math.floor(w / (units * 1.9))))];
     });
     const colA = sh.getRange(2, 1, rows - 1, 1);
     colA.setWrap(false).setHorizontalAlignment('center').setVerticalAlignment('middle');
     colA.setFontSizes(sizes);
+    sh.setRowHeights(2, rows - 1, 21); // 作業列維持一行高，不會因換行變高
   }
   props.setProperty('fmtSig', sig);
 }
