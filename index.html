@@ -2771,23 +2771,39 @@ const __app = createApp({
   methods: {
     // ---------- 家長專屬頁面 ----------
     async loadParent() {
+      if (this._parentLoading) return;
+      this._parentLoading = true;
       const q = new URLSearchParams(location.search);
       const t = q.get('p') || '', e = q.get('e') || '';
+      let invalid = 0;
       try {
-        if (!t || !e) throw new Error('bad');
+        if (!t || !e) { this.parentState.error = '這個連結不完整，請向老師索取新的連結。'; return; }
         const url = e + (e.includes('?') ? '&' : '?') + new URLSearchParams({ action: 'parent', t }).toString();
-        const res = await fetch(url);
-        const j = await res.json();
-        if (!j || j.error || !j.student) throw new Error('bad');
-        this.presetAvatars = [...(j.pets || []), ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
-        this.parentState.child = j.student;
-        this.parentState.top = !!j.top;
-        this.parentState.homework = j.homework || [];
-        this.parentState.error = '';
-        this.parentState.updated = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-      } catch (err) {
-        if (!this.parentState.child) this.parentState.error = '這個連結無法使用，可能已被停用或網路不穩，請稍後再試，或向老師索取新的連結。';
-      }
+        // Google 的服務偶爾會慢或暫時失敗：自動重試，最多 6 次，讀到之前的資料就先保留畫面
+        for (let i = 0; i < 6; i++) {
+          try {
+            const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timer = ctl ? setTimeout(() => ctl.abort(), 15000) : null;
+            const res = await fetch(url, ctl ? { signal: ctl.signal } : {});
+            if (timer) clearTimeout(timer);
+            const j = await res.json();
+            if (j && j.student) {
+              this.presetAvatars = [...(j.pets || []), ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
+              this.parentState.child = j.student;
+              this.parentState.top = !!j.top;
+              this.parentState.homework = j.homework || [];
+              this.parentState.error = '';
+              this.parentState.updated = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+              return;
+            }
+            if (j && j.error === 'invalid' && ++invalid >= 2) break;   // 連結本身不對，不用一直重試
+          } catch (err) { /* 網路或伺服器暫時失敗，稍後重試 */ }
+          await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+        }
+        if (!this.parentState.child) this.parentState.error = invalid >= 2
+          ? '這個連結無法使用，可能已被停用，請向老師索取新的連結。'
+          : '目前連線不穩，請稍後重新整理頁面再試一次。';
+      } finally { this._parentLoading = false; }
     },
     parentEvos() {
       const c = this.parentState.child;

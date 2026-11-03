@@ -16,9 +16,19 @@ function file_() {
 function parent_(t) {
   t = String(t || '');
   if (t.length < 16) return out_({ error: 'invalid' });
-  const f = file_();
-  if (!f) return out_({ error: 'invalid' });
-  const st = (JSON.parse(f.getBlob().getDataAsString()).state) || {};
+  // 家長頁面常被同時開啟：結果暫存 20 秒，減少讀取雲端硬碟的次數，也比較不會偶爾失敗
+  const cache = CacheService.getScriptCache();
+  const ck = 'p_' + t;
+  try { const hit = cache.get(ck); if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON); } catch (x) {}
+  let st = null;
+  for (let i = 0; i < 3 && !st; i++) {          // 剛好遇到老師端存檔、讀到一半時，稍等再讀
+    try {
+      const f = file_();
+      if (!f) break;
+      st = (JSON.parse(f.getBlob().getDataAsString()).state) || {};
+    } catch (e) { Utilities.sleep(400); }
+  }
+  if (!st) return out_({ error: 'busy' });
   const kid = (st.students || []).find(s => s.token && s.token === t);
   if (!kid) return out_({ error: 'invalid' });
   const hw = (st.homework || []).map(h => ({
@@ -29,12 +39,14 @@ function parent_(t) {
   // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
   const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
   const top = maxScore > 0 && Number(kid.score) === maxScore;
-  return out_({
+  const body = JSON.stringify({
     top: top,
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
     pets: pets
   });
+  try { cache.put(ck, body, 20); } catch (x) {}
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e) {
