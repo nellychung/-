@@ -510,9 +510,8 @@
           <div class="text-center"><span class="inline-block px-8 rounded-b-xl bg-slate-200 text-slate-500 text-[10px] font-black tracking-widest">講　台</span></div>
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
-              <button v-if="stu" @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-0.5 text-left leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
-                <div class="flex items-center justify-between gap-1 min-w-0"><span class="text-lg leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 flex-none">{{ stu.score }}</span></div>
-                <div class="min-h-[1rem]"><span class="text-[11px] font-black truncate block">{{ arriveText(stu) }}</span></div>
+              <button v-if="stu" @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
+                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black truncate block max-w-full min-h-[0.9rem]">{{ arriveText(stu) }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
@@ -572,10 +571,9 @@
           <div class="text-center"><span class="inline-block px-8 rounded-b-xl bg-slate-200 text-slate-500 text-[10px] font-black tracking-widest">講　台</span></div>
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
-              <button v-if="stu" @click="brushTap(stu)" class="rounded-xl border-2 px-1 py-0.5 text-left leading-tight transition active:scale-95 min-w-0"
+              <button v-if="stu" @click="brushTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0"
                       :class="dayRec.brush[stu.id] ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
-                <div class="flex items-center justify-between gap-1 min-w-0"><span class="text-lg leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 flex-none">{{ stu.score }}</span></div>
-                <div class="min-h-[1rem]"><span class="text-[11px] font-black block">{{ dayRec.brush[stu.id] ? '🪥 +1' : '' }}</span></div>
+                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ dayRec.brush[stu.id] ? '🪥 +1' : '' }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
