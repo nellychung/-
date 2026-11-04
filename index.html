@@ -171,6 +171,8 @@
     .fa-cloud-check::before{content:"☁"}
     .fa-clock-rotate-left::before{content:"🕘"}
     .fa-clock::before{content:"🕒"}
+    .fa-sun::before{content:"🌅"}
+    .fa-utensils::before{content:"🍱"}
     .fa-boxes-stacked::before{content:"📦"}
     .fa-book-bookmark::before{content:"🔖"}
     .fa-address-card::before{content:"🪪"}
@@ -212,6 +214,12 @@
     /* 寬螢幕（每排 10 人、共 3 排）：寵物大小跟著視窗高度，盡量放大又不用往下捲 */
     @media (min-width:1050px){:root{--ps:clamp(3.6rem,min(7.4vw,calc((100vh - 470px) / 3)),12rem)}}
     .pet-wrap{position:relative;width:var(--ps);margin:5px auto}
+    /* 早自修：黑板聯絡簿 */
+    .cl-board{background:linear-gradient(135deg,#2f5d50,#265044);border:10px solid #b08968;border-radius:1.25rem;box-shadow:inset 0 0 30px rgba(0,0,0,.35),0 4px 14px rgba(0,0,0,.25)}
+    .cl-cell{width:100%;aspect-ratio:1/1;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;text-align:center;font-weight:700;font-size:clamp(1.3rem,3vw,3.2rem);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;outline:none;padding:0;min-width:0}
+    .cl-cell:focus{background:rgba(255,255,255,.16);border-color:#fde68a}
+    .cl-date{writing-mode:vertical-rl;text-orientation:upright;color:#fde68a;font-weight:900;letter-spacing:.12em;font-size:clamp(1.1rem,2.4vw,2.4rem);white-space:nowrap}
+    .tm-ring{animation:tmBlink .6s ease-in-out infinite alternate}@keyframes tmBlink{to{background:#fee2e2}}
     .pet-wrap-sm{position:relative;width:2.5rem;height:2.5rem}
     .pet-orbit{position:absolute;inset:0;pointer-events:none;animation:orbitIn 2s ease-out both, orbitSpin 12s linear infinite}
     .pet-orbit-dot{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateY(calc(var(--r) * -1))}
@@ -282,6 +290,14 @@
         </div>
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">目前沒有作業項目</div>
       </div>
+      <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
+        <div class="text-sm font-black text-sky-800">🌅 今天到校</div>
+        <div class="text-lg font-black" :class="parentState.today.leave ? 'text-slate-600' : (parentState.today.arrive ? 'text-emerald-600' : 'text-slate-400')">
+          <template v-if="parentState.today.leave">請假（{{ parentState.today.leave }}）</template>
+          <template v-else-if="parentState.today.arrive">{{ parentState.today.arrive }} 到校</template>
+          <template v-else>今天還沒有紀錄</template>
+        </div>
+      </div>
       <div class="text-center text-[11px] font-bold text-slate-400">資料每分鐘自動更新 · 更新於 {{ parentState.updated }}</div>
     </template>
   </div>
@@ -316,8 +332,8 @@
       </div>
 
       <!-- 右側：隨機抽籤與頁面切換 -->
-      <div class="flex items-center space-x-2 flex-nowrap 2xl:justify-self-end">
-        <nav class="flex flex-nowrap items-center gap-1 bg-white/90 p-1 rounded-2xl border-2 border-white shadow-sm">
+      <div class="flex items-center space-x-2 flex-wrap min-[1500px]:flex-nowrap 2xl:justify-self-end">
+        <nav class="flex flex-wrap min-[1500px]:flex-nowrap items-center justify-center gap-1 bg-white/90 p-1 rounded-2xl border-2 border-white shadow-sm">
           <button v-for="menu in pages" :key="menu.id" 
                   @click="currentTab = menu.id"
                   :class="['whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
@@ -477,6 +493,136 @@
 
       <!-- 頁面 2：作業管理頁面 -->
       <!-- 座位表 -->
+      <!-- 頁面：早自修 -->
+      <div v-if="currentTab === 'morning'" class="grid gap-2 lg:grid-cols-[minmax(300px,36%)_1fr] items-start">
+        <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-orange-50 rounded-2xl px-2.5 py-1.5">
+            <span class="text-sm font-black text-[#8a3b12]">🌅 到校 {{ arrivedCount }} / {{ students.length }}</span>
+            <label class="flex items-center gap-1 text-[11px] font-black text-slate-600">遲到時間
+              <input type="time" v-model="daily.settings.lateTime" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" /></label>
+            <button @click="openLeave" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">🙋 請假</button>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button v-for="st in seatList" :key="st.id" @click="arriveTap(st)" class="relative rounded-2xl border-2 px-1 py-1 text-center transition active:scale-95" :class="arriveClass(st)">
+              <div class="flex items-center justify-between leading-none">
+                <span class="text-xl font-black">{{ st.seatNumber }}</span>
+                <span class="text-[10px] font-black bg-white/90 text-amber-700 border border-amber-200 px-1 rounded-full">{{ st.score }}</span>
+              </div>
+              <div class="text-[11px] font-bold truncate">{{ st.name }}</div>
+              <div class="text-xs font-black leading-tight min-h-[1rem]">{{ arriveText(st) }}</div>
+            </button>
+          </div>
+          <div class="text-[10px] font-bold text-slate-400 px-1">點座號＝記下現在時間；準時到校 +1 分，遲到（紅色）不加分。再點一次可修改時間或取消。</div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2 bg-white/90 rounded-2xl border border-orange-200 px-3 py-1.5">
+            <button @click="setBoardMode('board')" class="px-3 py-1 rounded-xl text-xs font-black" :class="daily.settings.boardMode !== 'photo' ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow' : 'bg-white text-[#a8481a] border border-orange-200'">📋 黑板聯絡簿</button>
+            <button @click="setBoardMode('photo')" class="px-3 py-1 rounded-xl text-xs font-black" :class="daily.settings.boardMode === 'photo' ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow' : 'bg-white text-[#a8481a] border border-orange-200'">🖼 照片</button>
+            <template v-if="daily.settings.boardMode !== 'photo'">
+              <button @click="openBatch" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">✏️ 整段輸入</button>
+              <button @click="clearBoard" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 text-[11px] font-black">清空</button>
+              <button @click="boardDateEdit = !boardDateEdit" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 text-[11px] font-black">📅 日期</button>
+              <span v-if="boardDateEdit" class="flex items-center gap-1">
+                <input v-model="daily.settings.boardDate" @change="saveDaily" :placeholder="boardDateText" class="px-2 py-0.5 rounded-lg border border-orange-200 text-xs font-bold w-56" />
+                <button @click="daily.settings.boardDate = ''; saveDaily()" class="px-2 py-0.5 rounded-lg bg-orange-100 text-[11px] font-black text-[#a8481a]">自動</button>
+              </span>
+            </template>
+            <template v-else>
+              <label class="px-3 py-1 rounded-xl bg-sky-500 text-white text-xs font-black cursor-pointer shadow-sm">📷 選擇照片<input type="file" accept="image/*" class="hidden" @change="pickBoardPhoto" /></label>
+              <button v-if="boardPhoto" @click="removeBoardPhoto" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 text-[11px] font-black">移除照片</button>
+              <span class="text-[11px] font-bold text-slate-500">{{ photoMsg }}</span>
+            </template>
+          </div>
+
+          <div v-if="daily.settings.boardMode !== 'photo'" class="cl-board p-3 flex gap-3 items-stretch justify-center">
+            <div class="grid grid-cols-7 flex-none" style="width:min(calc(100% - 4.5rem), calc((100vh - 270px) * 7 / 6))">
+              <template v-for="i in 42" :key="i">
+                <input :id="'bc' + (i - 1)" class="cl-cell" :value="boardCell(i - 1)" autocomplete="off"
+                       @focus="focusCell($event)" @compositionstart="onCompStart" @compositionend="onCellComposeEnd($event, i - 1)"
+                       @input="onCellInput($event, i - 1)" @keydown.backspace="onCellBackspace($event, i - 1)" />
+              </template>
+            </div>
+            <div class="cl-date flex-none self-start pt-1">{{ boardDateText }}</div>
+          </div>
+          <div v-else class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 flex items-center justify-center" style="min-height:40vh">
+            <img v-if="boardPhoto" :src="boardPhoto" class="max-w-full object-contain rounded-2xl" style="max-height:calc(100vh - 250px)" />
+            <label v-else class="cursor-pointer text-center text-slate-400 font-black p-10 border-4 border-dashed border-orange-200 rounded-3xl">📷 點這裡選擇一張照片<input type="file" accept="image/*" class="hidden" @change="pickBoardPhoto" /></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 頁面：午餐 -->
+      <div v-if="currentTab === 'lunch'" class="grid gap-2 lg:grid-cols-[minmax(280px,30%)_1fr] items-start">
+        <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-2">
+          <div class="bg-orange-50 rounded-2xl px-2.5 py-1.5 text-sm font-black text-[#8a3b12]">🪥 刷牙 {{ Object.keys(dayRec.brush).length }} / {{ students.length }}</div>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button v-for="st in seatList" :key="st.id" @click="brushTap(st)" class="rounded-2xl border-2 px-1 py-1 text-center transition active:scale-95"
+                    :class="dayRec.brush[st.id] ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
+              <div class="flex items-center justify-between leading-none">
+                <span class="text-xl font-black">{{ st.seatNumber }}</span>
+                <span class="text-[10px] font-black bg-white/90 text-amber-700 border border-amber-200 px-1 rounded-full">{{ st.score }}</span>
+              </div>
+              <div class="text-[11px] font-bold truncate">{{ st.name }}</div>
+              <div class="text-xs font-black leading-tight min-h-[1rem]">{{ dayRec.brush[st.id] ? '🪥 +1' : '' }}</div>
+            </button>
+          </div>
+          <div class="text-[10px] font-bold text-slate-400 px-1">刷得好才點，+1 分；刷不好再點一次就扣回來。</div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2 bg-white/90 rounded-2xl border border-orange-200 px-3 py-1.5 text-[11px] font-black text-slate-600">
+            <label class="flex items-center gap-1 flex-1 min-w-[220px]">▶ YouTube 網址
+              <input v-model="daily.settings.videoUrl" @change="saveDaily" placeholder="貼上影片或播放清單網址" class="flex-1 px-2 py-1 rounded-lg border border-orange-200 bg-white text-xs font-bold min-w-0" /></label>
+            <label class="flex items-center gap-1">開始時間
+              <input type="time" v-model="daily.settings.lunchTime" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" /></label>
+            <button @click="playLunchNow" class="px-3 py-1 rounded-xl bg-gradient-to-r from-orange-400 to-rose-400 text-white font-black shadow-sm">▶ 現在播放</button>
+            <button @click="stopLunch" class="px-3 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 font-black">⏹ 停止</button>
+            <button @click="toggleLunchAuto" class="px-3 py-1 rounded-xl font-black border" :class="lunchAuto ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-white text-[#a8481a] border-orange-200'">{{ lunchAuto ? '✓ 這台會自動播放' : '啟用這台自動播放' }}</button>
+          </div>
+          <div class="bg-black rounded-3xl overflow-hidden shadow-lg relative" style="aspect-ratio:16/9;max-height:calc(100vh - 380px);width:min(100%, calc((100vh - 380px) * 16 / 9));margin:0 auto">
+            <iframe v-if="lunchPlaying && lunchEmbed" :src="lunchEmbed" class="absolute inset-0 w-full h-full" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe>
+            <button v-else @click="playLunchNow" class="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-2 text-white font-black"
+                    :style="lunchThumb ? { backgroundImage: 'url(' + lunchThumb + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : { background: '#1f2937' }">
+              <span class="bg-black/55 rounded-3xl px-6 py-3 text-center">
+                <span class="block text-5xl">▶</span>
+                <span class="block text-sm mt-1">{{ lunchEmbed ? ('點一下播放（' + (daily.settings.lunchTime || '12:30') + ' 自動開始）') : '請先貼上 YouTube 網址' }}</span>
+              </span>
+            </button>
+          </div>
+
+          <div class="grid gap-2 md:grid-cols-[auto_1fr_1fr] items-stretch">
+            <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 flex flex-col items-center justify-center">
+              <svg viewBox="0 0 200 200" style="width:clamp(150px,17vw,230px);height:auto">
+                <circle cx="100" cy="100" r="97" fill="#fffaf0" stroke="#fb923c" stroke-width="5" />
+                <line v-for="t in clockTicks" :key="t.i" :x1="t.x1" :y1="t.y1" :x2="t.x2" :y2="t.y2" :stroke="t.major ? '#7c2d12' : '#d6a77a'" :stroke-width="t.major ? 3 : 1" stroke-linecap="round" />
+                <text v-for="c in clockNums" :key="c.n" :x="c.x" :y="c.y" text-anchor="middle" font-size="17" font-weight="900" fill="#7c2d12">{{ c.n }}</text>
+                <line x1="100" y1="100" x2="100" y2="58" stroke="#7c2d12" stroke-width="7" stroke-linecap="round" :transform="'rotate(' + analog.h + ' 100 100)'" />
+                <line x1="100" y1="100" x2="100" y2="30" stroke="#a8481a" stroke-width="5" stroke-linecap="round" :transform="'rotate(' + analog.m + ' 100 100)'" />
+                <line x1="100" y1="116" x2="100" y2="22" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" :transform="'rotate(' + analog.s + ' 100 100)'" />
+                <circle cx="100" cy="100" r="6" fill="#e11d48" />
+              </svg>
+              <div class="text-2xl font-black text-[#d9480f] tabular-nums leading-none mt-1">{{ currentTimeStr }}</div>
+            </div>
+            <div v-for="tm in [{ k: 'gargle', label: '💧 漱口' }, { k: 'brush', label: '🪥 刷牙' }]" :key="tm.k"
+                 class="bg-white/90 rounded-3xl border-2 p-2 flex flex-col items-center justify-center gap-1" :class="timers[tm.k].running && timers[tm.k].left <= 10 ? 'tm-ring border-rose-400' : 'border-orange-200'">
+              <div class="flex items-center gap-1 text-sm font-black text-[#8a3b12]">{{ tm.label }}
+                <input type="number" min="0.5" max="60" step="0.5" :value="(daily.settings[tm.k + 'Sec'] || 60) / 60" @change="setTimerMin(tm.k, $event.target.value)" class="w-14 px-1 py-0.5 text-center rounded-lg border border-orange-200 bg-white font-black text-xs" /> 分鐘</div>
+              <div class="font-black tabular-nums leading-none" :class="timers[tm.k].running && timers[tm.k].left <= 10 ? 'text-rose-600' : 'text-[#d9480f]'" style="font-size:clamp(2.6rem,5vw,4.6rem)">{{ fmtTimer(timers[tm.k].left) }}</div>
+              <div class="flex gap-1.5">
+                <button v-if="!timers[tm.k].running" @click="startTimer(tm.k)" class="px-4 py-1.5 rounded-xl bg-emerald-500 text-white font-black text-sm shadow-sm">▶ 開始</button>
+                <button v-else @click="pauseTimer(tm.k)" class="px-4 py-1.5 rounded-xl bg-amber-400 text-slate-900 font-black text-sm shadow-sm">⏸ 暫停</button>
+                <button @click="resetTimer(tm.k)" class="px-3 py-1.5 rounded-xl bg-white text-slate-500 border border-slate-200 font-black text-sm">重設</button>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400 px-1">
+            <button @click="ding" class="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-500 font-black">🔔 試聽叮咚</button>
+            <span>影片若顯示「無法播放」，是上傳者不允許嵌入，請換一支影片。</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="currentTab === 'seatMap'" class="space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2 bg-gradient-to-r from-orange-50 via-rose-50 to-amber-50 px-3 py-2 rounded-2xl border border-orange-100">
           <div class="flex items-center gap-2 flex-wrap">
@@ -1037,6 +1183,52 @@
 
   <!-- 確認與提示視窗：搬到 body 底部，固定浮在畫面最下方（不受頁面捲動影響） -->
   <teleport to="body">
+
+    <div v-if="arriveSheet" class="fixed inset-0 z-[280] bg-black/45 flex items-end justify-center px-3 pb-3 sm:pb-6" @click.self="arriveSheet = null">
+      <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-emerald-300 p-4 space-y-3">
+        <div class="text-lg font-black text-slate-800 text-center">{{ arriveSheet.seatNumber }} 號 {{ arriveSheet.name }}　到校 {{ dayRec.arrive[arriveSheet.id] ? String(dayRec.arrive[arriveSheet.id].t).slice(0, 5) : '' }}</div>
+        <div class="flex items-center justify-center gap-2">
+          <span class="font-black text-slate-600 text-sm">修改時間</span>
+          <input type="time" v-model="timeEdit" class="px-3 py-2 rounded-xl border-2 border-emerald-200 font-black text-lg" />
+          <button @click="saveArriveTime(arriveSheet)" class="px-5 py-2 rounded-xl bg-emerald-500 text-white font-black text-lg">儲存</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button @click="arriveSheet = null" class="py-3 rounded-2xl bg-slate-200 text-slate-700 font-black text-lg">關閉</button>
+          <button @click="cancelArrive(arriveSheet)" class="py-3 rounded-2xl bg-rose-500 text-white font-black text-lg">取消到校（扣回分數）</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="leaveDlg.show" class="fixed inset-0 z-[280] bg-black/45 flex items-end sm:items-center justify-center px-3 pb-3" @click.self="leaveDlg.show = false">
+      <div class="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border-4 border-orange-300 p-4 space-y-3">
+        <div class="flex items-center justify-between"><h3 class="text-lg font-black text-[#8a3b12]">🙋 登記請假</h3><button @click="leaveDlg.show = false" class="text-slate-400 text-xl font-black px-2">✕</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-2">
+          <select v-model="leaveDlg.sid" class="px-3 py-2 rounded-xl border-2 border-orange-200 bg-white font-black">
+            <option value="">選擇座號…</option>
+            <option v-for="st in seatList" :key="st.id" :value="st.id">{{ st.seatNumber }} 號 {{ st.name }}</option>
+          </select>
+          <select v-model="leaveDlg.reason" class="px-3 py-2 rounded-xl border-2 border-orange-200 bg-white font-black">
+            <option v-for="r in ['病假', '事假', '公假', '喪假', '生理假', '其他']" :key="r" :value="r">{{ r }}</option>
+          </select>
+        </div>
+        <input v-model="leaveDlg.custom" placeholder="或自己輸入原因（會取代上面的選項）" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 font-bold text-sm" />
+        <button @click="confirmLeave" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black text-lg shadow">登記請假</button>
+        <div v-if="leaveList.length" class="space-y-1">
+          <div class="text-xs font-black text-slate-500">今天請假的同學（家長頁面會顯示請假）</div>
+          <div v-for="st in leaveList" :key="st.id" class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-black">
+            <span>{{ st.seatNumber }} 號 {{ st.name }}　<span class="text-slate-500">{{ dayRec.leave[st.id] }}</span></span>
+            <button @click="removeLeave(st.id)" class="px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-600">取消請假</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="batchDlg.show" class="fixed inset-0 z-[280] bg-black/45 flex items-end sm:items-center justify-center px-3 pb-3" @click.self="batchDlg.show = false">
+      <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border-4 border-orange-300 p-4 space-y-3">
+        <div class="flex items-center justify-between"><h3 class="text-lg font-black text-[#8a3b12]">✏️ 整段輸入聯絡簿</h3><button @click="batchDlg.show = false" class="text-slate-400 text-xl font-black px-2">✕</button></div>
+        <p class="text-xs font-bold text-slate-500">一行就是黑板上的一行（每行最多 7 個字，超過會接到下一行），最多 6 行。可以打國字或注音符號。</p>
+        <textarea v-model="batchDlg.text" rows="7" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 font-black text-lg" style="letter-spacing:.2em"></textarea>
+        <button @click="applyBatch" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black text-lg shadow">放到黑板上</button>
+      </div>
+    </div>
     <div v-if="confirmState.show" class="fixed inset-0 z-[300] bg-black/45 flex items-end justify-center px-3 pb-3 sm:pb-6" @click.self="answerConfirm(false)">
       <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-amber-300 p-4 sm:p-5 space-y-3">
         <div class="text-lg sm:text-xl font-black text-slate-800 text-center" style="white-space:pre-line">{{ confirmState.msg }}</div>
@@ -1574,6 +1766,32 @@ function doPost(e) {
 `;
 
 // 隨機換座位：同組過、隔壁過的盡量不要再同組／同桌，並遵守老師指定的「不要同組／不要同桌」
+// ---------- 早自修／午餐 資料 ----------
+function pkTodayKey() { const n = new Date(), p = x => String(x).padStart(2, '0'); return n.getFullYear() + '-' + p(n.getMonth() + 1) + '-' + p(n.getDate()); }
+function pkDailyDefaults() {
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', photoRev: 0 }, days: {} };
+}
+function pkNormDaily(d) {
+  const b = pkDailyDefaults();
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return b;
+  return { settings: { ...b.settings, ...(d.settings || {}) }, days: (d.days && typeof d.days === 'object') ? d.days : {} };
+}
+function pkYT(u) {
+  u = String(u || '').trim();
+  if (!u) return null;
+  try {
+    const x = new URL(u);
+    const list = x.searchParams.get('list') || '';
+    let id = x.searchParams.get('v') || '';
+    if (!id && /(^|\.)youtu\.be$/.test(x.hostname)) id = x.pathname.slice(1);
+    if (!id) { const m = x.pathname.match(/\/(embed|shorts|live)\/([\w-]{6,})/); if (m) id = m[2]; }
+    if (id && /^[\w-]{6,}$/.test(id)) return { id, list };
+    if (list) return { id: '', list };
+  } catch (e) {}
+  if (/^[\w-]{11}$/.test(u)) return { id: u, list: '' };
+  return null;
+}
+
 // ---------- 多裝置同步：三方合併（base＝上次同步的狀態，local＝這台現在的，remote＝雲端現在的） ----------
 // 分數用「差額」合併：雲端分數 + (這台分數 − 上次同步分數)，平板和教室電腦同時加減都不會互相蓋掉
 function pkMergeStates(base, local, remote) {
@@ -1594,6 +1812,21 @@ function pkMergeStates(base, local, remote) {
   const out = {};
   const keys = ['students', 'homework', 'logs', 'gacha', 'items', 'pets', 'seatPlan'];
   keys.forEach(k => { out[k] = pick(base && base[k], local[k], remote[k]); });
+  // 早自修／午餐資料：逐層逐項合併（兩台同時點不同學生都會保留）
+  const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+  const mergeDeep = (b, l, r) => {
+    if (!isObj(l) || !isObj(r)) return pick(b, l, r);
+    b = isObj(b) ? b : {};
+    const o = {};
+    new Set([...Object.keys(l), ...Object.keys(r)]).forEach(k => {
+      const inL = k in l, inR = k in r, inB = k in b;
+      if (!inL && inB) return;
+      if (!inR && inB) return;
+      o[k] = (inL && inR) ? mergeDeep(b[k], l[k], r[k]) : clone(inL ? l[k] : r[k]);
+    });
+    return o;
+  };
+  if (local.daily || remote.daily) out.daily = (isObj(local.daily) && isObj(remote.daily)) ? mergeDeep(base && base.daily, local.daily, remote.daily) : clone(local.daily || remote.daily);
   // 學生：逐人逐欄合併
   const B = byId(base && base.students), L = byId(local.students), R = byId(remote.students);
   const ids = [];
@@ -2595,13 +2828,28 @@ const __app = createApp({
       currentTimeStr: '',
 
       pages: [
-        { id: 'dashboard', name: '全班主頁', icon: 'fa-solid fa-house' },
-        { id: 'homework', name: '作業管理', icon: 'fa-solid fa-book-open' },
-        { id: 'cardMarket', name: '卡片中心', icon: 'fa-solid fa-arrows-rotate' },
-        { id: 'addStudent', name: '名單與設定', icon: 'fa-solid fa-user-plus' },
+        { id: 'dashboard', name: '主頁', icon: 'fa-solid fa-house' },
+        { id: 'homework', name: '作業', icon: 'fa-solid fa-book-open' },
+        { id: 'morning', name: '早自修', icon: 'fa-solid fa-sun' },
+        { id: 'lunch', name: '午餐', icon: 'fa-solid fa-utensils' },
+        { id: 'cardMarket', name: '卡片', icon: 'fa-solid fa-arrows-rotate' },
+        { id: 'addStudent', name: '名單設定', icon: 'fa-solid fa-user-plus' },
         { id: 'seatMap', name: '座位表', icon: 'fa-solid fa-chair' },
-        { id: 'logs', name: '歷程備份', icon: 'fa-solid fa-clock-rotate-left' }
+        { id: 'logs', name: '歷程', icon: 'fa-solid fa-clock-rotate-left' }
       ],
+      daily: pkDailyDefaults(),
+      todayK: pkTodayKey(),
+      clockTs: Date.now(),
+      arriveSheet: null,
+      timeEdit: '',
+      leaveDlg: { show: false, sid: '', reason: '病假', custom: '' },
+      batchDlg: { show: false, text: '' },
+      boardDateEdit: false,
+      boardPhoto: '',
+      photoMsg: '',
+      lunchPlaying: false,
+      lunchAuto: (() => { try { return localStorage.getItem('pk_lunchAuto') === '1'; } catch (e) { return false; } })(),
+      timers: { gargle: { left: 60, running: false, endAt: 0 }, brush: { left: 180, running: false, endAt: 0 } },
 
       syncStatus: { isSyncing: false, text: '連線中…' },
       cloudReady: false,
@@ -2617,7 +2865,7 @@ const __app = createApp({
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { child: null, top: false, homework: [], error: '', updated: '' },
+      parentState: { child: null, top: false, homework: [], today: { arrive: '', leave: '' }, error: '', updated: '' },
       students: [],
       homeworkList: [],
       logs: [],
@@ -2698,6 +2946,36 @@ const __app = createApp({
   },
 
   computed: {
+    seatList() { return [...this.students].sort((a, b) => a.seatNumber - b.seatNumber); },
+    dayRec() { const r = this.daily.days[this.todayK] || {}; return { arrive: r.arrive || {}, leave: r.leave || {}, brush: r.brush || {} }; },
+    arrivedCount() { return Object.keys(this.dayRec.arrive).length; },
+    leaveList() { return this.seatList.filter(st => this.dayRec.leave[st.id]); },
+    boardDateText() {
+      const m = this.daily.settings.boardDate;
+      if (m) return m;
+      const d = new Date(this.clockTs);
+      return '民國' + (d.getFullYear() - 1911) + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日星期' + '日一二三四五六'[d.getDay()];
+    },
+    lunchEmbed() {
+      const v = pkYT(this.daily.settings.videoUrl);
+      if (!v) return '';
+      if (v.id) return 'https://www.youtube.com/embed/' + v.id + '?autoplay=1&rel=0&playsinline=1' + (v.list ? '&list=' + encodeURIComponent(v.list) : '');
+      return 'https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(v.list) + '&autoplay=1&rel=0';
+    },
+    lunchThumb() { const v = pkYT(this.daily.settings.videoUrl); return v && v.id ? 'https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg' : ''; },
+    analog() {
+      const d = new Date(this.clockTs), s = d.getSeconds(), m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60;
+      return { s: s * 6, m: m * 6, h: h * 30 };
+    },
+    clockTicks() {
+      const a = [];
+      for (let i = 0; i < 60; i++) {
+        const r = i % 5 === 0 ? 84 : 89, ang = i * 6 * Math.PI / 180;
+        a.push({ i, major: i % 5 === 0, x1: 100 + 94 * Math.sin(ang), y1: 100 - 94 * Math.cos(ang), x2: 100 + r * Math.sin(ang), y2: 100 - r * Math.cos(ang) });
+      }
+      return a;
+    },
+    clockNums() { return Array.from({ length: 12 }, (_, k) => { const n = k + 1, ang = n * 30 * Math.PI / 180; return { n, x: 100 + 70 * Math.sin(ang), y: 100 - 70 * Math.cos(ang) + 6 }; }); },
     // 座位表：index = 第幾排 × 每排人數 + 第幾個
     hasSuggest() { return (this.students || []).some(st => st.suggestGroup && st.suggestGroup !== st.group); },
     seatRules() { return (this.seatPlan.rules || []).filter(r => this.studentNameById(r.a) && this.studentNameById(r.b)); },
@@ -2752,6 +3030,7 @@ const __app = createApp({
   mounted() {
     this.updateClock();
     setInterval(this.updateClock, 1000);
+    setInterval(() => this.tickTimers(), 250);
 
     if (this.parentMode) {
       this.loadParent();
@@ -2769,6 +3048,256 @@ const __app = createApp({
   },
 
   methods: {
+
+    // ---------- 早自修 ----------
+    ensureDay() {
+      const k = pkTodayKey(), d = this.daily.days;
+      if (!d[k]) d[k] = { arrive: {}, leave: {}, brush: {} };
+      const r = d[k];
+      if (!r.arrive) r.arrive = {};
+      if (!r.leave) r.leave = {};
+      if (!r.brush) r.brush = {};
+      const keys = Object.keys(d).sort();
+      if (keys.length > 30) keys.slice(0, keys.length - 30).forEach(x => { delete d[x]; });
+      return r;
+    },
+    nowHMS() { const n = new Date(), p = x => String(x).padStart(2, '0'); return p(n.getHours()) + ':' + p(n.getMinutes()) + ':' + p(n.getSeconds()); },
+    isLate(hm) { return String(hm).slice(0, 5) > (this.daily.settings.lateTime || '07:50'); },
+    saveDaily() { this.saveData(); },
+    async arriveTap(st) {
+      const r = this.ensureDay();
+      if (r.leave[st.id]) {
+        if (await this.askConfirm(`${st.seatNumber} 號 ${st.name} 目前是「請假（${r.leave[st.id]}）」。\n要取消請假嗎？`)) { delete r.leave[st.id]; this.saveData(); }
+        return;
+      }
+      if (r.arrive[st.id]) { this.arriveSheet = st; this.timeEdit = String(r.arrive[st.id].t).slice(0, 5); return; }
+      const t = this.nowHMS(), late = this.isLate(t), pt = late ? 0 : 1;
+      r.arrive[st.id] = { t, late, pt };
+      if (pt) this.addScore(st, 1, '到校準時', '準時到校', true); else this.saveData();
+    },
+    cancelArrive(st) {
+      const r = this.ensureDay(), a = r.arrive[st.id];
+      if (a) {
+        delete r.arrive[st.id];
+        if (a.pt) this.addScore(st, -a.pt, '取消到校', '取消到校', true); else this.saveData();
+      }
+      this.arriveSheet = null;
+    },
+    saveArriveTime(st) {
+      const r = this.ensureDay(), a = r.arrive[st.id], hm = String(this.timeEdit || '');
+      if (!a || !/^\d\d:\d\d$/.test(hm)) { this.arriveSheet = null; return; }
+      const late = this.isLate(hm), pt = late ? 0 : 1, diff = pt - (a.pt || 0);
+      a.t = hm + ':00'; a.late = late; a.pt = pt;
+      if (diff) this.addScore(st, diff, '修改到校時間', diff > 0 ? '準時到校' : '', true); else this.saveData();
+      this.arriveSheet = null;
+    },
+    openLeave() { this.leaveDlg = { show: true, sid: '', reason: '病假', custom: '' }; },
+    confirmLeave() {
+      const st = this.students.find(x => x.id === this.leaveDlg.sid);
+      if (!st) { this.notify('請先選擇座號'); return; }
+      const reason = (this.leaveDlg.custom || '').trim() || this.leaveDlg.reason;
+      const r = this.ensureDay();
+      if (r.arrive[st.id]) { const a = r.arrive[st.id]; delete r.arrive[st.id]; if (a.pt) this.addScore(st, -a.pt, '改為請假', '', true); }
+      r.leave[st.id] = reason;
+      this.saveData();
+      this.leaveDlg.sid = ''; this.leaveDlg.custom = '';
+    },
+    removeLeave(sid) { const r = this.ensureDay(); delete r.leave[sid]; this.saveData(); },
+    arriveClass(st) {
+      const r = this.dayRec;
+      if (r.leave[st.id]) return 'bg-slate-100 border-slate-300 text-slate-500';
+      const a = r.arrive[st.id];
+      if (a) return a.late ? 'bg-rose-50 border-rose-400 text-rose-700' : 'bg-emerald-50 border-emerald-400 text-emerald-800';
+      return 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50';
+    },
+    arriveText(st) {
+      const r = this.dayRec;
+      if (r.leave[st.id]) return '請假·' + r.leave[st.id];
+      const a = r.arrive[st.id];
+      return a ? String(a.t).slice(0, 5) + (a.late ? ' 遲到' : '') : '';
+    },
+    // 黑板聯絡簿（7 格 × 6 行）
+    boardCell(i) { return (this.daily.settings.boardCells || {})[i] || ''; },
+    fillBoardFrom(i, text) {
+      const s = this.daily.settings;
+      if (!s.boardCells) s.boardCells = {};
+      const chars = Array.from(String(text || '')).filter(c => !/[\r\n]/.test(c));
+      if (!chars.length) { delete s.boardCells[i]; this.saveData(); return i; }
+      let k = i;
+      chars.forEach(c => { if (k < 42) { if (c === ' ' || c === '　') delete s.boardCells[k]; else s.boardCells[k] = c; k++; } });
+      this.saveData();
+      return Math.min(k, 41);
+    },
+    onCellInput(e, i) {
+      if (this._composing) return;
+      const next = this.fillBoardFrom(i, e.target.value);
+      e.target.value = this.boardCell(i);
+      if (e.target.value && next !== i) this.$nextTick(() => { const el = document.getElementById('bc' + next); if (el) el.focus(); });
+    },
+    onCompStart() { this._composing = true; },
+    onCellComposeEnd(e, i) {
+      this._composing = false;
+      this.onCellInput(e, i);
+    },
+    onCellBackspace(e, i) {
+      if (!this.boardCell(i) && i > 0) { const el = document.getElementById('bc' + (i - 1)); if (el) { e.preventDefault(); el.focus(); } }
+    },
+    focusCell(e) { const t = e.target; setTimeout(() => { try { t.select(); } catch (x) {} }, 0); },
+    openBatch() {
+      const rows = [];
+      for (let r = 0; r < 6; r++) { let line = ''; for (let c = 0; c < 7; c++) line += this.boardCell(r * 7 + c) || '　'; rows.push(line.replace(/　+$/, '')); }
+      this.batchDlg = { show: true, text: rows.join('\n').replace(/\n+$/, '') };
+    },
+    applyBatch() {
+      const cells = {};
+      let idx = 0;
+      String(this.batchDlg.text || '').split('\n').forEach(line => {
+        if (idx % 7 !== 0) idx = Math.ceil(idx / 7) * 7;
+        if (!line.replace(/\r/g, '').length) { idx += 7; return; }   // 空白行＝空一行
+        Array.from(line.replace(/\r/g, '')).forEach(c => { if (idx < 42) { if (c !== ' ' && c !== '　') cells[idx] = c; idx++; } });
+      });
+      this.daily.settings.boardCells = cells;
+      this.batchDlg.show = false;
+      this.saveData();
+    },
+    async clearBoard() {
+      if (!(await this.askConfirm('確定要清空黑板上的字嗎？'))) return;
+      this.daily.settings.boardCells = {};
+      this.saveData();
+    },
+    setBoardMode(m) { this.daily.settings.boardMode = m; this.saveData(); },
+    compressImage(file, max, q) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onerror = reject;
+        fr.onload = () => {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = () => {
+            const k = Math.min(1, max / Math.max(img.width, img.height));
+            const c = document.createElement('canvas');
+            c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            resolve(c.toDataURL('image/jpeg', q));
+          };
+          img.src = fr.result;
+        };
+        fr.readAsDataURL(file);
+      });
+    },
+    async pickBoardPhoto(ev) {
+      const f = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!f) return;
+      this.photoMsg = '處理照片中…';
+      try {
+        const url = await this.compressImage(f, 1600, 0.82);
+        this.boardPhoto = url;
+        try { localStorage.setItem('pk_photo', url); } catch (e) {}
+        if (!this.cfg().endpoint) { this.photoMsg = '照片只存在這台（尚未設定雲端）'; return; }
+        try {
+          await this.gas('POST', { action: 'photo' }, { data: url });
+          const rev = Date.now();
+          this._photoRevLoaded = rev;
+          try { localStorage.setItem('pk_photoRev', String(rev)); } catch (e) {}
+          this.daily.settings.photoRev = rev;
+          this.saveData();
+          this.photoMsg = '已上傳，其他裝置會自動顯示';
+        } catch (e) {
+          this.photoMsg = '照片只存在這台：雲端的 Apps Script 還沒更新（' + (e.message || '') + '）';
+        }
+      } catch (e) { this.photoMsg = '照片處理失敗，請換一張再試'; }
+    },
+    async removeBoardPhoto() {
+      if (!(await this.askConfirm('確定要移除照片嗎？'))) return;
+      this.boardPhoto = ''; this._photoRevLoaded = 0;
+      try { localStorage.removeItem('pk_photo'); localStorage.removeItem('pk_photoRev'); } catch (e) {}
+      this.daily.settings.photoRev = 0;
+      this.saveData();
+    },
+    async syncPhoto() {
+      const rev = this.daily.settings.photoRev || 0;
+      if (rev === (this._photoRevLoaded || 0)) return;
+      if (!rev) { this.boardPhoto = ''; this._photoRevLoaded = 0; try { localStorage.removeItem('pk_photo'); localStorage.removeItem('pk_photoRev'); } catch (e) {} return; }
+      if (!this.cfg().endpoint || this._photoBusy) return;
+      this._photoBusy = true;
+      try {
+        const r = await this.gas('GET', { action: 'photo' });
+        if (r && r.data) {
+          this.boardPhoto = r.data; this._photoRevLoaded = rev;
+          try { localStorage.setItem('pk_photo', r.data); localStorage.setItem('pk_photoRev', String(rev)); } catch (e) {}
+        }
+      } catch (e) {} finally { this._photoBusy = false; }
+    },
+
+    // ---------- 午餐 ----------
+    toggleLunchAuto() {
+      this.lunchAuto = !this.lunchAuto;
+      try { localStorage.setItem('pk_lunchAuto', this.lunchAuto ? '1' : '0'); } catch (e) {}
+      if (this.lunchAuto) this.showToast('這台電腦已啟用：到時間會自動跳到午餐並播放');
+    },
+    playLunchNow() { this.lunchPlaying = true; },
+    stopLunch() { this.lunchPlaying = false; },
+    async brushTap(st) {
+      const r = this.ensureDay();
+      if (r.brush[st.id]) {
+        delete r.brush[st.id];
+        this.addScore(st, -1, '刷牙取消', '取消刷牙', true);
+      } else {
+        r.brush[st.id] = this.nowHMS().slice(0, 5);
+        this.addScore(st, 1, '刷牙', '刷牙 +1', true);
+      }
+    },
+    syncTimerTotals() {
+      const s = this.daily.settings;
+      ['gargle', 'brush'].forEach(k => { const t = this.timers[k]; if (!t.running) t.left = Number(s[k + 'Sec']) || (k === 'gargle' ? 60 : 180); });
+    },
+    setTimerMin(k, v) {
+      const m = Math.max(0.5, Math.min(60, Number(v) || 1));
+      this.daily.settings[k + 'Sec'] = Math.round(m * 60);
+      const t = this.timers[k]; if (!t.running) t.left = Math.round(m * 60);
+      this.saveData();
+    },
+    startTimer(k) {
+      const t = this.timers[k];
+      this.unlockAudio();
+      if (t.left <= 0) t.left = Number(this.daily.settings[k + 'Sec']) || 60;
+      t.endAt = Date.now() + t.left * 1000; t.running = true;
+    },
+    pauseTimer(k) { const t = this.timers[k]; if (t.running) { t.left = Math.max(0, Math.ceil((t.endAt - Date.now()) / 1000)); t.running = false; } },
+    resetTimer(k) { const t = this.timers[k]; t.running = false; t.left = Number(this.daily.settings[k + 'Sec']) || 60; },
+    tickTimers() {
+      const now = Date.now();
+      ['gargle', 'brush'].forEach(k => {
+        const t = this.timers[k];
+        if (!t.running) return;
+        t.left = Math.max(0, Math.ceil((t.endAt - now) / 1000));
+        if (t.left <= 0) { t.running = false; this.ding(); }
+      });
+    },
+    fmtTimer(sec) { sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); },
+    unlockAudio() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!this._ac) this._ac = new AC();
+        if (this._ac.state === 'suspended') this._ac.resume();
+      } catch (e) {}
+    },
+    ding() {
+      try {
+        this.unlockAudio();
+        const ac = this._ac;
+        const tone = (f, at, d) => {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+          const t = ac.currentTime + at;
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          o.start(t); o.stop(t + d + 0.05);
+        };
+        tone(988, 0, 0.9); tone(740, 0.5, 1.4);
+      } catch (e) {}
+    },
+
     // ---------- 家長專屬頁面 ----------
     async loadParent() {
       if (this._parentLoading) return;
@@ -2792,6 +3321,7 @@ const __app = createApp({
               this.parentState.child = j.student;
               this.parentState.top = !!j.top;
               this.parentState.homework = j.homework || [];
+              this.parentState.today = j.today || { arrive: '', leave: '' };
               this.parentState.error = '';
               this.parentState.updated = new Date().toLocaleTimeString('zh-TW', { hour12: false });
               return;
@@ -3100,6 +3630,19 @@ const __app = createApp({
       const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       this.currentDayStr = days[now.getDay()];
       this.currentTimeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+      this.clockTs = now.getTime();
+      this.todayK = pkTodayKey();
+      // 午餐：到設定的時間，這台電腦若有開「自動播放」就跳到午餐頁並開始播放
+      if (!this.parentMode && this.lunchAuto) {
+        const p = x => String(x).padStart(2, '0');
+        const hm = p(now.getHours()) + ':' + p(now.getMinutes());
+        if (hm === (this.daily.settings.lunchTime || '12:30') && this._lunchFired !== this.todayK) {
+          this._lunchFired = this.todayK;
+          try { localStorage.setItem('pk_lunchFired', this.todayK); } catch (e) {}
+          this.currentTab = 'lunch';
+          this.lunchPlaying = true;
+        }
+      }
     },
 
     // 梯度經驗值計算精確實作
@@ -3265,7 +3808,7 @@ const __app = createApp({
     },
 
     // 加減分邏輯 + 1秒即時飄浮數字 (+1 / -1) 與綠/紅邊框閃爍
-    addScore(student, val, reason = '手動調整經驗值', tag = '') {
+    addScore(student, val, reason = '手動調整經驗值', tag = '', tmp = false) {
       const oldScore = student.score;
       student.score = Math.max(0, student.score + val);
       const diff = student.score - oldScore;
@@ -3283,7 +3826,7 @@ const __app = createApp({
         if (student.anim === animObj) student.anim = null;
       }, tag ? 1900 : 1000);
 
-      this.addLog(student.name, `${reason} (${diff > 0 ? '+' + diff : diff})`, diff);
+      this.addLog(student.name, `${reason} (${diff > 0 ? '+' + diff : diff})`, diff, tmp);
       this.saveData();
     },
 
@@ -3896,11 +4439,21 @@ const __app = createApp({
       this.saveData();
     },
 
-    addLog(name, action, change) {
+    addLog(name, action, change, tmp) {
       const now = new Date();
       const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
-      this.logs.unshift({ time: timeStr, name, action, change });
-      if (this.logs.length > 200) this.logs.pop();
+      const e = { time: timeStr, name, action, change };
+      if (tmp) { e.tmp = 1; e.d = pkTodayKey(); }
+      this.logs.unshift(e);
+      this.pruneLogs();
+    },
+    // 到校、刷牙的明細只留 3 天、最多 60 筆，不會把作業等重要紀錄擠掉
+    pruneLogs() {
+      const c = new Date(); c.setDate(c.getDate() - 3);
+      const cut = c.getFullYear() + '-' + String(c.getMonth() + 1).padStart(2, '0') + '-' + String(c.getDate()).padStart(2, '0');
+      let n = 0;
+      this.logs = this.logs.filter(l => { if (!l.tmp) return true; if (l.d && l.d < cut) return false; return ++n <= 60; });
+      if (this.logs.length > 200) this.logs.length = 200;
     },
 
     async clearLogs() {
@@ -3919,7 +4472,7 @@ const __app = createApp({
 
     snapshotState() {
       const o = {};
-      ['students','homework','logs','gacha','items','pets','seatPlan'].forEach(k => { o[k] = JSON.parse(this.serializeKey(k)); });
+      ['students','homework','logs','gacha','items','pets','seatPlan','daily'].forEach(k => { o[k] = JSON.parse(this.serializeKey(k)); });
       return o;
     },
 
@@ -3932,7 +4485,8 @@ const __app = createApp({
         gacha: this.gachaCardPool,
         items: this.directItems,
         pets: this.presetAvatars.filter(p => p.isCustom),
-        seatPlan: this.seatPlan
+        seatPlan: this.seatPlan,
+        daily: this.daily
       };
       return JSON.stringify(map[key], replacer);
     },
@@ -3941,7 +4495,7 @@ const __app = createApp({
       this.ensureTokens();
       this.ensureDesks();
       try {
-        ['students','homework','logs','gacha','items','pets','seatPlan'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
+        ['students','homework','logs','gacha','items','pets','seatPlan','daily'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
       } catch (e) {}
       if (!this.cfg().endpoint) {
         this.syncStatus.isSyncing = false;
@@ -4011,6 +4565,7 @@ const __app = createApp({
       if (st.gacha) this.gachaCardPool = st.gacha;
       if (st.items) this.directItems = st.items;
       if (st.seatPlan && typeof st.seatPlan === 'object') this.seatPlan = st.seatPlan;
+      if (st.daily && typeof st.daily === 'object') { this.daily = pkNormDaily(st.daily); this.syncTimerTotals(); this.syncPhoto(); }
       this.normalizeCatalog();
       this.ensureDesks();
       if (st.pets) this.presetAvatars = [...st.pets, ...FULL_64_POKEMON_POOL.filter(p => !p.isCustom)];
@@ -4019,7 +4574,7 @@ const __app = createApp({
         if (!this.profileStudent) this.showProfileModal = false;
       }
       try {
-        ['students','homework','logs','gacha','items','pets','seatPlan'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
+        ['students','homework','logs','gacha','items','pets','seatPlan','daily'].forEach(k => localStorage.setItem('pk_' + k, this.serializeKey(k)));
       } catch (e) {}
       if (animate) this.animateRemoteChanges(oldScores, oldLogKeys);
     },
@@ -4108,6 +4663,10 @@ const __app = createApp({
       const g = parse('gacha', Array.isArray); if (g && g.length) this.gachaCardPool = g;
       const i = parse('items', Array.isArray); if (i) this.directItems = i;
       const sp = parse('seatPlan', o => o && typeof o === 'object' && !Array.isArray(o)); if (sp) this.seatPlan = sp;
+      const dl = parse('daily', o => o && typeof o === 'object' && !Array.isArray(o)); if (dl) this.daily = pkNormDaily(dl);
+      this.syncTimerTotals();
+      try { this.boardPhoto = localStorage.getItem('pk_photo') || ''; this._photoRevLoaded = Number(localStorage.getItem('pk_photoRev') || 0); } catch (e) {}
+      try { this._lunchFired = localStorage.getItem('pk_lunchFired') || ''; } catch (e) {}
       this.normalizeCatalog();
       this.ensureDesks();
       this.ensureTokens();
@@ -4123,6 +4682,7 @@ const __app = createApp({
         gachaCardPool: this.gachaCardPool,
         directItems: this.directItems,
         seatPlan: this.seatPlan,
+        daily: this.daily,
         customPets: this.presetAvatars.filter(p => p.isCustom)
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -4151,6 +4711,7 @@ const __app = createApp({
           const di = data.directItems || data.items;
           if (Array.isArray(di)) this.directItems = di;
           if (data.seatPlan && typeof data.seatPlan === 'object') this.seatPlan = data.seatPlan;
+          if (data.daily && typeof data.daily === 'object') this.daily = pkNormDaily(data.daily);
           const cp = data.customPets || data.pets;
           if (Array.isArray(cp)) this.presetAvatars = [...cp, ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
           this.saveData();

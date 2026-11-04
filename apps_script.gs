@@ -3,9 +3,14 @@ const PASSPHRASE = '請改成你自己的密語';   // ← 改掉它，網頁設
 const SHEET_ID   = '1a3XhjDEUXXWPl1X9lRb7M2wNMII5cMhbuAadu5ORkJU';
 const SHEET_NAME = '作業檢核';
 const FILE_NAME  = 'pokemon_classroom_state.json';
+const PHOTO_NAME = 'pokemon_board_photo.txt';
 
 function out_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+function photoFile_() {
+  const it = DriveApp.getFilesByName(PHOTO_NAME);
+  return it.hasNext() ? it.next() : null;
 }
 function file_() {
   const it = DriveApp.getFilesByName(FILE_NAME);
@@ -39,8 +44,14 @@ function parent_(t) {
   // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
   const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
   const top = maxScore > 0 && Number(kid.score) === maxScore;
+  // 今天到校／請假（只回傳這位孩子自己的）
+  const today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+  const day = (((st.daily || {}).days) || {})[today] || {};
+  const arr = (day.arrive || {})[kid.id];
+  const lv = (day.leave || {})[kid.id];
   const body = JSON.stringify({
     top: top,
+    today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '' },
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
     pets: pets
@@ -59,6 +70,10 @@ function doGet(e) {
       if (!f) return out_({ state: null, rev: 0 });
       const o = JSON.parse(f.getBlob().getDataAsString());
       return out_({ state: o.state, rev: o.rev });
+    }
+    if (action === 'photo') {
+      const pf = photoFile_();
+      return out_({ data: pf ? pf.getBlob().getDataAsString() : '' });
     }
     if (action === 'rev') {
       // 很輕量的「資料有沒有更新」查詢，讓其他裝置可以幾秒內同步
@@ -119,6 +134,12 @@ function doPost(e) {
     if (e.parameter.key !== PASSPHRASE) return out_({ error: '密語錯誤' });
     lock.waitLock(20000);
     const body = JSON.parse(e.postData.contents);
+    if (e.parameter.action === 'photo') {
+      const pf = photoFile_();
+      const data = String(body.data || '');
+      if (pf) pf.setContent(data); else DriveApp.createFile(PHOTO_NAME, data, MimeType.PLAIN_TEXT);
+      return out_({ ok: true });
+    }
     const f = file_();
     let rev = 1;
     if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
