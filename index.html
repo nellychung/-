@@ -299,7 +299,7 @@
         <div class="text-sm font-black text-sky-800">🌅 今天到校</div>
         <div class="text-lg font-black" :class="parentState.today.leave ? 'text-slate-600' : (parentState.today.arrive ? 'text-emerald-600' : 'text-slate-400')">
           <template v-if="parentState.today.leave">請假（{{ parentState.today.leave }}）</template>
-          <template v-else-if="parentState.today.arrive">{{ fmtArriveCN(parentState.today.arrive) }}到班</template>
+          <template v-else-if="parentState.today.arrive">{{ String(parentState.today.arrive).slice(0, 5) }}到班</template>
           <template v-else>今天還沒有紀錄</template>
         </div>
       </div>
