@@ -567,18 +567,22 @@
       <!-- 頁面：午餐（用 v-show，切到別頁影片也不會中斷） -->
       <div v-show="currentTab === 'lunch'" class="grid gap-2 lg:grid-cols-[minmax(300px,24%)_1fr_200px] items-start">
         <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-1.5">
-          <div class="bg-orange-50 rounded-2xl px-2.5 py-1 text-sm font-black text-[#8a3b12]">🪥 刷牙 {{ Object.keys(dayRec.brush).length }} / {{ students.length }}</div>
+          <div class="bg-orange-50 rounded-2xl px-1.5 py-1 flex gap-1.5">
+            <button @click="lunchMode = 'brush'" class="flex-1 rounded-xl px-2 py-1 text-sm font-black border-2 transition" :class="lunchMode === 'brush' ? 'bg-emerald-500 text-white border-emerald-600 shadow' : 'bg-white text-[#8a3b12] border-orange-200'">🪥 刷牙 {{ Object.keys(dayRec.brush).length }} / {{ students.length }}</button>
+            <button @click="lunchMode = 'meal'" class="flex-1 rounded-xl px-2 py-1 text-sm font-black border-2 transition" :class="lunchMode === 'meal' ? 'bg-amber-500 text-white border-amber-600 shadow' : 'bg-white text-[#8a3b12] border-orange-200'">🍚 吃光光 {{ Object.keys(dayRec.meal).length }} / {{ students.length }}</button>
+          </div>
           <div class="text-center"><span class="inline-block px-8 rounded-b-xl bg-slate-200 text-slate-500 text-[10px] font-black tracking-widest">講　台</span></div>
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
-              <button v-if="stu" @click="brushTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0"
-                      :class="dayRec.brush[stu.id] ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
-                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ dayRec.brush[stu.id] ? '🪥 +1' : '' }}</span></div>
+              <button v-if="stu" @click="lunchMode === 'meal' ? mealTap(stu) : brushTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0"
+                      :class="(lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? (lunchMode === 'meal' ? 'bg-amber-50 border-amber-400 text-amber-800' : 'bg-emerald-50 border-emerald-400 text-emerald-800') : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
+                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
           </div>
-          <div class="text-[10px] font-bold text-slate-400 px-1">座位依「座位表」排列。刷得好才點，+1 分；刷不好再點一次就扣回來。</div>
+          <div v-if="mealWeekTop.length" class="bg-amber-50 border border-amber-200 rounded-xl px-2 py-1 text-[11px] font-black text-amber-800">🍚 本週吃光光：<span v-for="(t, i) in mealWeekTop" :key="t.id" class="mr-2">{{ i + 1 }}. {{ t.seatNumber }} 號（{{ t.n }} 天）</span></div>
+          <div class="text-[10px] font-bold text-slate-400 px-1">座位依「座位表」排列。先在上面選「刷牙」或「吃光光」，再點座號 +1 分（每人每天一次）；再點一次就扣回來。</div>
         </div>
 
         <div class="space-y-2 min-w-0">
@@ -2889,6 +2893,7 @@ const __app = createApp({
       ytMuted: false,
       ytMsg: '',
       alarmPopup: null,
+      lunchMode: 'brush',
       alarmOpen: false,
       timerMode: 'gargle',
       timers: { gargle: { left: 60, running: false, endAt: 0 }, brush: { left: 180, running: false, endAt: 0 } },
@@ -2989,7 +2994,19 @@ const __app = createApp({
 
   computed: {
     seatList() { return [...this.students].sort((a, b) => a.seatNumber - b.seatNumber); },
-    dayRec() { const r = this.daily.days[this.todayK] || {}; return { arrive: r.arrive || {}, leave: r.leave || {}, brush: r.brush || {} }; },
+    dayRec() { const r = this.daily.days[this.todayK] || {}; return { arrive: r.arrive || {}, leave: r.leave || {}, brush: r.brush || {}, meal: r.meal || {} }; },
+    mealWeekTop() {
+      const now = new Date(this.clockTs), dow = (now.getDay() + 6) % 7;   // 週一=0
+      const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow);
+      const p = x => String(x).padStart(2, '0'), cnt = {};
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+        const r = this.daily.days[d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())];
+        if (r && r.meal) Object.keys(r.meal).forEach(id => { cnt[id] = (cnt[id] || 0) + 1; });
+      }
+      return this.students.filter(st => cnt[st.id]).map(st => ({ id: st.id, seatNumber: st.seatNumber, n: cnt[st.id] }))
+        .sort((a, b) => b.n - a.n || a.seatNumber - b.seatNumber).slice(0, 3);
+    },
     arrivedCount() { return Object.keys(this.dayRec.arrive).length; },
     leaveList() { return this.seatList.filter(st => this.dayRec.leave[st.id]); },
     boardCols() { const n = Number(this.daily.settings.boardCols); return n >= 4 && n <= 12 ? Math.floor(n) : 8; },
@@ -3102,11 +3119,12 @@ const __app = createApp({
     // ---------- 早自修 ----------
     ensureDay() {
       const k = pkTodayKey(), d = this.daily.days;
-      if (!d[k]) d[k] = { arrive: {}, leave: {}, brush: {} };
+      if (!d[k]) d[k] = { arrive: {}, leave: {}, brush: {}, meal: {} };
       const r = d[k];
       if (!r.arrive) r.arrive = {};
       if (!r.leave) r.leave = {};
       if (!r.brush) r.brush = {};
+      if (!r.meal) r.meal = {};
       const keys = Object.keys(d).sort();
       if (keys.length > 30) keys.slice(0, keys.length - 30).forEach(x => { delete d[x]; });
       return r;
@@ -3389,6 +3407,16 @@ const __app = createApp({
       } else {
         r.brush[st.id] = this.nowHMS().slice(0, 5);
         this.addScore(st, 1, '刷牙', '刷牙 +1', true);
+      }
+    },
+    async mealTap(st) {
+      const r = this.ensureDay();
+      if (r.meal[st.id]) {
+        delete r.meal[st.id];
+        this.addScore(st, -1, '吃光光取消', '取消吃光光', true);
+      } else {
+        r.meal[st.id] = this.nowHMS().slice(0, 5);
+        this.addScore(st, 1, '午餐吃光光', '午餐吃光光 +1', true);
       }
     },
     syncTimerTotals() {
