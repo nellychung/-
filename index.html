@@ -217,7 +217,9 @@
     .pet-wrap{position:relative;width:var(--ps);margin:5px auto}
     /* 早自修：黑板聯絡簿 */
     .cl-board{background:linear-gradient(135deg,#2f5d50,#265044);border:10px solid #b08968;border-radius:1.25rem;box-shadow:inset 0 0 30px rgba(0,0,0,.35),0 4px 14px rgba(0,0,0,.25);padding:14px 18px;display:flex;justify-content:center;overflow:hidden}
-    .cl-cell{width:100%;height:100%;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;text-align:center;direction:ltr;font-weight:700;font-size:calc(var(--bh) / 7 * .58);line-height:1;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;outline:none;padding:0;min-width:0}
+    .cl-wrap{container-type:size;min-width:0;min-height:0}
+    .cl-cell{width:100%;height:100%;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;text-align:center;direction:ltr;font-weight:700;font-size:calc(var(--bh) / 7 * .62);font-size:68cqmin;line-height:1;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;outline:none;padding:0;min-width:0}
+    .zy-font{font-family:"Bpmf Iansui","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
     .cl-board.zy .cl-cell{font-family:"Bpmf Iansui","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
     .cl-cell:focus{background:rgba(255,255,255,.16);border-color:#fde68a}
     .cl-date{writing-mode:vertical-rl;color:#fde68a;font-weight:900;white-space:nowrap;line-height:1.1;text-align:center;font-size:calc(var(--bh) / var(--du) * .86);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
@@ -509,8 +511,8 @@
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
               <button v-if="stu" @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-0.5 text-left leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
-                <div class="flex items-center gap-1 min-w-0"><span class="text-sm font-black">{{ stu.seatNumber }}</span><span class="text-[11px] font-bold truncate">{{ stu.name }}</span></div>
-                <div class="flex items-center justify-between gap-1 min-h-[1rem]"><span class="text-[11px] font-black truncate">{{ arriveText(stu) }}</span><span class="text-[9px] font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1 flex-none">{{ stu.score }}</span></div>
+                <div class="flex items-center justify-between gap-1 min-w-0"><span class="text-lg leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 flex-none">{{ stu.score }}</span></div>
+                <div class="min-h-[1rem]"><span class="text-[11px] font-black truncate block">{{ arriveText(stu) }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
@@ -526,6 +528,8 @@
               <button @click="openBatch" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">✏️ 整段輸入</button>
               <button @click="clearBoard" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 text-[11px] font-black">清空</button>
               <button @click="daily.settings.boardZhuyin = !daily.settings.boardZhuyin; saveDaily()" class="px-2.5 py-1 rounded-xl border text-[11px] font-black" :class="daily.settings.boardZhuyin ? 'bg-sky-500 text-white border-sky-600' : 'bg-white text-slate-500 border-slate-200'">ㄅ 注音 {{ daily.settings.boardZhuyin ? '開' : '關' }}</button>
+              <label class="flex items-center gap-1 text-[11px] font-black text-slate-500">每行
+                <select :value="boardCols" @change="setBoardCols($event.target.value)" class="px-1 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs"><option v-for="n in [4,5,6,7,8,9,10,11,12]" :key="n" :value="n">{{ n }} 欄</option></select></label>
               <button @click="boardDateEdit = !boardDateEdit" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 text-[11px] font-black">📅 日期</button>
               <span v-if="boardDateEdit" class="flex items-center gap-1">
                 <input v-model="daily.settings.boardDate" @change="saveDaily" :placeholder="boardDateText" class="px-2 py-0.5 rounded-lg border border-orange-200 text-xs font-bold w-48" />
@@ -540,14 +544,16 @@
           </div>
 
           <!-- 直書、由右到左：最右邊是日期，往左依序是第 1、2…6 行，每行 7 格由上往下 -->
-          <div v-if="daily.settings.boardMode !== 'photo'" class="cl-board" :class="daily.settings.boardZhuyin ? 'zy' : ''" style="--bh:clamp(260px, min(calc(100vh - 300px), 52vw), 880px)">
-            <div class="flex flex-row-reverse items-start" style="gap:calc(var(--bh) / 30)">
+          <div v-if="daily.settings.boardMode !== 'photo'" class="cl-board" :class="daily.settings.boardZhuyin ? 'zy' : ''" style="--bh:max(300px, calc(100vh - 300px))">
+            <div class="flex flex-row-reverse items-stretch w-full" style="gap:calc(var(--bh) / 40);height:var(--bh)">
               <div class="cl-date" :style="{ '--du': boardDateParts.units, height: 'var(--bh)' }"><template v-for="(pt, i) in boardDateParts.parts" :key="i"><span :class="pt.n ? 'tcy' : ''">{{ pt.t }}</span></template></div>
-              <div style="display:grid;direction:rtl;height:var(--bh);grid-template-columns:repeat(6,calc(var(--bh) / 7));grid-template-rows:repeat(7,calc(var(--bh) / 7))">
-                <template v-for="i in 42" :key="i">
-                  <input :id="'bc' + (i - 1)" class="cl-cell" :style="{ gridColumn: Math.floor((i - 1) / 7) + 1, gridRow: (i - 1) % 7 + 1 }" :value="boardCell(i - 1)" autocomplete="off"
-                         @focus="focusCell($event)" @compositionstart="onCompStart" @compositionend="onCellComposeEnd($event, i - 1)"
-                         @input="onCellInput($event, i - 1)" @keydown.backspace="onCellBackspace($event, i - 1)" />
+              <div class="flex-1 min-w-0" :style="{ display: 'grid', direction: 'rtl', gridTemplateColumns: 'repeat(' + boardCols + ', minmax(0, 1fr))', gridTemplateRows: 'repeat(7, minmax(0, 1fr))' }">
+                <template v-for="i in boardCols * 7" :key="i">
+                  <div class="cl-wrap" :style="{ gridColumn: Math.floor((i - 1) / 7) + 1, gridRow: (i - 1) % 7 + 1 }">
+                    <input :id="'bc' + (i - 1)" class="cl-cell" :value="boardCell(i - 1)" autocomplete="off"
+                           @focus="focusCell($event)" @compositionstart="onCompStart" @compositionend="onCellComposeEnd($event, i - 1)"
+                           @input="onCellInput($event, i - 1)" @keydown.backspace="onCellBackspace($event, i - 1)" />
+                  </div>
                 </template>
               </div>
             </div>
@@ -568,8 +574,8 @@
             <template v-for="(stu, idx) in seatCells" :key="idx">
               <button v-if="stu" @click="brushTap(stu)" class="rounded-xl border-2 px-1 py-0.5 text-left leading-tight transition active:scale-95 min-w-0"
                       :class="dayRec.brush[stu.id] ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
-                <div class="flex items-center gap-1 min-w-0"><span class="text-sm font-black">{{ stu.seatNumber }}</span><span class="text-[11px] font-bold truncate">{{ stu.name }}</span></div>
-                <div class="flex items-center justify-between gap-1 min-h-[1rem]"><span class="text-[11px] font-black">{{ dayRec.brush[stu.id] ? '🪥 +1' : '' }}</span><span class="text-[9px] font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1 flex-none">{{ stu.score }}</span></div>
+                <div class="flex items-center justify-between gap-1 min-w-0"><span class="text-lg leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 flex-none">{{ stu.score }}</span></div>
+                <div class="min-h-[1rem]"><span class="text-[11px] font-black block">{{ dayRec.brush[stu.id] ? '🪥 +1' : '' }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
@@ -604,14 +610,14 @@
           <div class="bg-white/90 rounded-2xl border border-orange-200 px-3 py-1.5 text-[11px] font-black text-slate-600">
             <div class="flex flex-wrap items-center gap-2">
               <button @click="alarmOpen = !alarmOpen" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 font-black">⏰ 鬧鐘 {{ alarmOpen ? '▲' : '▼' }}</button>
-              <span v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="px-2 py-0.5 rounded-full border font-black" :class="a.on ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'">{{ a.time }} {{ a.text }}</span>
+              <span v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="zy-font px-2.5 py-0.5 rounded-full border font-black text-sm" :class="a.on ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'">{{ a.time }} {{ a.text }}</span>
               <span class="text-slate-400 font-bold">週一到週五，到時間會叮咚並跳出提示</span>
             </div>
             <div v-if="alarmOpen" class="mt-1.5 space-y-1">
               <div v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="flex items-center gap-1.5">
                 <input type="checkbox" v-model="a.on" @change="saveDaily" class="w-4 h-4" />
                 <input type="time" v-model="a.time" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" />
-                <input v-model="a.text" @change="saveDaily" placeholder="跳出的提示文字（例如：該去洗手囉）" class="flex-1 px-2 py-1 rounded-lg border border-orange-200 bg-white text-xs font-bold min-w-0" />
+                <input v-model="a.text" @change="saveDaily" placeholder="跳出的提示文字（例如：該去洗手囉）" class="zy-font flex-1 px-2 py-1 rounded-lg border border-orange-200 bg-white text-base font-bold min-w-0" />
                 <button @click="delAlarm(id)" class="px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-500 font-black">✕</button>
               </div>
               <div class="flex gap-2"><button @click="addAlarm" class="px-3 py-1 rounded-xl bg-gradient-to-r from-orange-400 to-rose-400 text-white font-black shadow-sm">＋ 新增鬧鐘</button><button @click="testAlarm" class="px-3 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 font-black">🔔 試響</button></div>
@@ -1212,7 +1218,7 @@
     <div v-if="alarmPopup" class="fixed inset-0 z-[500] bg-black/65 flex items-center justify-center p-4" @click.self="dismissAlarm">
       <div class="w-full max-w-4xl bg-white rounded-[2rem] shadow-2xl border-8 border-amber-300 p-6 sm:p-10 text-center space-y-5">
         <div class="text-2xl sm:text-3xl font-black text-amber-600">⏰ {{ alarmPopup.time }}</div>
-        <div class="font-black text-slate-800" style="font-size:clamp(2.2rem,6vw,5.5rem);line-height:1.25;white-space:pre-line;word-break:break-word">{{ alarmPopup.text }}</div>
+        <div class="zy-font font-black text-slate-800" style="font-size:clamp(2.2rem,6vw,5.5rem);line-height:1.25;white-space:pre-line;word-break:break-word">{{ alarmPopup.text }}</div>
         <button @click="dismissAlarm" class="px-10 py-4 rounded-3xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black text-2xl shadow-lg">知道了</button>
       </div>
     </div>
@@ -1257,7 +1263,7 @@
     <div v-if="batchDlg.show" class="fixed inset-0 z-[280] bg-black/45 flex items-end sm:items-center justify-center px-3 pb-3" @click.self="batchDlg.show = false">
       <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border-4 border-orange-300 p-4 space-y-3">
         <div class="flex items-center justify-between"><h3 class="text-lg font-black text-[#8a3b12]">✏️ 整段輸入聯絡簿</h3><button @click="batchDlg.show = false" class="text-slate-400 text-xl font-black px-2">✕</button></div>
-        <p class="text-xs font-bold text-slate-500">一行就是黑板上的一行（每行最多 7 個字，超過會接到下一行），最多 6 行。可以打國字或注音符號。</p>
+        <p class="text-xs font-bold text-slate-500">一行就是黑板上的一行（每行最多 7 個字，超過會接到下一行），最多可輸入「每行 N 欄」所設定的行數。可以打國字或注音符號。</p>
         <textarea v-model="batchDlg.text" rows="7" class="w-full px-3 py-2 rounded-xl border-2 border-orange-200 font-black text-lg" style="letter-spacing:.2em"></textarea>
         <button @click="applyBatch" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black text-lg shadow">放到黑板上</button>
       </div>
@@ -1802,7 +1808,7 @@ function doPost(e) {
 // ---------- 早自修／午餐 資料 ----------
 function pkTodayKey() { const n = new Date(), p = x => String(x).padStart(2, '0'); return n.getFullYear() + '-' + p(n.getMonth() + 1) + '-' + p(n.getDate()); }
 function pkDailyDefaults() {
-  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, photoRev: 0, alarms: {} }, days: {} };
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, photoRev: 0, alarms: {} }, days: {} };
 }
 function pkNormDaily(d) {
   const b = pkDailyDefaults();
@@ -2988,6 +2994,7 @@ const __app = createApp({
     dayRec() { const r = this.daily.days[this.todayK] || {}; return { arrive: r.arrive || {}, leave: r.leave || {}, brush: r.brush || {} }; },
     arrivedCount() { return Object.keys(this.dayRec.arrive).length; },
     leaveList() { return this.seatList.filter(st => this.dayRec.leave[st.id]); },
+    boardCols() { const n = Number(this.daily.settings.boardCols); return n >= 4 && n <= 12 ? Math.floor(n) : 8; },
     boardDateParts() {
       const parts = String(this.boardDateText).split(/(\d+)/).filter(x => x !== '').map(t => ({ t, n: /^\d+$/.test(t) }));
       const units = parts.reduce((a, p) => a + (p.n ? 1 : Array.from(p.t).length), 0);
@@ -3171,9 +3178,9 @@ const __app = createApp({
       const chars = Array.from(String(text || '')).filter(c => !/[\r\n]/.test(c));
       if (!chars.length) { delete s.boardCells[i]; this.saveData(); return i; }
       let k = i;
-      chars.forEach(c => { if (k < 42) { if (c === ' ' || c === '　') delete s.boardCells[k]; else s.boardCells[k] = c; k++; } });
+      chars.forEach(c => { if (k < this.boardCols * 7) { if (c === ' ' || c === '　') delete s.boardCells[k]; else s.boardCells[k] = c; k++; } });
       this.saveData();
-      return Math.min(k, 41);
+      return Math.min(k, this.boardCols * 7 - 1);
     },
     onCellInput(e, i) {
       if (this._composing) return;
@@ -3192,7 +3199,7 @@ const __app = createApp({
     focusCell(e) { const t = e.target; setTimeout(() => { try { t.select(); } catch (x) {} }, 0); },
     openBatch() {
       const rows = [];
-      for (let r = 0; r < 6; r++) { let line = ''; for (let c = 0; c < 7; c++) line += this.boardCell(r * 7 + c) || '　'; rows.push(line.replace(/　+$/, '')); }
+      for (let r = 0; r < this.boardCols; r++) { let line = ''; for (let c = 0; c < 7; c++) line += this.boardCell(r * 7 + c) || '　'; rows.push(line.replace(/　+$/, '')); }
       this.batchDlg = { show: true, text: rows.join('\n').replace(/\n+$/, '') };
     },
     applyBatch() {
@@ -3201,7 +3208,7 @@ const __app = createApp({
       String(this.batchDlg.text || '').split('\n').forEach(line => {
         if (idx % 7 !== 0) idx = Math.ceil(idx / 7) * 7;
         if (!line.replace(/\r/g, '').length) { idx += 7; return; }   // 空白行＝空一行
-        Array.from(line.replace(/\r/g, '')).forEach(c => { if (idx < 42) { if (c !== ' ' && c !== '　') cells[idx] = c; idx++; } });
+        Array.from(line.replace(/\r/g, '')).forEach(c => { if (idx < this.boardCols * 7) { if (c !== ' ' && c !== '　') cells[idx] = c; idx++; } });
       });
       this.daily.settings.boardCells = cells;
       this.batchDlg.show = false;
@@ -3212,6 +3219,7 @@ const __app = createApp({
       this.daily.settings.boardCells = {};
       this.saveData();
     },
+    setBoardCols(v) { this.daily.settings.boardCols = Number(v) || 8; this.saveData(); },
     setBoardMode(m) { this.daily.settings.boardMode = m; this.saveData(); },
     compressImage(file, max, q) {
       return new Promise((resolve, reject) => {
