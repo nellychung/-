@@ -687,6 +687,7 @@
           <div class="flex flex-wrap gap-1.5">
             <span v-for="t in weeklyTasks" :key="t.id" class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-[12px] font-black text-amber-800">{{ t.icon }} {{ t.name }}：{{ t.target }} {{ t.type === 'hw' ? '項' : '天' }}　＋{{ t.exp }} 分</span>
           </div>
+          <div v-if="limitedActive && limitedCfg().shinyRotate !== false && shinyFeature" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">✨ 本週異色限定：{{ shinyFeature.now.name }}　<span class="text-slate-500 font-bold">用扭蛋有機會抽到（下週換成 {{ shinyFeature.next.name }}）</span></div>
           <div v-if="weeklyEdit" class="rounded-2xl border border-orange-200 bg-orange-50/60 p-2 space-y-1">
             <div v-for="t in weeklyCfg().tasks" :key="t.id" class="flex flex-wrap items-center gap-1.5 text-[11px] font-black text-slate-600">
               <input type="checkbox" :checked="t.on" @change="setWeeklyTask(t, 'on', $event.target.checked)" class="w-4 h-4" />
@@ -733,14 +734,16 @@
         </div>
         <div class="bg-white/90 rounded-3xl border-2 border-fuchsia-200 p-3 space-y-2 lg:col-start-2">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="text-base font-black text-fuchsia-800">🌟 限定扭蛋設定</div>
-            <label class="flex items-center gap-1 text-xs font-black" :class="limitedCfg().on ? 'text-emerald-600' : 'text-slate-500'"><input type="checkbox" v-model="limitedCfg().on" @change="saveData" class="w-4 h-4" />{{ limitedCfg().on ? '已開放（學生資料卡會出現按鈕）' : '未開放' }}</label>
+            <div class="text-base font-black text-fuchsia-800">🌟 限定寶可夢（併入原本的扭蛋抽卡）</div>
+            <label class="flex items-center gap-1 text-xs font-black" :class="limitedCfg().on ? 'text-emerald-600' : 'text-slate-500'"><input type="checkbox" v-model="limitedCfg().on" @change="saveData" class="w-4 h-4" />{{ limitedCfg().on ? '已開放（用原本的扭蛋抽，花 50 EXP）' : '未開放' }}</label>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-600">
-            <label class="flex items-center gap-1">名稱<input v-model="limitedCfg().name" @change="saveData" class="w-28 px-1.5 py-0.5 rounded-lg border border-fuchsia-200 bg-white" /></label>
-            <label class="flex items-center gap-1">每抽扣<input type="number" min="0" max="500" v-model.number="limitedCfg().cost" @change="saveData" class="w-16 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />分</label>
-            <label class="flex items-center gap-1">異色機率<input type="number" min="0" max="100" v-model.number="limitedCfg().shinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+            <label class="flex items-center gap-1">每次扭蛋抽到限定的機率<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().rate" @change="saveData" class="w-16 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+            <label class="flex items-center gap-1">其中異色的機率<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().shinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+            <label class="flex items-center gap-1"><input type="checkbox" v-model="limitedCfg().shinyRotate" @change="saveData" class="w-4 h-4" />異色每週自動輪替</label>
+            <span class="text-fuchsia-700">→ 異色約 {{ ((Number(limitedCfg().rate) || 0) * (Number(limitedCfg().shinyRate) || 0) / 100).toFixed(2) }}%</span>
           </div>
+          <div v-if="limitedCfg().shinyRotate !== false && shinyFeature" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">✨ 本週異色主角：{{ shinyFeature.now.name }}　<span class="text-slate-500 font-bold">下週：{{ shinyFeature.next.name }}（限定池共 {{ shinyFeature.count }} 隻，依序輪流）</span></div>
           <div class="flex flex-wrap items-center gap-2">
             <select v-model="limitedPick" class="px-2 py-1 rounded-lg border border-fuchsia-200 bg-white text-xs font-black min-w-0"><option value="">＋ 選一隻加入限定池…</option><option v-for="pv in normalAvatars" :key="pv.id" :value="pv.id">{{ pv.name }}</option></select>
             <button @click="addLimitedPet" class="px-3 py-1 rounded-xl bg-fuchsia-500 text-white text-xs font-black">加入</button>
@@ -1593,7 +1596,7 @@
                   <i class="fa-solid fa-gem text-amber-500"></i> 幸運扭蛋抽卡機
                 </h4>
                 <span class="text-[9px] font-bold text-amber-800 bg-amber-200/80 px-1.5 py-0.2 rounded-full">
-                  必中特權卡
+                  {{ limitedActive ? '必中特權卡・小機率抽到限定寶可夢' : '必中特權卡' }}
                 </span>
               </div>
 
@@ -1603,13 +1606,6 @@
               </button>
             </div>
 
-            <div v-if="limitedCfg().on && limitedCfg().pool.length" class="bg-gradient-to-br from-fuchsia-50 to-sky-50 p-2.5 rounded-2xl border border-fuchsia-200 space-y-1.5">
-              <div class="flex justify-between items-center">
-                <h4 class="text-xs font-black text-fuchsia-900">🌟 {{ limitedCfg().name }}</h4>
-                <span class="text-[9px] font-bold text-fuchsia-800 bg-fuchsia-100 px-1.5 rounded-full">限定寶可夢・有機會抽到 ✨異色</span>
-              </div>
-              <button @click="drawLimited(profileStudent)" class="w-full py-2 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 text-white font-black text-xs rounded-xl shadow transition active:scale-95">消耗 {{ limitedCfg().cost }} EXP 抽限定寶可夢</button>
-            </div>
             <div v-if="(profileStudent.collection || []).length" class="bg-white p-2.5 rounded-2xl border border-fuchsia-200 space-y-1.5">
               <h4 class="text-xs font-black text-slate-800 flex items-center justify-between"><span>🌟 限定收藏（{{ profileStudent.collection.length }}）</span><span class="text-[9px] text-slate-500 font-bold">可設為主寵或和同學交換</span></h4>
               <div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto custom-scroll p-0.5">
@@ -1989,7 +1985,7 @@ function pkWeekDays(mon, n) {
   return out;
 }
 function pkDailyDefaults() {
-  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定扭蛋', cost: 50, shinyRate: 10, pool: [] } }, days: {}, weekly: {} };
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [] } }, days: {}, weekly: {} };
 }
 // 把一段文字拆成黑板上的「格」：連續 1~3 個數字放同一格、國字連同讀音選擇碼（IVS）放同一格
 function pkBoardTokens(text) {
@@ -3222,6 +3218,15 @@ const __app = createApp({
       }
       return out;
     },
+    limitedActive() { const c = this.limitedCfg(); return !!(c.on && c.pool.some(id => this.petById(id))); },
+    // 異色每週輪替：依週次輪流，每週只有一隻是「本週異色主角」
+    shinyFeature() {
+      const c = this.limitedCfg(), pool = c.pool.filter(id => this.petById(id));
+      if (!pool.length) return null;
+      const [y, m, d] = this.weekKey.split('-').map(Number);
+      const wi = Math.floor(Date.UTC(y, m - 1, d) / 86400000 / 7);
+      return { now: this.petById(pool[wi % pool.length]), next: this.petById(pool[(wi + 1) % pool.length]), nowId: pool[wi % pool.length], count: pool.length };
+    },
     limitedIds() { return new Set(this.limitedCfg().pool); },
     normalAvatars() { const ids = this.limitedIds; return this.presetAvatars.filter(p => !ids.has(p.id)); },
     petTradeA() { return this.students.find(x => x.id === this.petTrade.aId) || null; },
@@ -4315,8 +4320,10 @@ const __app = createApp({
     // ---------- 限定扭蛋（限定寶可夢＋異色版） ----------
     limitedCfg() {
       const st = this.daily.settings;
-      if (!st.limited) st.limited = { on: false, name: '限定扭蛋', cost: 50, shinyRate: 10, pool: [] };
+      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [] };
       if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
+      if (st.limited.rate === undefined) st.limited.rate = 3;
+      if (st.limited.shinyRotate === undefined) st.limited.shinyRotate = true;
       return st.limited;
     },
     closeLim() { if (!this.limResult.spin) this.limResult.show = false; },
@@ -4354,22 +4361,23 @@ const __app = createApp({
       this.saveData();
     },
     removeLimitedPet(id) { const c = this.limitedCfg(); c.pool = c.pool.filter(x => x !== id); this.saveData(); },
-    drawLimited(st) {
+    grantLimited(st) {
       const c = this.limitedCfg();
       const pool = c.pool.filter(id => this.petById(id));
-      if (!c.on || !pool.length) { this.notify('限定扭蛋目前沒有開放'); return; }
-      const cost = Number(c.cost) || 0;
-      if (st.score < cost) { this.notify(`經驗值不足 ${cost} EXP，無法抽限定扭蛋！`); return; }
-      this.addScore(st, -cost, '消耗 EXP 抽限定扭蛋', '🌟 限定扭蛋');
-      const pid = pool[Math.floor(Math.random() * pool.length)];
-      const shiny = Math.random() * 100 < (Number(c.shinyRate) || 0);
+      if (!pool.length) return null;
+      const rot = c.shinyRotate !== false && pool.length > 0, feat = rot ? this.shinyFeature.nowId : '';
+      // 輪替開啟時：本週異色主角被抽中的機會是其他的 3 倍，而且只有牠有機會是異色
+      const wts = pool.map(id => (rot && id === feat ? 3 : 1)), tot = wts.reduce((a, b) => a + b, 0);
+      let roll = Math.random() * tot, pid = pool[pool.length - 1];
+      for (let i = 0; i < pool.length; i++) { if (roll < wts[i]) { pid = pool[i]; break; } roll -= wts[i]; }
+      const shiny = (!rot || pid === feat) && Math.random() * 100 < (Number(c.shinyRate) || 0);
       const item = { uid: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) + (this._uidN = (this._uidN || 0) + 1), pid, shiny, t: Date.now() };
       if (!st.collection) st.collection = [];
       st.collection.push(item);
-      this.addLog(st.name, `限定扭蛋抽到【${shiny ? '✨異色 ' : ''}${this.petById(pid).name}】`, 0);
-      this.limResult = { show: true, spin: true, student: st, pet: this.petById(pid), shiny, img: this.collImg(item) };
+      this.addLog(st.name, `扭蛋抽到限定寶可夢【${shiny ? '✨異色 ' : ''}${this.petById(pid).name}】`, 0);
+      this.limResult = { show: true, spin: false, student: st, pet: this.petById(pid), shiny, img: this.collImg(item) };
       this.saveData();
-      setTimeout(() => { this.limResult.spin = false; }, 1500);
+      return item;
     },
     setMainFromCollection(st, it) {
       const pet = this.petById(it.pid); if (!pet) return;
@@ -4595,6 +4603,12 @@ const __app = createApp({
 
       setTimeout(() => {
         this.isGachaSpinning = false;
+        // 小機率改抽到限定寶可夢（和一般扭蛋合在一起）
+        if (this.limitedActive && Math.random() * 100 < (Number(this.limitedCfg().rate) || 0)) {
+          this.showGachaModal = false;
+          this.grantLimited(student);
+          return;
+        }
         const cardPicked = { ...this.pickGachaCard() };
         this.gachaResultCard = cardPicked;
 
