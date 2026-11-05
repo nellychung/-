@@ -4324,6 +4324,11 @@ const __app = createApp({
       if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
       if (st.limited.rate === undefined) st.limited.rate = 3;
       if (st.limited.shinyRotate === undefined) st.limited.shinyRotate = true;
+      // 第一次使用：先放一組預設的限定池（傳說系＋學生愛的熱門寶可夢），老師可自行增減
+      if (!st.limited.seeded && !st.limited.pool.length) {
+        st.limited.pool = ['mewtwo', 'rayquaza', 'lugia', 'arceus', 'mew', 'mimikyu', 'umbreon_line', 'snorlax'].filter(id => this.presetAvatars.some(p => p.id === id));
+      }
+      st.limited.seeded = true;
       return st.limited;
     },
     closeLim() { if (!this.limResult.spin) this.limResult.show = false; },
