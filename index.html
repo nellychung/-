@@ -174,6 +174,7 @@
     .fa-clock::before{content:"🕒"}
     .fa-sun::before{content:"🌅"}
     .fa-utensils::before{content:"🍱"}
+    .fa-trophy::before{content:"🏆"}
     .fa-boxes-stacked::before{content:"📦"}
     .fa-book-bookmark::before{content:"🔖"}
     .fa-address-card::before{content:"🪪"}
@@ -662,6 +663,62 @@
               <input type="number" min="0.5" max="60" step="0.5" :value="(daily.settings[timerMode + 'Sec'] || 60) / 60" @change="setTimerMin(timerMode, $event.target.value)" title="分鐘" class="w-12 px-1 text-center rounded-lg border border-orange-200 bg-white font-black text-xs" />
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 頁面：每週任務 / 友你真好星期五 -->
+      <div v-if="currentTab === 'weekly'" class="grid gap-2 lg:grid-cols-[minmax(340px,56%)_1fr] items-start">
+        <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-1.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-orange-50 rounded-2xl px-2.5 py-1">
+            <span class="text-sm font-black text-[#8a3b12]">🏆 本週任務（{{ weekDayKeys[0].slice(5).replace('-', '/') }} 起，週一～週五）</span>
+            <button @click="weeklyEdit = !weeklyEdit" class="px-2.5 py-0.5 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">⚙ 設定任務</button>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="t in weeklyTasks" :key="t.id" class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-[12px] font-black text-amber-800">{{ t.icon }} {{ t.name }}：{{ t.target }} {{ t.type === 'hw' ? '項' : '天' }}　＋{{ t.exp }} 分</span>
+          </div>
+          <div v-if="weeklyEdit" class="rounded-2xl border border-orange-200 bg-orange-50/60 p-2 space-y-1">
+            <div v-for="t in weeklyCfg().tasks" :key="t.id" class="flex flex-wrap items-center gap-1.5 text-[11px] font-black text-slate-600">
+              <input type="checkbox" :checked="t.on" @change="setWeeklyTask(t, 'on', $event.target.checked)" class="w-4 h-4" />
+              <input :value="t.icon" @change="setWeeklyTask(t, 'icon', $event.target.value)" class="w-9 text-center px-1 py-0.5 rounded-lg border border-orange-200 bg-white" />
+              <input :value="t.name" @change="setWeeklyTask(t, 'name', $event.target.value)" class="w-28 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" />
+              <span>{{ { arrive: '準時到班天數', brush: '刷牙天數', meal: '吃光光天數', hw: '作業完成項數' }[t.type] }}</span>
+              <input type="number" min="1" max="30" :value="t.target" @change="setWeeklyTask(t, 'target', $event.target.value)" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" />
+              <span>達成加</span>
+              <input type="number" min="0" max="50" :value="t.exp" @change="setWeeklyTask(t, 'exp', $event.target.value)" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /><span>分</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🤝 友你真好獎勵：全組每人加
+              <input type="number" min="0" max="100" :value="weeklyCfg().friendExp" @change="weeklyCfg().friendExp = Math.max(0, Number($event.target.value) || 0); saveData()" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /> 分</div>
+            <div class="text-[10px] font-bold text-slate-400">任務達成時會自動加分並發徽章；之後又被取消（例如取消刷牙）而不足時，會自動收回。每週一重新計算。</div>
+          </div>
+          <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
+            <template v-for="(stu, idx) in seatCells" :key="idx">
+              <div v-if="stu" @click="openProfileModal(stu)" class="rounded-xl border-2 border-orange-200 bg-white px-1 py-1 min-w-0 text-center">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-xl leading-none font-black text-[#8a3b12]">{{ stu.seatNumber }}</span>
+                  <span v-if="badgeCount(stu)" class="text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-300 rounded-full px-1.5">🏅{{ badgeCount(stu) }}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-0.5 mt-0.5">
+                  <span v-for="t in weeklyTasks" :key="t.id" class="rounded-md text-[10px] leading-tight font-black px-0.5 py-0.5 whitespace-nowrap" :class="taskProg(stu, t).done ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'">{{ t.icon }}{{ taskProg(stu, t).n }}/{{ t.target }}</span>
+                </div>
+              </div>
+              <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
+            </template>
+          </div>
+          <div class="text-[10px] font-bold text-slate-400 px-1">進度會跟著「早自修／午餐／作業」的點選自動更新。綠色＝本週已達成。</div>
+        </div>
+
+        <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-3 space-y-2">
+          <div class="text-base font-black text-[#8a3b12]">🤝 友你真好星期五</div>
+          <div class="text-[11px] font-bold text-slate-500">本週（週一～週日）各組「平均每人加分」最多的組別，全組獲得 {{ weeklyCfg().friendExp }} 分與徽章。</div>
+          <div class="space-y-1.5">
+            <div v-for="(g, i) in groupStandings" :key="g.g" class="flex items-center gap-2">
+              <span class="w-14 text-sm font-black" :class="i === 0 && g.avg > 0 ? 'text-amber-600' : 'text-slate-600'">{{ i === 0 && g.avg > 0 ? '👑' : '' }}第 {{ g.g }} 組</span>
+              <div class="flex-1 h-6 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full" :class="i === 0 && g.avg > 0 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-sky-300'" :style="{ width: (groupStandings[0].avg > 0 ? Math.max(4, Math.round(g.avg / groupStandings[0].avg * 100)) : 4) + '%' }"></div></div>
+              <span class="w-24 text-right text-xs font-black text-slate-600">平均 {{ g.avg.toFixed(1) }}　共 {{ g.total }}</span>
+            </div>
+          </div>
+          <div v-if="friendDone" class="rounded-2xl bg-emerald-50 border border-emerald-300 px-3 py-2 text-sm font-black text-emerald-800">✅ 本週已結算：第 {{ friendDone.g }} 組全組加分並獲得 🤝 徽章</div>
+          <button v-else @click="settleFriend" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black shadow">🏆 結算本週「友你真好」（星期五按）</button>
         </div>
       </div>
 
@@ -1405,6 +1462,7 @@
               </div>
               <span class="bg-indigo-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full shrink-0">第 {{ profileStudent.group }} 組 · {{ profileStudent.role || '組員' }}</span>
             </div>
+            <div v-if="(profileStudent.badges || []).length" class="flex flex-wrap gap-1 mt-0.5"><span v-for="b in profileStudent.badges" :key="b.id" :title="b.name + '（' + b.wk + ' 那週）'" class="text-[11px] font-black bg-amber-50 border border-amber-300 text-amber-800 rounded-full px-1.5">{{ b.icon }}{{ b.name }}</span></div>
             <div class="mt-0.5 space-y-0.5">
               <div class="flex items-center space-x-2 text-[11px] font-black">
                 <span class="text-amber-600">EXP：<span class="text-xs font-black">{{ profileStudent.score }}</span></span>
@@ -1818,8 +1876,26 @@ function doPost(e) {
 // 隨機換座位：同組過、隔壁過的盡量不要再同組／同桌，並遵守老師指定的「不要同組／不要同桌」
 // ---------- 早自修／午餐 資料 ----------
 function pkTodayKey() { const n = new Date(), p = x => String(x).padStart(2, '0'); return n.getFullYear() + '-' + p(n.getMonth() + 1) + '-' + p(n.getDate()); }
+function pkWeeklyDefaults() {
+  return { friendExp: 10, tasks: [
+    { id: 't_arrive', type: 'arrive', name: '準時到班', icon: '🌅', target: 4, exp: 3, on: true },
+    { id: 't_brush', type: 'brush', name: '認真刷牙', icon: '🪥', target: 4, exp: 3, on: true },
+    { id: 't_meal', type: 'meal', name: '午餐吃光光', icon: '🍚', target: 4, exp: 3, on: true },
+    { id: 't_hw', type: 'hw', name: '完成作業', icon: '📚', target: 5, exp: 3, on: true }
+  ] };
+}
+// 回傳 d 所在那一週的星期一（'YYYY-MM-DD'）
+function pkMonKey(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7)), p = n => String(n).padStart(2, '0');
+  return x.getFullYear() + '-' + p(x.getMonth() + 1) + '-' + p(x.getDate());
+}
+function pkWeekDays(mon, n) {
+  const [y, m, d] = mon.split('-').map(Number), out = [], p = k => String(k).padStart(2, '0');
+  for (let i = 0; i < n; i++) { const x = new Date(y, m - 1, d + i); out.push(x.getFullYear() + '-' + p(x.getMonth() + 1) + '-' + p(x.getDate())); }
+  return out;
+}
 function pkDailyDefaults() {
-  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {} }, days: {} };
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults() }, days: {}, weekly: {} };
 }
 // 把一段文字拆成黑板上的「格」：連續 1~3 個數字放同一格、國字連同讀音選擇碼（IVS）放同一格
 function pkBoardTokens(text) {
@@ -1837,7 +1913,7 @@ function pkBoardTokens(text) {
 function pkNormDaily(d) {
   const b = pkDailyDefaults();
   if (!d || typeof d !== 'object' || Array.isArray(d)) return b;
-  return { settings: { ...b.settings, ...(d.settings || {}) }, days: (d.days && typeof d.days === 'object') ? d.days : {} };
+  return { settings: { ...b.settings, ...(d.settings || {}) }, days: (d.days && typeof d.days === 'object') ? d.days : {}, weekly: (d.weekly && typeof d.weekly === 'object' && !Array.isArray(d.weekly)) ? d.weekly : {} };
 }
 function pkYT(u) {
   u = String(u || '').trim();
@@ -2895,6 +2971,7 @@ const __app = createApp({
         { id: 'homework', name: '作業', icon: 'fa-solid fa-book-open' },
         { id: 'morning', name: '早自修', icon: 'fa-solid fa-sun' },
         { id: 'lunch', name: '午餐', icon: 'fa-solid fa-utensils' },
+        { id: 'weekly', name: '任務', icon: 'fa-solid fa-trophy' },
         { id: 'cardMarket', name: '卡片', icon: 'fa-solid fa-arrows-rotate' },
         { id: 'addStudent', name: '名單設定', icon: 'fa-solid fa-user-plus' },
         { id: 'seatMap', name: '座位表', icon: 'fa-solid fa-chair' },
@@ -2916,6 +2993,7 @@ const __app = createApp({
       ytMsg: '',
       alarmPopup: null,
       lunchMode: 'brush',
+      weeklyEdit: false,
       focusIdx: -1,
       alarmOpen: false,
       timerMode: 'gargle',
@@ -3043,6 +3121,19 @@ const __app = createApp({
       }
       return out;
     },
+    weekKey() { return pkMonKey(new Date(this.clockTs)); },
+    weekDayKeys() { return pkWeekDays(this.weekKey, 7); },
+    weeklyTasks() { return this.weeklyCfg().tasks.filter(t => t.on); },
+    friendDone() { const w = (this.daily.weekly || {})[this.weekKey]; return w && w.friend ? w.friend : null; },
+    groupStandings() {
+      const keys = this.weekDayKeys, gs = {};
+      this.students.forEach(st => { const g = st.group || 1; (gs[g] = gs[g] || []).push(st); });
+      return Object.keys(gs).map(g => {
+        const members = gs[g];
+        const total = members.reduce((a, st) => a + keys.reduce((b, k) => b + ((((this.daily.days[k] || {}).pts) || {})[st.id] || 0), 0), 0);
+        return { g: Number(g), members, total, avg: members.length ? total / members.length : 0 };
+      }).sort((a, b) => b.avg - a.avg || b.total - a.total || a.g - b.g);
+    },
     boardCols() { const n = Number(this.daily.settings.boardCols); return n >= 4 && n <= 12 ? Math.floor(n) : 8; },
     boardDateParts() {
       const parts = String(this.boardDateText).split(/(\d+)/).filter(x => x !== '').map(t => ({ t, n: /^\d+$/.test(t) }));
@@ -3153,12 +3244,14 @@ const __app = createApp({
     // ---------- 早自修 ----------
     ensureDay() {
       const k = pkTodayKey(), d = this.daily.days;
-      if (!d[k]) d[k] = { arrive: {}, leave: {}, brush: {}, meal: {} };
+      if (!d[k]) d[k] = { arrive: {}, leave: {}, brush: {}, meal: {}, pts: {}, hw: {} };
       const r = d[k];
       if (!r.arrive) r.arrive = {};
       if (!r.leave) r.leave = {};
       if (!r.brush) r.brush = {};
       if (!r.meal) r.meal = {};
+      if (!r.pts) r.pts = {};
+      if (!r.hw) r.hw = {};
       const keys = Object.keys(d).sort();
       if (keys.length > 30) keys.slice(0, keys.length - 30).forEach(x => { delete d[x]; });
       return r;
@@ -4099,6 +4192,85 @@ const __app = createApp({
       }, tag ? 1900 : 1000);
 
       this.addLog(student.name, `${reason} (${diff > 0 ? '+' + diff : diff})`, diff, tmp);
+      // 每週任務／友你真好用的統計：每天每人的淨得分、作業完成數
+      if (diff) {
+        const spend = /扭蛋|更換|兌換|消耗/.test(String(tag) + String(reason));
+        const r = this.ensureDay();
+        if (!this._noPts && !(diff < 0 && spend)) r.pts[student.id] = (r.pts[student.id] || 0) + diff;
+        if (tag === '作業完成') r.hw[student.id] = (r.hw[student.id] || 0) + 1;
+        else if (tag === '取消完成') r.hw[student.id] = Math.max(0, (r.hw[student.id] || 0) - 1);
+      }
+      this.checkWeekly(student);
+      this.saveData();
+    },
+
+    // ---------- 每週任務 ／ 友你真好星期五 ----------
+    weeklyCfg() { return this.daily.settings.weekly || (this.daily.settings.weekly = pkWeeklyDefaults()); },
+    weekCount(st, type, mon) {
+      let n = 0;
+      pkWeekDays(mon || this.weekKey, 5).forEach(k => {
+        const r = this.daily.days[k]; if (!r) return;
+        if (type === 'arrive') { const a = r.arrive && r.arrive[st.id]; if (a && !a.late) n++; }
+        else if (type === 'brush') { if (r.brush && r.brush[st.id]) n++; }
+        else if (type === 'meal') { if (r.meal && r.meal[st.id]) n++; }
+        else if (type === 'hw') n += (r.hw && r.hw[st.id]) || 0;
+      });
+      return n;
+    },
+    weekAw(mon) {
+      const w = this.daily.weekly || (this.daily.weekly = {});
+      if (!w[mon]) w[mon] = { aw: {}, friend: null };
+      if (!w[mon].aw) w[mon].aw = {};
+      const keys = Object.keys(w).sort();
+      if (keys.length > 16) keys.slice(0, keys.length - 16).forEach(x => { delete w[x]; });
+      return w[mon];
+    },
+    checkWeekly(st) {
+      if (this._wkBusy || !st) return;
+      this._wkBusy = true;
+      try {
+        const cfg = this.weeklyCfg(), mon = this.weekKey, wk = this.weekAw(mon);
+        cfg.tasks.forEach(t => {
+          if (!t.on) return;
+          const n = this.weekCount(st, t.type, mon), got = wk.aw[st.id] && wk.aw[st.id][t.id];
+          const bid = 'wk-' + mon + '-' + t.id;
+          if (n >= t.target && !got) {
+            if (!wk.aw[st.id]) wk.aw[st.id] = {};
+            wk.aw[st.id][t.id] = 1;
+            if (!st.badges) st.badges = [];
+            if (!st.badges.some(b => b.id === bid)) st.badges.push({ id: bid, icon: t.icon, name: t.name, wk: mon });
+            this._noPts = true;
+            try { if (t.exp) this.addScore(st, Number(t.exp) || 0, '每週任務達成：' + t.name, t.icon + ' 任務達成'); } finally { this._noPts = false; }
+            this.showBigFx(`${st.name} 完成「${t.name}」`, t.icon + ' 獲得徽章！', 'plus');
+          } else if (n < t.target && got) {
+            delete wk.aw[st.id][t.id];
+            st.badges = (st.badges || []).filter(b => b.id !== bid);
+            this._noPts = true;
+            try { if (t.exp) this.addScore(st, -(Number(t.exp) || 0), '取消每週任務：' + t.name, '取消任務'); } finally { this._noPts = false; }
+          }
+        });
+      } finally { this._wkBusy = false; }
+    },
+    taskProg(st, t) { const n = this.weekCount(st, t.type); return { n: Math.min(n, 99), done: n >= t.target }; },
+    badgeCount(st) { return (st.badges || []).length; },
+    setWeeklyTask(t, field, val) { t[field] = field === 'target' || field === 'exp' ? Math.max(0, Number(val) || 0) : val; this.saveData(); },
+    async settleFriend() {
+      const mon = this.weekKey, wk = this.weekAw(mon);
+      if (wk.friend) { this.notify('這個星期已經結算過了'); return; }
+      const top = this.groupStandings[0];
+      if (!top || top.avg <= 0) { this.notify('這個星期還沒有人加到分'); return; }
+      const exp = Number(this.weeklyCfg().friendExp) || 0;
+      if (!(await this.askConfirm(`結算「友你真好」：第 ${top.g} 組（平均每人 +${top.avg.toFixed(1)}）每人加 ${exp} 分並獲得徽章。\n每週只能結算一次，確定嗎？`))) return;
+      wk.friend = { g: top.g, t: Date.now() };
+      this._noPts = true;
+      try {
+        top.members.forEach(st => {
+          if (!st.badges) st.badges = [];
+          st.badges.push({ id: 'wk-' + mon + '-friend', icon: '🤝', name: '友你真好', wk: mon });
+          this.addScore(st, exp, '友你真好星期五：第 ' + top.g + ' 組', '🤝 友你真好');
+        });
+      } finally { this._noPts = false; }
+      this.showBigFx(`第 ${top.g} 組 友你真好！`, `全組 +${exp}`, 'plus');
       this.saveData();
     },
 
