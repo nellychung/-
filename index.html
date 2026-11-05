@@ -580,8 +580,8 @@
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
               <button v-if="stu" @click="lunchMode === 'meal' ? mealTap(stu) : brushTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0"
-                      :class="(lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? (lunchMode === 'meal' ? 'bg-amber-500 border-amber-700 text-white shadow-inner' : 'bg-emerald-500 border-emerald-700 text-white shadow-inner') : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
-                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ ((lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? '✓ ' : '') + (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
+                      :class="(lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? (lunchMode === 'meal' ? 'bg-amber-600 border-amber-800 text-white shadow-inner' : 'bg-emerald-600 border-emerald-800 text-white shadow-inner') : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
+                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
@@ -3207,14 +3207,14 @@ const __app = createApp({
       const r = this.dayRec;
       if (r.leave[st.id]) return 'bg-slate-300 border-slate-500 text-slate-700';
       const a = r.arrive[st.id];
-      if (a) return a.late ? 'bg-rose-500 border-rose-700 text-white shadow-inner' : 'bg-emerald-500 border-emerald-700 text-white shadow-inner';
+      if (a) return a.late ? 'bg-rose-600 border-rose-800 text-white shadow-inner' : 'bg-emerald-600 border-emerald-800 text-white shadow-inner';
       return 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50';
     },
     arriveText(st) {
       const r = this.dayRec;
       if (r.leave[st.id]) return '請假·' + r.leave[st.id];
       const a = r.arrive[st.id];
-      return a ? '✓ ' + String(a.t).slice(0, 5) + (a.late ? ' 遲到' : '') : '';
+      return a ? String(a.t).slice(0, 5) + (a.late ? ' 遲到' : '') : '';
     },
     // 黑板聯絡簿（7 格 × 6 行）
     boardCell(i) { return (this.daily.settings.boardCells || {})[i] || ''; },
