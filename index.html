@@ -3531,7 +3531,7 @@ const __app = createApp({
         const t = this.timers[k];
         if (!t.running) return;
         t.left = Math.max(0, Math.ceil((t.endAt - now) / 1000));
-        if (t.left <= 0) { t.running = false; this.ding(); }
+        if (t.left <= 0) { t.running = false; this.timerRing(k); }
       });
     },
     fmtTimer(sec) { sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); },
@@ -3542,15 +3542,22 @@ const __app = createApp({
         if (this._ac.state === 'suspended') this._ac.resume();
       } catch (e) {}
     },
-    ding() {
+    // 漱口／刷牙時間到：連續響 3 次「叮咚」並跳出提示
+    timerRing(k) {
+      this.showToast((k === 'gargle' ? '💧 漱口' : '🪥 刷牙') + '時間到！');
+      this.ding(true);
+      for (let n = 1; n < 3; n++) setTimeout(() => this.ding(true), n * 2200);
+    },
+    async ding(loud) {
       try {
-        this.unlockAudio();
+        const ac0 = this._ac || (this.unlockAudio(), this._ac);
+        if (ac0 && ac0.state === 'suspended') { try { await ac0.resume(); } catch (e) {} }
         const ac = this._ac;
         const tone = (f, at, d) => {
           const o = ac.createOscillator(), g = ac.createGain();
-          o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+          o.type = loud ? 'triangle' : 'sine'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
           const t = ac.currentTime + at;
-          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(loud ? 1 : 0.6, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
           o.start(t); o.stop(t + d + 0.05);
         };
         tone(988, 0, 0.9); tone(740, 0.5, 1.4);
