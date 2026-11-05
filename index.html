@@ -3296,24 +3296,50 @@ const __app = createApp({
     },
     setBoardCols(v) { this.daily.settings.boardCols = Number(v) || 8; this.saveData(); },
     setBoardMode(m) { this.daily.settings.boardMode = m; this.saveData(); },
-    compressImage(file, max, q) {
+    // 解碼圖片：先用 createImageBitmap（會自動轉正方向），不行再用 <img>
+    decodeImage(blob) {
       return new Promise((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onerror = reject;
-        fr.onload = () => {
-          const img = new Image();
-          img.onerror = reject;
-          img.onload = () => {
-            const k = Math.min(1, max / Math.max(img.width, img.height));
-            const c = document.createElement('canvas');
-            c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-            resolve(c.toDataURL('image/jpeg', q));
-          };
-          img.src = fr.result;
+        const viaImg = () => {
+          const u = URL.createObjectURL(blob), img = new Image();
+          img.onload = () => { resolve({ src: img, w: img.naturalWidth || img.width, h: img.naturalHeight || img.height, done() { URL.revokeObjectURL(u); } }); };
+          img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('decode')); };
+          img.src = u;
         };
-        fr.readAsDataURL(file);
+        if (window.createImageBitmap) {
+          createImageBitmap(blob, { imageOrientation: 'from-image' }).then(b => resolve({ src: b, w: b.width, h: b.height, done() { try { b.close(); } catch (e) {} } }), () => {
+            createImageBitmap(blob).then(b => resolve({ src: b, w: b.width, h: b.height, done() { try { b.close(); } catch (e) {} } }), viaImg);
+          });
+        } else viaImg();
       });
+    },
+    loadScriptOnce(url) {
+      return new Promise((resolve, reject) => {
+        const sc = document.createElement('script');
+        sc.src = url; sc.onload = resolve; sc.onerror = () => reject(new Error('load'));
+        document.head.appendChild(sc);
+      });
+    },
+    async compressImage(file, max, q) {
+      let blob = file, d;
+      try { d = await this.decodeImage(blob); }
+      catch (e) {
+        // iPhone 的 HEIC 照片：Windows 的 Chrome 打不開，借用轉檔小工具轉成 JPG 再試
+        if (/hei[cf]/i.test((file.type || '') + ' ' + (file.name || ''))) {
+          if (!window.heic2any) await this.loadScriptOnce('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
+          const out = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+          blob = Array.isArray(out) ? out[0] : out;
+          d = await this.decodeImage(blob);
+        } else throw e;
+      }
+      try {
+        const k = Math.min(1, max / Math.max(d.w, d.h));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(d.w * k)); c.height = Math.max(1, Math.round(d.h * k));
+        const g = c.getContext('2d');
+        g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        g.drawImage(d.src, 0, 0, c.width, c.height);
+        return c.toDataURL('image/jpeg', q);
+      } finally { d.done(); }
     },
     async pickBoardPhoto(ev) {
       const f = ev.target.files && ev.target.files[0];
@@ -3336,7 +3362,10 @@ const __app = createApp({
         } catch (e) {
           this.photoMsg = '照片只存在這台：雲端的 Apps Script 還沒更新（' + (e.message || '') + '）';
         }
-      } catch (e) { this.photoMsg = '照片處理失敗，請換一張再試'; }
+      } catch (e) {
+        const tp = f.type || (String(f.name || '').split('.').pop() || '未知格式');
+        this.photoMsg = '這台電腦打不開這張照片（' + tp + '，' + Math.round((f.size || 0) / 1024) + ' KB）。請改選 JPG／PNG，或用平板上傳';
+      }
     },
     async removeBoardPhoto() {
       if (!(await this.askConfirm('確定要移除照片嗎？'))) return;
