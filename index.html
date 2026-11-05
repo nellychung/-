@@ -720,6 +720,33 @@
           <div v-if="friendDone" class="rounded-2xl bg-emerald-50 border border-emerald-300 px-3 py-2 text-sm font-black text-emerald-800">✅ 本週已結算：第 {{ friendDone.g }} 組全組加分並獲得 🤝 徽章</div>
           <button v-else @click="settleFriend" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black shadow">🏆 結算本週「友你真好」（星期五按）</button>
         </div>
+        <div class="bg-white/90 rounded-3xl border-2 border-fuchsia-200 p-3 space-y-2 lg:col-start-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-base font-black text-fuchsia-800">🌟 限定扭蛋設定</div>
+            <label class="flex items-center gap-1 text-xs font-black" :class="limitedCfg().on ? 'text-emerald-600' : 'text-slate-500'"><input type="checkbox" v-model="limitedCfg().on" @change="saveData" class="w-4 h-4" />{{ limitedCfg().on ? '已開放（學生資料卡會出現按鈕）' : '未開放' }}</label>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-600">
+            <label class="flex items-center gap-1">名稱<input v-model="limitedCfg().name" @change="saveData" class="w-28 px-1.5 py-0.5 rounded-lg border border-fuchsia-200 bg-white" /></label>
+            <label class="flex items-center gap-1">每抽扣<input type="number" min="0" max="500" v-model.number="limitedCfg().cost" @change="saveData" class="w-16 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />分</label>
+            <label class="flex items-center gap-1">異色機率<input type="number" min="0" max="100" v-model.number="limitedCfg().shinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select v-model="limitedPick" class="px-2 py-1 rounded-lg border border-fuchsia-200 bg-white text-xs font-black min-w-0"><option value="">＋ 選一隻加入限定池…</option><option v-for="pv in normalAvatars" :key="pv.id" :value="pv.id">{{ pv.name }}</option></select>
+            <button @click="addLimitedPet" class="px-3 py-1 rounded-xl bg-fuchsia-500 text-white text-xs font-black">加入</button>
+          </div>
+          <div v-if="limitedCfg().pool.length" class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+            <div v-for="pid in limitedCfg().pool" :key="pid" class="rounded-xl border border-fuchsia-200 bg-fuchsia-50/50 p-1 text-center relative">
+              <button @click="removeLimitedPet(pid)" class="absolute top-0 right-1 text-rose-500 text-xs font-black">✕</button>
+              <div v-if="petById(pid)" class="flex items-center justify-center gap-1">
+                <img :src="petById(pid).url" @error="handleImageError" data-name="寵" class="w-10 h-10 object-contain" />
+                <img v-if="shinyReady(petById(pid).url)" :src="shinyUrlFor(petById(pid).url)" class="w-10 h-10 object-contain" title="異色圖" />
+              </div>
+              <div class="text-[11px] font-black text-slate-700 truncate">{{ (petById(pid) || {}).name || pid }}</div>
+              <div class="text-[10px] font-bold" :class="petById(pid) && shinyReady(petById(pid).url) ? 'text-emerald-600' : 'text-rose-500'">{{ petById(pid) && shinyReady(petById(pid).url) ? '✨ 有異色圖' : '缺異色圖' }}</div>
+            </div>
+          </div>
+          <div class="text-[10px] font-bold text-slate-400">限定池裡的寶可夢不會出現在一般的「更換寵物」清單裡，只能抽到。異色圖請放在專案的 <b>pk/shiny/</b> 資料夾，檔名和一般圖一樣（例如 pk/6.png 的異色圖就是 pk/shiny/6.png）。沒有異色圖時，抽到異色會顯示一般圖並標示 ✨。</div>
+        </div>
       </div>
 
       <div v-if="currentTab === 'seatMap'" class="space-y-2">
@@ -1028,7 +1055,7 @@
               <div>
                 <label class="block text-slate-600 mb-1">選擇初始寶可夢/寵物造型 (共 {{ presetAvatars.length }} 款)：</label>
                 <div class="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto custom-scroll p-1 border rounded-xl">
-                  <div v-for="(avatar, idx) in presetAvatars" :key="idx" 
+                  <div v-for="(avatar, idx) in normalAvatars" :key="idx" 
                        @click="newStudent.customAvatar = avatar.url; newStudent.petId = avatar.id; newStudent.animalBg = avatar.bg"
                        :class="['p-1 rounded-xl cursor-pointer border-2 transition text-center relative', (newStudent.petId === avatar.id || newStudent.customAvatar === avatar.url) ? 'border-indigo-600 bg-indigo-50 shadow-xs' : 'border-transparent hover:border-indigo-200']">
                     <img :src="avatar.url" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-8 h-8 mx-auto object-contain" />
@@ -1283,6 +1310,40 @@
   <!-- 確認與提示視窗：搬到 body 底部，固定浮在畫面最下方（不受頁面捲動影響） -->
   <teleport to="body">
 
+    <div v-if="limResult.show" class="fixed inset-0 z-[310] bg-black/70 flex items-center justify-center p-4" @click.self="closeLim">
+      <div class="w-full max-w-sm bg-white rounded-[2rem] shadow-2xl border-8 p-6 text-center space-y-3" :class="limResult.shiny && !limResult.spin ? 'border-amber-300' : 'border-fuchsia-300'">
+        <div v-if="limResult.spin" class="py-8 space-y-3"><div class="text-6xl animate-bounce">🌟</div><div class="text-lg font-black text-fuchsia-700">抽取中…</div></div>
+        <template v-else>
+          <div class="text-sm font-black text-fuchsia-700">{{ limResult.student ? limResult.student.name : '' }} 抽到了！</div>
+          <div class="w-36 h-36 mx-auto rounded-3xl p-2 animal-sphere overflow-hidden flex items-center justify-center" :class="(limResult.pet || {}).bg"><img :src="limResult.img" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" /></div>
+          <div class="text-2xl font-black text-slate-800">{{ limResult.shiny ? '✨ ' : '' }}{{ (limResult.pet || {}).name }}</div>
+          <div v-if="limResult.shiny" class="text-sm font-black text-amber-600">🎉 恭喜抽到異色版！</div>
+          <div class="text-[11px] font-bold text-slate-500">已放進限定收藏，可以在學生資料卡設為主寵或交換。</div>
+          <button @click="limResult.show = false" class="px-8 py-2.5 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-sky-500 text-white font-black text-base shadow">太棒了</button>
+        </template>
+      </div>
+    </div>
+
+    <div v-if="petTrade.show" class="fixed inset-0 z-[300] bg-black/50 flex items-center justify-center p-3" @click.self="petTrade.show = false">
+      <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border-4 border-fuchsia-300 p-4 space-y-3">
+        <div class="flex items-center justify-between"><h3 class="text-lg font-black text-fuchsia-800">🔁 限定寶可夢交換</h3><button @click="petTrade.show = false" class="text-slate-400 text-xl font-black px-2">✕</button></div>
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div class="rounded-2xl border border-slate-200 p-2 space-y-1">
+            <div class="text-xs font-black text-slate-500">給出</div>
+            <div class="text-sm font-black text-slate-800">{{ petTradeA ? petTradeA.seatNumber + ' 號 ' + petTradeA.name : '' }}</div>
+            <div v-if="petTradeItemA" class="flex flex-col items-center"><img :src="collImg(petTradeItemA)" @error="handleImageError" data-name="寵" class="w-14 h-14 object-contain" /><span class="text-xs font-black">{{ petTradeItemA.shiny ? '✨' : '' }}{{ (petById(petTradeItemA.pid) || {}).name }}</span></div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 p-2 space-y-1">
+            <div class="text-xs font-black text-slate-500">換給</div>
+            <select v-model="petTrade.bId" @change="petTrade.bUid = ''" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-sm font-black"><option value="">選擇同學</option><option v-for="st in seatList" :key="st.id" :value="st.id" :disabled="petTrade.aId === st.id">{{ st.seatNumber }} 號 {{ st.name }}</option></select>
+            <select v-model="petTrade.bUid" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-sm font-black"><option value="">選擇對方的寶可夢</option><option v-for="it in (petTradeB ? (petTradeB.collection || []) : [])" :key="it.uid" :value="it.uid" :disabled="petTradeB.petUid === it.uid">{{ it.shiny ? '✨' : '' }}{{ (petById(it.pid) || {}).name }}{{ petTradeB.petUid === it.uid ? '（使用中，不能交換）' : '' }}</option></select>
+          </div>
+        </div>
+        <div class="text-[11px] font-bold text-slate-400">正在當主寵使用的寶可夢不能交換，要先換成別隻。</div>
+        <button @click="confirmPetTrade" :disabled="!petTradeItemB" class="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-sky-500 text-white font-black text-lg shadow disabled:opacity-40">確認交換</button>
+      </div>
+    </div>
+
     <div v-if="alarmPopup" class="fixed inset-0 z-[500] bg-black/65 flex items-center justify-center p-4" @click.self="dismissAlarm">
       <div class="w-full max-w-4xl bg-white rounded-[2rem] shadow-2xl border-8 border-amber-300 p-6 sm:p-10 text-center space-y-5">
         <div class="text-2xl sm:text-3xl font-black text-amber-600">⏰ {{ alarmPopup.time }}</div>
@@ -1531,6 +1592,28 @@
               </button>
             </div>
 
+            <div v-if="limitedCfg().on && limitedCfg().pool.length" class="bg-gradient-to-br from-fuchsia-50 to-sky-50 p-2.5 rounded-2xl border border-fuchsia-200 space-y-1.5">
+              <div class="flex justify-between items-center">
+                <h4 class="text-xs font-black text-fuchsia-900">🌟 {{ limitedCfg().name }}</h4>
+                <span class="text-[9px] font-bold text-fuchsia-800 bg-fuchsia-100 px-1.5 rounded-full">限定寶可夢・有機會抽到 ✨異色</span>
+              </div>
+              <button @click="drawLimited(profileStudent)" class="w-full py-2 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 text-white font-black text-xs rounded-xl shadow transition active:scale-95">消耗 {{ limitedCfg().cost }} EXP 抽限定寶可夢</button>
+            </div>
+            <div v-if="(profileStudent.collection || []).length" class="bg-white p-2.5 rounded-2xl border border-fuchsia-200 space-y-1.5">
+              <h4 class="text-xs font-black text-slate-800 flex items-center justify-between"><span>🌟 限定收藏（{{ profileStudent.collection.length }}）</span><span class="text-[9px] text-slate-500 font-bold">可設為主寵或和同學交換</span></h4>
+              <div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto custom-scroll p-0.5">
+                <div v-for="it in profileStudent.collection" :key="it.uid" class="rounded-xl border p-1.5 text-center space-y-1" :class="it.shiny ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-slate-50'">
+                  <div class="w-12 h-12 mx-auto rounded-xl p-1 animal-sphere overflow-hidden flex items-center justify-center" :class="(petById(it.pid) || {}).bg"><img :src="collImg(it)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" /></div>
+                  <div class="text-[11px] font-black text-slate-800 truncate">{{ it.shiny ? '✨' : '' }}{{ (petById(it.pid) || {}).name || '寶可夢' }}</div>
+                  <div v-if="profileStudent.petUid === it.uid" class="text-[10px] font-black text-emerald-600">使用中</div>
+                  <div v-else class="flex gap-1">
+                    <button @click="setMainFromCollection(profileStudent, it)" class="flex-1 py-0.5 rounded-lg bg-indigo-500 text-white text-[10px] font-black">設為主寵</button>
+                    <button @click="openPetTrade(profileStudent, it)" class="flex-1 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-600 text-[10px] font-black">交換</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 class="text-xs font-black text-slate-800 flex items-center justify-between">
                 <span><i class="fa-solid fa-address-card text-indigo-500 mr-1"></i> 已擁有的特權卡片</span>
@@ -1723,7 +1806,7 @@
 
       <div class="flex-1 overflow-y-auto custom-scroll p-2 border-2 border-teal-100 rounded-2xl bg-teal-50/30">
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-          <div v-for="(avatar, idx) in presetAvatars" :key="idx"
+          <div v-for="(avatar, idx) in normalAvatars" :key="idx"
                @click="selectedPetForExchange = avatar"
                :class="['p-2 rounded-2xl cursor-pointer border-2 transition flex flex-col items-center justify-between group relative', 
                        selectedPetForExchange === avatar ? 'border-teal-500 bg-teal-100/80 shadow-md scale-105 ring-2 ring-teal-400' : 'border-slate-200 bg-white hover:border-teal-300']">
@@ -1895,7 +1978,7 @@ function pkWeekDays(mon, n) {
   return out;
 }
 function pkDailyDefaults() {
-  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults() }, days: {}, weekly: {} };
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定扭蛋', cost: 50, shinyRate: 10, pool: [] } }, days: {}, weekly: {} };
 }
 // 把一段文字拆成黑板上的「格」：連續 1~3 個數字放同一格、國字連同讀音選擇碼（IVS）放同一格
 function pkBoardTokens(text) {
@@ -2994,6 +3077,10 @@ const __app = createApp({
       alarmPopup: null,
       lunchMode: 'brush',
       weeklyEdit: false,
+      limitedPick: '',
+      shinyOk: {},
+      limResult: { show: false, spin: false, student: null, pet: null, shiny: false, img: '' },
+      petTrade: { show: false, aId: '', aUid: '', bId: '', bUid: '' },
       focusIdx: -1,
       alarmOpen: false,
       timerMode: 'gargle',
@@ -3121,6 +3208,12 @@ const __app = createApp({
       }
       return out;
     },
+    limitedIds() { return new Set(this.limitedCfg().pool); },
+    normalAvatars() { const ids = this.limitedIds; return this.presetAvatars.filter(p => !ids.has(p.id)); },
+    petTradeA() { return this.students.find(x => x.id === this.petTrade.aId) || null; },
+    petTradeB() { return this.students.find(x => x.id === this.petTrade.bId) || null; },
+    petTradeItemA() { const a = this.petTradeA; return a ? (a.collection || []).find(x => x.uid === this.petTrade.aUid) || null : null; },
+    petTradeItemB() { const b = this.petTradeB; return b ? (b.collection || []).find(x => x.uid === this.petTrade.bUid) || null : null; },
     weekKey() { return pkMonKey(new Date(this.clockTs)); },
     weekDayKeys() { return pkWeekDays(this.weekKey, 7); },
     weeklyTasks() { return this.weeklyCfg().tasks.filter(t => t.on); },
@@ -4054,10 +4147,10 @@ const __app = createApp({
             currentEvo = evo;
           }
         }
-        return currentEvo.url;
+        return student.petShiny && this.shinyReady(currentEvo.url) ? this.shinyUrlFor(currentEvo.url) : currentEvo.url;
       }
 
-      return pet ? pet.url : PET_EGG_SVG;
+      return pet ? (student.petShiny && this.shinyReady(pet.url) ? this.shinyUrlFor(pet.url) : pet.url) : PET_EGG_SVG;
     },
 
     // 取得寵物名稱 (包含原廠同步進化名稱)
@@ -4075,10 +4168,10 @@ const __app = createApp({
             currentEvo = evo;
           }
         }
-        return currentEvo.name;
+        return (student.petShiny ? '✨' : '') + currentEvo.name;
       }
 
-      return pet ? pet.name : '寶可夢';
+      return pet ? (student.petShiny ? '✨' : '') + pet.name : '寶可夢';
     },
 
     // 階段依這隻寶可夢實際的進化形態計算（不是固定等級）
@@ -4202,6 +4295,86 @@ const __app = createApp({
       }
       this.checkWeekly(student);
       this.saveData();
+    },
+
+    // ---------- 限定扭蛋（限定寶可夢＋異色版） ----------
+    limitedCfg() {
+      const st = this.daily.settings;
+      if (!st.limited) st.limited = { on: false, name: '限定扭蛋', cost: 50, shinyRate: 10, pool: [] };
+      if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
+      return st.limited;
+    },
+    closeLim() { if (!this.limResult.spin) this.limResult.show = false; },
+    petById(id) { return this.presetAvatars.find(p => p.id === id) || null; },
+    // 異色圖網址：pk/6.png → pk/shiny/6.png；自訂網址的寵物可在 evolution 裡另填 shinyUrl
+    shinyUrlFor(url) {
+      for (const pk of this.presetAvatars) {
+        const hit = (pk.evolutions || []).find(ev => ev.url === url) || (pk.url === url ? pk : null);
+        if (hit && hit.shinyUrl) return hit.shinyUrl;
+      }
+      const m = /^(.*\/)?pk\/([^/]+)$/.exec(String(url || ''));
+      return m ? ((m[1] || '') + 'pk/shiny/' + m[2]) : '';
+    },
+    probeShiny(u) {
+      if (!u) return;
+      if (!this._shProbe) this._shProbe = {};
+      if (this._shProbe[u]) return;
+      this._shProbe[u] = 1;
+      const im = new Image();
+      im.onload = () => { this.shinyOk[u] = true; };
+      im.onerror = () => { this.shinyOk[u] = false; };
+      im.src = u;
+    },
+    shinyReady(url) { const u = this.shinyUrlFor(url); if (!u) return false; if (this.shinyOk[u] === undefined) this.probeShiny(u); return this.shinyOk[u] === true; },
+    collImg(it) {
+      const pet = this.petById(it.pid); if (!pet) return '';
+      const base = (pet.evolutions && pet.evolutions[0] && pet.evolutions[0].url) || pet.url;
+      return it.shiny && this.shinyReady(base) ? this.shinyUrlFor(base) : base;
+    },
+    addLimitedPet() {
+      const id = this.limitedPick; if (!id) return;
+      const c = this.limitedCfg();
+      if (!c.pool.includes(id)) c.pool.push(id);
+      this.limitedPick = '';
+      this.saveData();
+    },
+    removeLimitedPet(id) { const c = this.limitedCfg(); c.pool = c.pool.filter(x => x !== id); this.saveData(); },
+    drawLimited(st) {
+      const c = this.limitedCfg();
+      const pool = c.pool.filter(id => this.petById(id));
+      if (!c.on || !pool.length) { this.notify('限定扭蛋目前沒有開放'); return; }
+      const cost = Number(c.cost) || 0;
+      if (st.score < cost) { this.notify(`經驗值不足 ${cost} EXP，無法抽限定扭蛋！`); return; }
+      this.addScore(st, -cost, '消耗 EXP 抽限定扭蛋', '🌟 限定扭蛋');
+      const pid = pool[Math.floor(Math.random() * pool.length)];
+      const shiny = Math.random() * 100 < (Number(c.shinyRate) || 0);
+      const item = { uid: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) + (this._uidN = (this._uidN || 0) + 1), pid, shiny, t: Date.now() };
+      if (!st.collection) st.collection = [];
+      st.collection.push(item);
+      this.addLog(st.name, `限定扭蛋抽到【${shiny ? '✨異色 ' : ''}${this.petById(pid).name}】`, 0);
+      this.limResult = { show: true, spin: true, student: st, pet: this.petById(pid), shiny, img: this.collImg(item) };
+      this.saveData();
+      setTimeout(() => { this.limResult.spin = false; }, 1500);
+    },
+    setMainFromCollection(st, it) {
+      const pet = this.petById(it.pid); if (!pet) return;
+      st.petId = pet.id; st.customAvatar = pet.url; st.animalBg = pet.bg; st.petShiny = !!it.shiny; st.petUid = it.uid;
+      this.addLog(st.name, `寵物更換為【${it.shiny ? '✨異色 ' : ''}${pet.name}】`, 0);
+      this.saveData();
+    },
+    openPetTrade(st, it) { this.petTrade = { show: true, aId: st.id, aUid: it.uid, bId: '', bUid: '' }; },
+    async confirmPetTrade() {
+      const A = this.petTradeA, B = this.petTradeB, ia = this.petTradeItemA, ib = this.petTradeItemB;
+      if (!A || !B || !ia || !ib) return;
+      if (A.petUid === ia.uid || B.petUid === ib.uid) { this.notify('使用中的寶可夢不能交換'); return; }
+      const na = (this.petById(ia.pid) || {}).name, nb = (this.petById(ib.pid) || {}).name;
+      if (!(await this.askConfirm(`${A.name} 的【${ia.shiny ? '✨' : ''}${na}】\n換\n${B.name} 的【${ib.shiny ? '✨' : ''}${nb}】\n確定交換嗎？`))) return;
+      A.collection = (A.collection || []).filter(x => x.uid !== ia.uid).concat([ib]);
+      B.collection = (B.collection || []).filter(x => x.uid !== ib.uid).concat([ia]);
+      this.addLog(A.name, `與 ${B.name} 交換寶可夢：${na} ⇄ ${nb}`, 0);
+      this.petTrade.show = false;
+      this.saveData();
+      this.showToast('交換完成！');
     },
 
     // ---------- 每週任務 ／ 友你真好星期五 ----------
@@ -4602,6 +4775,7 @@ const __app = createApp({
         this.addScore(this.petSelectingStudent, -25, '更換寵物造型', '🐾 更換寵物');
       }
 
+      this.petSelectingStudent.petShiny = false; this.petSelectingStudent.petUid = '';
       this.petSelectingStudent.petId = this.selectedPetForExchange.id;
       this.petSelectingStudent.customAvatar = this.selectedPetForExchange.url;
       this.petSelectingStudent.animalBg = this.selectedPetForExchange.bg;
