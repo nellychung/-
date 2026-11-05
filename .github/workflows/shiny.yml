@@ -1,0 +1,40 @@
+name: 下載異色圖
+
+# 在 GitHub 的伺服器上自動下載異色版寶可夢圖片，存進 pk/shiny/ 後自動提交。
+# 觸發方式：改動這個檔案或下載程式時自動執行；也可到 Actions 頁面手動按 Run workflow。
+on:
+  workflow_dispatch:
+    inputs:
+      add:
+        description: '要額外新增的限定寶可夢圖鑑編號（用空格隔開，例如 884 1000；留空就只補異色圖）'
+        required: false
+        default: ''
+  push:
+    branches: [claude/pokemon-kingdom]
+    paths:
+      - '.github/workflows/shiny.yml'
+      - '下載寶可夢圖.py'
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - name: 下載全部寶可夢的異色圖
+        run: python 下載寶可夢圖.py
+      - name: 下載額外的限定寶可夢（一般圖＋異色圖）
+        if: ${{ github.event.inputs.add != '' }}
+        run: python 下載寶可夢圖.py --新增 ${{ github.event.inputs.add }}
+      - name: 提交下載的圖片
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add pk
+          if git diff --cached --quiet; then echo "沒有新圖片"; else git commit -m "自動下載異色版寶可夢圖片" && git push; fi
