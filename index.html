@@ -526,6 +526,7 @@
             <template v-if="daily.settings.boardMode !== 'photo'">
               <button @click="openBatch" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">✏️ 整段輸入</button>
               <button @click="clearBoard" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 text-[11px] font-black">清空</button>
+              <button @mousedown.prevent @click="cycleReading" class="px-2.5 py-1 rounded-xl bg-white text-sky-700 border border-sky-300 text-[11px] font-black">🔁 換讀音（破音字）</button>
               <button @click="daily.settings.boardZhuyin = !daily.settings.boardZhuyin; saveDaily()" class="px-2.5 py-1 rounded-xl border text-[11px] font-black" :class="daily.settings.boardZhuyin ? 'bg-sky-500 text-white border-sky-600' : 'bg-white text-slate-500 border-slate-200'">ㄅ 注音 {{ daily.settings.boardZhuyin ? '開' : '關' }}</button>
               <label class="flex items-center gap-1 text-[11px] font-black text-slate-500">每行
                 <select :value="boardCols" @change="setBoardCols($event.target.value)" class="px-1 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs"><option v-for="n in [4,5,6,7,8,9,10,11,12]" :key="n" :value="n">{{ n }} 欄</option></select></label>
@@ -549,7 +550,7 @@
               <div class="flex-1 min-w-0" :style="{ display: 'grid', direction: 'rtl', gridTemplateColumns: 'repeat(' + boardCols + ', minmax(0, 1fr))', gridTemplateRows: 'repeat(7, minmax(0, 1fr))' }">
                 <template v-for="i in boardCols * 7" :key="i">
                   <div class="cl-wrap" :style="{ gridColumn: Math.floor((i - 1) / 7) + 1, gridRow: (i - 1) % 7 + 1 }">
-                    <input :id="'bc' + (i - 1)" class="cl-cell" :value="boardCell(i - 1)" autocomplete="off"
+                    <input :id="'bc' + (i - 1)" class="cl-cell" :value="boardCell(i - 1)" :style="cellStyle(i - 1)" autocomplete="off"
                            @focus="focusCell($event)" @compositionstart="onCompStart" @compositionend="onCellComposeEnd($event, i - 1)"
                            @input="onCellInput($event, i - 1)" @keydown.backspace="onCellBackspace($event, i - 1)" />
                   </div>
@@ -575,8 +576,8 @@
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
               <button v-if="stu" @click="lunchMode === 'meal' ? mealTap(stu) : brushTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0"
-                      :class="(lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? (lunchMode === 'meal' ? 'bg-amber-50 border-amber-400 text-amber-800' : 'bg-emerald-50 border-emerald-400 text-emerald-800') : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
-                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
+                      :class="(lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? (lunchMode === 'meal' ? 'bg-amber-500 border-amber-700 text-white shadow-inner' : 'bg-emerald-500 border-emerald-700 text-white shadow-inner') : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
+                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ ((lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? '✓ ' : '') + (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
@@ -1812,6 +1813,19 @@ function pkTodayKey() { const n = new Date(), p = x => String(x).padStart(2, '0'
 function pkDailyDefaults() {
   return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, photoRev: 0, alarms: {} }, days: {} };
 }
+// 把一段文字拆成黑板上的「格」：連續 1~3 個數字放同一格、國字連同讀音選擇碼（IVS）放同一格
+function pkBoardTokens(text) {
+  const out = [];
+  const re = /[0-9０-９]+|[\u3400-\u9FFF\uF900-\uFAFF\u{20000}-\u{2FA1F}][\uFE00-\uFE0F\u{E0100}-\u{E01EF}]?|[\s\S]/gu;
+  let m;
+  while ((m = re.exec(String(text || '')))) {
+    const t = m[0];
+    if (/^[0-9０-９]+$/.test(t)) {
+      if (t.length <= 3) out.push(t); else for (let k = 0; k < t.length; k += 2) out.push(t.slice(k, k + 2));
+    } else out.push(t);
+  }
+  return out;
+}
 function pkNormDaily(d) {
   const b = pkDailyDefaults();
   if (!d || typeof d !== 'object' || Array.isArray(d)) return b;
@@ -2894,6 +2908,7 @@ const __app = createApp({
       ytMsg: '',
       alarmPopup: null,
       lunchMode: 'brush',
+      focusIdx: -1,
       alarmOpen: false,
       timerMode: 'gargle',
       timers: { gargle: { left: 60, running: false, endAt: 0 }, brush: { left: 180, running: false, endAt: 0 } },
@@ -3175,27 +3190,28 @@ const __app = createApp({
     removeLeave(sid) { const r = this.ensureDay(); delete r.leave[sid]; this.saveData(); },
     arriveClass(st) {
       const r = this.dayRec;
-      if (r.leave[st.id]) return 'bg-slate-100 border-slate-300 text-slate-500';
+      if (r.leave[st.id]) return 'bg-slate-300 border-slate-500 text-slate-700';
       const a = r.arrive[st.id];
-      if (a) return a.late ? 'bg-rose-50 border-rose-400 text-rose-700' : 'bg-emerald-50 border-emerald-400 text-emerald-800';
+      if (a) return a.late ? 'bg-rose-500 border-rose-700 text-white shadow-inner' : 'bg-emerald-500 border-emerald-700 text-white shadow-inner';
       return 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50';
     },
     arriveText(st) {
       const r = this.dayRec;
       if (r.leave[st.id]) return '請假·' + r.leave[st.id];
       const a = r.arrive[st.id];
-      return a ? String(a.t).slice(0, 5) + (a.late ? ' 遲到' : '') : '';
+      return a ? '✓ ' + String(a.t).slice(0, 5) + (a.late ? ' 遲到' : '') : '';
     },
     // 黑板聯絡簿（7 格 × 6 行）
     boardCell(i) { return (this.daily.settings.boardCells || {})[i] || ''; },
     fillBoardFrom(i, text) {
       const s = this.daily.settings;
       if (!s.boardCells) s.boardCells = {};
-      const chars = Array.from(String(text || '')).filter(c => !/[\r\n]/.test(c));
+      const chars = pkBoardTokens(text).filter(c => !/[\r\n]/.test(c));
       if (!chars.length) { delete s.boardCells[i]; this.saveData(); return i; }
       let k = i;
       chars.forEach(c => { if (k < this.boardCols * 7) { if (c === ' ' || c === '　') delete s.boardCells[k]; else s.boardCells[k] = c; k++; } });
       this.saveData();
+      if (chars.length === 1 && /^[0-9０-９]{1,2}$/.test(chars[0])) return i;   // 數字先留在這一格，可以接著打第 2、3 位
       return Math.min(k, this.boardCols * 7 - 1);
     },
     onCellInput(e, i) {
@@ -3212,7 +3228,7 @@ const __app = createApp({
     onCellBackspace(e, i) {
       if (!this.boardCell(i) && i > 0) { const el = document.getElementById('bc' + (i - 1)); if (el) { e.preventDefault(); el.focus(); } }
     },
-    focusCell(e) { const t = e.target; setTimeout(() => { try { t.select(); } catch (x) {} }, 0); },
+    focusCell(e) { const m = String(e.target.id || '').match(/^bc(\d+)$/); if (m) this.focusIdx = Number(m[1]); const t = e.target; setTimeout(() => { try { t.select(); } catch (x) {} }, 0); },
     openBatch() {
       const rows = [];
       for (let r = 0; r < this.boardCols; r++) { let line = ''; for (let c = 0; c < 7; c++) line += this.boardCell(r * 7 + c) || '　'; rows.push(line.replace(/　+$/, '')); }
@@ -3224,7 +3240,7 @@ const __app = createApp({
       String(this.batchDlg.text || '').split('\n').forEach(line => {
         if (idx % 7 !== 0) idx = Math.ceil(idx / 7) * 7;
         if (!line.replace(/\r/g, '').length) { idx += 7; return; }   // 空白行＝空一行
-        Array.from(line.replace(/\r/g, '')).forEach(c => { if (idx < this.boardCols * 7) { if (c !== ' ' && c !== '　') cells[idx] = c; idx++; } });
+        pkBoardTokens(line.replace(/\r/g, '')).forEach(c => { if (idx < this.boardCols * 7) { if (c !== ' ' && c !== '　') cells[idx] = c; idx++; } });
       });
       this.daily.settings.boardCells = cells;
       this.batchDlg.show = false;
@@ -3233,7 +3249,25 @@ const __app = createApp({
     async clearBoard() {
       if (!(await this.askConfirm('確定要清空黑板上的字嗎？'))) return;
       this.daily.settings.boardCells = {};
+      this.daily.settings.boardSs = {};
       this.saveData();
+    },
+    cellStyle(i) {
+      const v = this.boardCell(i), ss = ((this.daily.settings.boardSs || {})[i]) | 0, st = {};
+      if (/^[0-9０-９]{2}$/.test(v)) st.fontSize = '50cqmin';
+      else if (/^[0-9０-９]{3}$/.test(v)) st.fontSize = '36cqmin';
+      if (ss > 0) st.fontFeatureSettings = '"ss' + String(ss).padStart(2, '0') + '"';
+      return st;
+    },
+    cycleReading() {
+      const i = this.focusIdx;
+      if (i < 0 || !this.boardCell(i)) { this.showToast('先點一下要換讀音的那個字'); return; }
+      const s = this.daily.settings;
+      if (!s.boardSs) s.boardSs = {};
+      const n = (((s.boardSs[i] | 0) + 1) % 5);
+      if (n) s.boardSs[i] = n; else delete s.boardSs[i];
+      this.saveData();
+      const el = document.getElementById('bc' + i); if (el) el.focus();
     },
     setBoardCols(v) { this.daily.settings.boardCols = Number(v) || 8; this.saveData(); },
     setBoardMode(m) { this.daily.settings.boardMode = m; this.saveData(); },
