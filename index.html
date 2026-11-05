@@ -298,11 +298,11 @@
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">目前沒有作業項目</div>
       </div>
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
-        <div class="text-sm font-black text-sky-800">🌅 今天到校</div>
+        <div class="text-sm font-black text-sky-800">🌅 今天到班時間</div>
         <div class="text-lg font-black" :class="parentState.today.leave ? 'text-slate-600' : (parentState.today.arrive ? 'text-emerald-600' : 'text-slate-400')">
           <template v-if="parentState.today.leave">請假（{{ parentState.today.leave }}）</template>
-          <template v-else-if="parentState.today.arrive">{{ String(parentState.today.arrive).slice(0, 5) }} 到班</template>
-          <template v-else>今天還沒有紀錄</template>
+          <template v-else-if="parentState.today.arrive">{{ String(parentState.today.arrive).slice(0, 5) }}</template>
+          <template v-else>尚未到班</template>
         </div>
       </div>
       <div class="text-center text-[11px] font-bold text-slate-400">資料每分鐘自動更新 · 更新於 {{ parentState.updated }}</div>
