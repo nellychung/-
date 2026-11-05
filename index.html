@@ -617,15 +617,19 @@
           <div class="bg-white/90 rounded-2xl border border-orange-200 px-3 py-1.5 text-[11px] font-black text-slate-600">
             <div class="flex flex-wrap items-center gap-2">
               <button @click="alarmOpen = !alarmOpen" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 font-black">⏰ 鬧鐘 {{ alarmOpen ? '▲' : '▼' }}</button>
-              <span v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="zy-font px-2.5 py-0.5 rounded-full border font-black text-sm" :class="a.on ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'">{{ a.time }} {{ a.text }}</span>
-              <span class="text-slate-400 font-bold">週一到週五，到時間會叮咚並跳出提示</span>
+              <span v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="zy-font px-2.5 py-0.5 rounded-full border font-black text-sm" :class="a.on && alarmDays(a).includes(new Date(clockTs).getDay()) ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'">{{ a.time }} {{ a.text }}<span class="text-[11px] font-bold">{{ alarmDayText(a) }}</span></span>
+              <span class="text-slate-400 font-bold">預設週一到週五，可在每個鬧鐘下面選星期；到時間會叮咚並跳出提示</span>
             </div>
             <div v-if="alarmOpen" class="mt-1.5 space-y-1">
-              <div v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="flex items-center gap-1.5">
+              <div v-for="(a, id) in (daily.settings.alarms || {})" :key="id" class="flex flex-wrap items-center gap-1.5">
                 <input type="checkbox" v-model="a.on" @change="saveDaily" class="w-4 h-4" />
                 <input type="time" v-model="a.time" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" />
                 <input v-model="a.text" @change="saveDaily" placeholder="跳出的提示文字（例如：該去洗手囉）" class="zy-font flex-1 px-2 py-1 rounded-lg border border-orange-200 bg-white text-base font-bold min-w-0" />
                 <button @click="delAlarm(id)" class="px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-500 font-black">✕</button>
+                <div class="basis-full flex items-center gap-1 pl-6">
+                  <span class="text-[11px] text-slate-400 font-bold mr-1">星期</span>
+                  <button v-for="d in [1, 2, 3, 4, 5]" :key="d" @click="toggleAlarmDay(a, d)" class="w-7 h-7 rounded-full border text-xs font-black" :class="alarmDays(a).includes(d) ? 'bg-amber-500 border-amber-600 text-white' : 'bg-white border-slate-300 text-slate-400'">{{ '日一二三四五六'[d] }}</button>
+                </div>
               </div>
               <div class="flex gap-2"><button @click="addAlarm" class="px-3 py-1 rounded-xl bg-gradient-to-r from-orange-400 to-rose-400 text-white font-black shadow-sm">＋ 新增鬧鐘</button><button @click="testAlarm" class="px-3 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 font-black">🔔 試響</button></div>
             </div>
@@ -3408,13 +3412,24 @@ const __app = createApp({
       const al = this.daily.settings.alarms || {};
       Object.keys(al).forEach(id => {
         const a = al[id], t = a ? toMin(a.time) : -1;
-        if (!a || !a.on || t < 0) return;
+        if (!a || !a.on || t < 0 || !this.alarmDays(a).includes(wd)) return;
         if (mins >= t && mins < t + 3 && this._alFired[id] !== this.todayK) {
           this._alFired[id] = this.todayK;
           try { localStorage.setItem('pk_alFired', JSON.stringify(this._alFired)); } catch (e) {}
           this.fireAlarm(a);
         }
       });
+    },
+    alarmDays(a) { return Array.isArray(a && a.days) ? a.days : [1, 2, 3, 4, 5]; },
+    alarmDayText(a) {
+      const d = this.alarmDays(a);
+      if (d.length >= 5) return '';
+      return d.length ? '（週' + [...d].sort().map(x => '日一二三四五六'[x]).join('、') + '）' : '（沒選星期）';
+    },
+    toggleAlarmDay(a, d) {
+      const cur = this.alarmDays(a), i = cur.indexOf(d);
+      a.days = i >= 0 ? cur.filter(x => x !== d) : [...cur, d].sort();
+      this.saveDaily();
     },
     addAlarm() {
       if (!this.daily.settings.alarms) this.daily.settings.alarms = {};
