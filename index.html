@@ -298,6 +298,17 @@
         </div>
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">目前沒有作業項目</div>
       </div>
+
+      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="font-black text-amber-900 text-sm">🏅 得到的徽章</div>
+          <div class="text-xs font-black text-amber-700">共 {{ parentState.badges.length }} 枚</div>
+        </div>
+        <div v-if="parentState.badges.length" class="flex flex-wrap gap-1.5">
+          <span v-for="(b, i) in [...parentState.badges].reverse()" :key="i" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ b.icon }} {{ b.name }}<span class="text-[10px] font-bold text-amber-600 ml-1">{{ String(b.wk || '').slice(5).replace('-', '/') }} 那週</span></span>
+        </div>
+        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">還沒有徽章，每週完成任務就能拿到喔！</div>
+      </div>
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
         <div class="text-sm font-black text-sky-800">🌅 今天到班時間</div>
         <div class="text-lg font-black" :class="parentState.today.leave ? 'text-slate-600' : (parentState.today.arrive ? 'text-emerald-600' : 'text-slate-400')">
@@ -681,14 +692,14 @@
               <input type="checkbox" :checked="t.on" @change="setWeeklyTask(t, 'on', $event.target.checked)" class="w-4 h-4" />
               <input :value="t.icon" @change="setWeeklyTask(t, 'icon', $event.target.value)" class="w-9 text-center px-1 py-0.5 rounded-lg border border-orange-200 bg-white" />
               <input :value="t.name" @change="setWeeklyTask(t, 'name', $event.target.value)" class="w-28 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" />
-              <span>{{ { arrive: '準時到班天數', brush: '刷牙天數', meal: '吃光光天數', hw: '作業完成項數' }[t.type] }}</span>
+              <span>{{ { arrive: '準時到班天數', brush: '刷牙天數', meal: '吃光光天數', hw: '作業完成項數', hwday: '作業當天全部完成的天數' }[t.type] }}</span>
               <input type="number" min="1" max="30" :value="t.target" @change="setWeeklyTask(t, 'target', $event.target.value)" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" />
               <span>達成加</span>
               <input type="number" min="0" max="50" :value="t.exp" @change="setWeeklyTask(t, 'exp', $event.target.value)" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /><span>分</span>
             </div>
             <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🤝 友你真好獎勵：全組每人加
               <input type="number" min="0" max="100" :value="weeklyCfg().friendExp" @change="weeklyCfg().friendExp = Math.max(0, Number($event.target.value) || 0); saveData()" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /> 分</div>
-            <div class="text-[10px] font-bold text-slate-400">任務達成時會自動加分並發徽章；之後又被取消（例如取消刷牙）而不足時，會自動收回。每週一重新計算。</div>
+            <div class="text-[10px] font-bold text-slate-400">「作業當天完成」＝當天出的作業，在當天按完成才算一天；沒出作業的日子也算一天（隔天才算）。任務達成時會自動加分並發徽章；之後又被取消（例如取消刷牙）而不足時，會自動收回。每週一重新計算。</div>
           </div>
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
@@ -1964,7 +1975,7 @@ function pkWeeklyDefaults() {
     { id: 't_arrive', type: 'arrive', name: '準時到班', icon: '🌅', target: 4, exp: 3, on: true },
     { id: 't_brush', type: 'brush', name: '認真刷牙', icon: '🪥', target: 4, exp: 3, on: true },
     { id: 't_meal', type: 'meal', name: '午餐吃光光', icon: '🍚', target: 4, exp: 3, on: true },
-    { id: 't_hw', type: 'hw', name: '完成作業', icon: '📚', target: 5, exp: 3, on: true }
+    { id: 't_hw', type: 'hwday', name: '作業當天完成', icon: '📚', target: 5, exp: 3, on: true }
   ] };
 }
 // 回傳 d 所在那一週的星期一（'YYYY-MM-DD'）
@@ -3100,7 +3111,7 @@ const __app = createApp({
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { child: null, top: false, homework: [], today: { arrive: '', leave: '' }, error: '', updated: '' },
+      parentState: { child: null, top: false, homework: [], badges: [], today: { arrive: '', leave: '' }, error: '', updated: '' },
       students: [],
       homeworkList: [],
       logs: [],
@@ -3180,6 +3191,9 @@ const __app = createApp({
     };
   },
 
+  watch: {
+    currentTab(v) { if (v === 'weekly') this.students.forEach(st => this.checkWeekly(st)); }
+  },
   computed: {
     seatList() { return [...this.students].sort((a, b) => a.seatNumber - b.seatNumber); },
     dayRec() { const r = this.daily.days[this.todayK] || {}; return { arrive: r.arrive || {}, leave: r.leave || {}, brush: r.brush || {}, meal: r.meal || {} }; },
@@ -3788,6 +3802,7 @@ const __app = createApp({
               this.parentState.child = j.student;
               this.parentState.top = !!j.top;
               this.parentState.homework = j.homework || [];
+              this.parentState.badges = j.badges || [];
               this.parentState.today = j.today || { arrive: '', leave: '' };
               this.parentState.error = '';
               this.parentState.updated = new Date().toLocaleTimeString('zh-TW', { hour12: false });
@@ -4378,7 +4393,11 @@ const __app = createApp({
     },
 
     // ---------- 每週任務 ／ 友你真好星期五 ----------
-    weeklyCfg() { return this.daily.settings.weekly || (this.daily.settings.weekly = pkWeeklyDefaults()); },
+    weeklyCfg() {
+      const w = this.daily.settings.weekly || (this.daily.settings.weekly = pkWeeklyDefaults());
+      (w.tasks || []).forEach(t => { if (t.id === 't_hw' && t.type === 'hw') { t.type = 'hwday'; if (t.name === '完成作業') t.name = '作業當天完成'; } });
+      return w;
+    },
     weekCount(st, type, mon) {
       let n = 0;
       pkWeekDays(mon || this.weekKey, 5).forEach(k => {
@@ -4388,6 +4407,16 @@ const __app = createApp({
         else if (type === 'meal') { if (r.meal && r.meal[st.id]) n++; }
         else if (type === 'hw') n += (r.hw && r.hw[st.id]) || 0;
       });
+      if (type === 'hwday') {
+        // 一天算一天：當天出的作業，當天全部按完成；沒出作業的過去日子也算
+        const today = pkTodayKey();
+        pkWeekDays(mon || this.weekKey, 5).forEach(k => {
+          if (k > today) return;
+          const hws = this.homeworkList.filter(h => h.date === k);
+          if (!hws.length) { if (k < today) n++; return; }
+          if (hws.every(h => { const d = st.homeworks && st.homeworks[h.id]; return d && d.completed && d.doneDate === k; })) n++;
+        });
+      }
       return n;
     },
     weekAw(mon) {
@@ -4514,6 +4543,7 @@ const __app = createApp({
       d.submitted = d.completed;
       d.revision = false;
       d.fromSheet = false;
+      d.doneDate = d.completed ? pkTodayKey() : '';
       this.addScore(student, d.completed ? 1 : -1, d.completed ? '作業完成' : '取消作業完成', d.completed ? '作業完成' : '取消完成');
       if (d.completed) this.showBigFx(`${student.name} 作業完成`, '+1 EXP', 'plus');
       this.saveData();
@@ -4526,7 +4556,7 @@ const __app = createApp({
         }
         const d = student.homeworks[hwId];
         if (!d.completed) {
-          d.completed = true; d.submitted = true; d.revision = false;
+          d.completed = true; d.submitted = true; d.revision = false; d.doneDate = pkTodayKey();
           this.addScore(student, 1, '批次設定作業完成', '作業完成');
         }
       });
@@ -4537,7 +4567,8 @@ const __app = createApp({
       if (!this.newHomeworkTitle.trim()) return;
       this.homeworkList.push({
         id: 'hw_' + Date.now(),
-        title: this.newHomeworkTitle.trim()
+        title: this.newHomeworkTitle.trim(),
+        date: pkTodayKey()
       });
       this.newHomeworkTitle = '';
       this.saveData();
@@ -4594,7 +4625,7 @@ const __app = createApp({
         sheetTitles.add(label);
         let hw = this.homeworkList.find(h => h.title === label);
         if (!hw) {
-          hw = { id: 'hw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), title: label };
+          hw = { id: 'hw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), title: label, date: pkTodayKey() };
           this.homeworkList.push(hw);
         }
         hw.fromSheet = true;
@@ -4616,7 +4647,7 @@ const __app = createApp({
             const stF = this.students.find(x => x.seatNumber === seats[i]);
             const dF = stF && stF.homeworks && stF.homeworks[hw.id];
             if (dF && dF.completed && dF.fromSheet) {
-              dF.completed = false; dF.submitted = false; dF.fromSheet = false;
+              dF.completed = false; dF.submitted = false; dF.fromSheet = false; dF.doneDate = '';
               this.addScore(stF, -1, `試算表取消完成：${label}`, '取消完成');
               revoked++;
             }
@@ -4629,7 +4660,7 @@ const __app = createApp({
           if (!st.homeworks[hw.id]) st.homeworks[hw.id] = { submitted: false, completed: false, revision: false };
           const d = st.homeworks[hw.id];
           if (d.completed) { skipped++; return; }
-          d.completed = true; d.submitted = true; d.revision = false; d.fromSheet = true;
+          d.completed = true; d.submitted = true; d.revision = false; d.fromSheet = true; d.doneDate = pkTodayKey();
           this.addScore(st, 1, `作業完成（試算表）：${label}`, '作業完成');
           added++;
         });

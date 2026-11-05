@@ -54,6 +54,7 @@ function parent_(t) {
     today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '' },
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
+    badges: (kid.badges || []).slice(-60).map(b => ({ icon: b.icon, name: b.name, wk: b.wk })),
     pets: pets
   });
   try { cache.put(ck, body, 20); } catch (x) {}
