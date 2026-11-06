@@ -695,11 +695,16 @@
               <input :value="t.name" @change="setWeeklyTask(t, 'name', $event.target.value)" class="w-28 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" />
               <span>{{ { arrive: '準時到班天數', brush: '刷牙天數', meal: '吃光光天數', hw: '作業完成項數', hwday: '作業當天全部完成的天數' }[t.type] }}</span>
               <input type="number" min="1" max="30" :value="t.target" @change="setWeeklyTask(t, 'target', $event.target.value)" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" />
+              <span>徽章</span><input :value="t.badge" @change="setWeeklyTask(t, 'badge', $event.target.value); refreshBadgeNames()" class="w-24 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" />
               <span>達成加</span>
               <input type="number" min="0" max="50" :value="t.exp" @change="setWeeklyTask(t, 'exp', $event.target.value)" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /><span>分</span>
             </div>
             <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🤝 友你真好獎勵：全組每人加
               <input type="number" min="0" max="100" :value="weeklyCfg().friendExp" @change="weeklyCfg().friendExp = Math.max(0, Number($event.target.value) || 0); saveData()" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /> 分</div>
+            <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🚫 友你真好不計入的組別（測試組等，用逗號分開）：
+              <input :value="(weeklyCfg().friendExclude || []).join(',')" @change="weeklyCfg().friendExclude = $event.target.value.split(/[,，\s]+/).map(Number).filter(n => n > 0); saveData()" class="w-24 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" /></div>
+            <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🤝 友你真好徽章名稱：
+              <input :value="weeklyCfg().friendBadge" @change="weeklyCfg().friendBadge = $event.target.value; refreshBadgeNames(); saveData()" class="w-28 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" /></div>
             <div class="text-[10px] font-bold text-slate-400">「作業當天完成」＝當天出的作業，在當天按完成才算一天；沒出作業的日子也算一天（隔天才算）。任務達成時會自動加分並發徽章；之後又被取消（例如取消刷牙）而不足時，會自動收回。每週一重新計算。</div>
           </div>
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
@@ -743,23 +748,26 @@
             <label class="flex items-center gap-1"><input type="checkbox" v-model="limitedCfg().shinyRotate" @change="saveData" class="w-4 h-4" />異色每週自動輪替</label>
             <span class="text-fuchsia-700">→ 異色約 {{ ((Number(limitedCfg().rate) || 0) * (Number(limitedCfg().shinyRate) || 0) / 100).toFixed(2) }}%</span>
           </div>
-          <div v-if="limitedCfg().shinyRotate !== false && shinyFeature" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">✨ 本週異色主角：{{ shinyFeature.now.name }}　<span class="text-slate-500 font-bold">下週：{{ shinyFeature.next.name }}（限定池共 {{ shinyFeature.count }} 隻，依序輪流）</span></div>
-          <div class="flex flex-wrap items-center gap-2">
-            <select v-model="limitedPick" class="px-2 py-1 rounded-lg border border-fuchsia-200 bg-white text-xs font-black min-w-0"><option value="">＋ 選一隻加入限定池…</option><option v-for="pv in normalAvatars" :key="pv.id" :value="pv.id">{{ pv.name }}</option></select>
-            <button @click="addLimitedPet" class="px-3 py-1 rounded-xl bg-fuchsia-500 text-white text-xs font-black">加入</button>
-          </div>
-          <div v-if="limitedCfg().pool.length" class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-            <div v-for="pid in limitedCfg().pool" :key="pid" class="rounded-xl border border-fuchsia-200 bg-fuchsia-50/50 p-1 text-center relative">
-              <button @click="removeLimitedPet(pid)" class="absolute top-0 right-1 text-rose-500 text-xs font-black">✕</button>
-              <div v-if="petById(pid)" class="flex items-center justify-center gap-1">
-                <img :src="petById(pid).url" @error="handleImageError" data-name="寵" class="w-10 h-10 object-contain" />
-                <img v-if="shinyReady(petById(pid).url)" :src="shinyUrlFor(petById(pid).url)" class="w-10 h-10 object-contain" title="異色圖" />
+          <div v-if="limitedCfg().shinyRotate !== false && shinyFeature" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">✨ 本週異色主角：{{ shinyFeature.now.name }}　<span class="text-slate-500 font-bold">下週：{{ shinyFeature.next.name }}（共 {{ shinyFeature.count }} 隻，依序輪流）</span></div>
+          <div v-for="L in [{ key: 'pool', title: '👑 稀有限定（原色＋異色都抽得到；原色版不能再用 25 EXP 換）' }, { key: 'shinyPool', title: '✨ 只抽異色版（原色版仍可正常更換寵物）' }]" :key="L.key" class="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/40 p-2 space-y-1.5">
+            <div class="text-xs font-black text-fuchsia-800">{{ L.title }}　<span class="text-slate-500">共 {{ limitedCfg()[L.key].length }} 隻</span></div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select v-model="limitedPicks[L.key]" class="px-2 py-1 rounded-lg border border-fuchsia-200 bg-white text-xs font-black min-w-0"><option value="">＋ 選一隻加入…</option><option v-for="pv in limitedOptions(L.key)" :key="pv.id" :value="pv.id">{{ pv.name }}</option></select>
+              <button @click="addLimitedPet(L.key)" class="px-3 py-1 rounded-xl bg-fuchsia-500 text-white text-xs font-black">加入</button>
+            </div>
+            <div v-if="limitedCfg()[L.key].length" class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+              <div v-for="pid in limitedCfg()[L.key]" :key="pid" class="rounded-xl border border-fuchsia-200 bg-white p-1 text-center relative">
+                <button @click="removeLimitedPet(L.key, pid)" class="absolute top-0 right-1 text-rose-500 text-xs font-black">✕</button>
+                <div v-if="petById(pid)" class="flex items-center justify-center gap-1">
+                  <img :src="petById(pid).url" @error="handleImageError" data-name="寵" class="w-10 h-10 object-contain" />
+                  <img v-if="shinyReady(petById(pid).url)" :src="shinyUrlFor(petById(pid).url)" class="w-10 h-10 object-contain" title="異色圖" />
+                </div>
+                <div class="text-[11px] font-black text-slate-700 truncate">{{ (petById(pid) || {}).name || pid }}</div>
+                <div class="text-[10px] font-bold" :class="petById(pid) && shinyReady(petById(pid).url) ? 'text-emerald-600' : 'text-rose-500'">{{ petById(pid) && shinyReady(petById(pid).url) ? '✨ 有異色圖' : '缺異色圖' }}</div>
               </div>
-              <div class="text-[11px] font-black text-slate-700 truncate">{{ (petById(pid) || {}).name || pid }}</div>
-              <div class="text-[10px] font-bold" :class="petById(pid) && shinyReady(petById(pid).url) ? 'text-emerald-600' : 'text-rose-500'">{{ petById(pid) && shinyReady(petById(pid).url) ? '✨ 有異色圖' : '缺異色圖' }}</div>
             </div>
           </div>
-          <div class="text-[10px] font-bold text-slate-400">限定池裡的寶可夢不會出現在一般的「更換寵物」清單裡，只能抽到。異色圖請放在專案的 <b>pk/shiny/</b> 資料夾，檔名和一般圖一樣（例如 pk/6.png 的異色圖就是 pk/shiny/6.png）。沒有異色圖時，抽到異色會顯示一般圖並標示 ✨。可執行專案裡的「下載異色圖.bat」自動下載。</div>
+          <div class="text-[10px] font-bold text-slate-400">抽到限定時：先決定是不是異色（只會是「本週異色主角」，兩個清單交錯輪流）；不是異色就從「稀有限定」抽原色版。「只抽異色版」的寶可夢，原色版不在扭蛋裡，學生仍可用 EXP 直接更換。異色圖放在 <b>pk/shiny/</b>（檔名同一般圖）。</div>
         </div>
       </div>
 
@@ -1967,11 +1975,11 @@ function doPost(e) {
 // ---------- 早自修／午餐 資料 ----------
 function pkTodayKey() { const n = new Date(), p = x => String(x).padStart(2, '0'); return n.getFullYear() + '-' + p(n.getMonth() + 1) + '-' + p(n.getDate()); }
 function pkWeeklyDefaults() {
-  return { friendExp: 10, tasks: [
-    { id: 't_arrive', type: 'arrive', name: '準時到班', icon: '🌅', target: 4, exp: 3, on: true },
-    { id: 't_brush', type: 'brush', name: '認真刷牙', icon: '🪥', target: 4, exp: 3, on: true },
-    { id: 't_meal', type: 'meal', name: '午餐吃光光', icon: '🍚', target: 4, exp: 3, on: true },
-    { id: 't_hw', type: 'hwday', name: '作業當天完成', icon: '📚', target: 5, exp: 3, on: true }
+  return { friendExp: 10, friendExclude: [7], friendBadge: '友誼之星', tasks: [
+    { id: 't_arrive', type: 'arrive', name: '準時到班', badge: '破曉守時者', icon: '🌅', target: 4, exp: 3, on: true },
+    { id: 't_brush', type: 'brush', name: '認真刷牙', badge: '白牙聖騎士', icon: '🪥', target: 4, exp: 3, on: true },
+    { id: 't_meal', type: 'meal', name: '午餐吃光光', badge: '空盤王者', icon: '🍚', target: 4, exp: 3, on: true },
+    { id: 't_hw', type: 'hwday', name: '作業當天完成', badge: '作業終結者', icon: '📚', target: 5, exp: 3, on: true }
   ] };
 }
 // 回傳 d 所在那一週的星期一（'YYYY-MM-DD'）
@@ -1985,7 +1993,7 @@ function pkWeekDays(mon, n) {
   return out;
 }
 function pkDailyDefaults() {
-  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [] } }, days: {}, weekly: {} };
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [], shinyPool: [] } }, days: {}, weekly: {} };
 }
 // 把一段文字拆成黑板上的「格」：連續 1~3 個數字放同一格、國字連同讀音選擇碼（IVS）放同一格
 function pkBoardTokens(text) {
@@ -3084,7 +3092,7 @@ const __app = createApp({
       alarmPopup: null,
       lunchMode: 'brush',
       weeklyEdit: false,
-      limitedPick: '',
+      limitedPicks: { pool: '', shinyPool: '' },
       shinyOk: {},
       limResult: { show: false, spin: false, student: null, pet: null, shiny: false, img: '' },
       petTrade: { show: false, aId: '', aUid: '', bId: '', bUid: '' },
@@ -3218,15 +3226,21 @@ const __app = createApp({
       }
       return out;
     },
-    limitedActive() { const c = this.limitedCfg(); return !!(c.on && c.pool.some(id => this.petById(id))); },
-    // 異色每週輪替：依週次輪流，每週只有一隻是「本週異色主角」
+    limitedActive() { const c = this.limitedCfg(); return !!(c.on && (c.pool.some(id => this.petById(id)) || this.shinyList.length)); },
+    // 異色名單＝稀有限定＋只抽異色版，兩邊交錯排列，每週輪到一隻當「本週異色主角」
+    shinyList() {
+      const c = this.limitedCfg(), a = c.pool.filter(id => this.petById(id)), b = c.shinyPool.filter(id => this.petById(id) && !a.includes(id)), out = [];
+      for (let i = 0; i < Math.max(a.length, b.length); i++) { if (i < b.length) out.push(b[i]); if (i < a.length) out.push(a[i]); }
+      return out;
+    },
     shinyFeature() {
-      const c = this.limitedCfg(), pool = c.pool.filter(id => this.petById(id));
-      if (!pool.length) return null;
+      const list = this.shinyList;
+      if (!list.length) return null;
       const [y, m, d] = this.weekKey.split('-').map(Number);
       const wi = Math.floor(Date.UTC(y, m - 1, d) / 86400000 / 7);
-      return { now: this.petById(pool[wi % pool.length]), next: this.petById(pool[(wi + 1) % pool.length]), nowId: pool[wi % pool.length], count: pool.length };
+      return { now: this.petById(list[wi % list.length]), next: this.petById(list[(wi + 1) % list.length]), nowId: list[wi % list.length], count: list.length };
     },
+    // 只有「稀有限定」會從一般更換寵物的清單拿掉；「只抽異色版」的原色版仍可正常選
     limitedIds() { return new Set(this.limitedCfg().pool); },
     normalAvatars() { const ids = this.limitedIds; return this.presetAvatars.filter(p => !ids.has(p.id)); },
     petTradeA() { return this.students.find(x => x.id === this.petTrade.aId) || null; },
@@ -3240,7 +3254,8 @@ const __app = createApp({
     groupStandings() {
       const keys = this.weekDayKeys, gs = {};
       this.students.forEach(st => { const g = st.group || 1; (gs[g] = gs[g] || []).push(st); });
-      return Object.keys(gs).map(g => {
+      const ex = (this.weeklyCfg().friendExclude || []).map(Number);
+      return Object.keys(gs).filter(g => !ex.includes(Number(g))).map(g => {
         const members = gs[g];
         const total = members.reduce((a, st) => a + keys.reduce((b, k) => b + ((((this.daily.days[k] || {}).pts) || {})[st.id] || 0), 0), 0);
         return { g: Number(g), members, total, avg: members.length ? total / members.length : 0 };
@@ -4320,18 +4335,23 @@ const __app = createApp({
     // ---------- 限定扭蛋（限定寶可夢＋異色版） ----------
     limitedCfg() {
       const st = this.daily.settings;
-      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [] };
+      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [], shinyPool: [] };
       if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
       if (st.limited.rate === undefined) st.limited.rate = 3;
       if (st.limited.shinyRotate === undefined) st.limited.shinyRotate = true;
-      // 預設限定池（傳說系＋學生愛的熱門寶可夢，共 20 隻＝輪替 20 週）；老師可自行增減
-      if (st.limited.seedVer !== 2) {
+      if (!Array.isArray(st.limited.shinyPool)) st.limited.shinyPool = [];
+      // 預設：稀有限定（原色＋異色都抽得到）8 隻；「只抽異色版」12 隻（它們的原色版維持一般換寵）
+      if (st.limited.seedVer !== 3) {
+        const rare8 = ['giratina', 'dialga', 'palkia', 'kyogre', 'groudon', 'hooh', 'reshiram', 'zekrom'];
+        const other12 = ['mewtwo', 'rayquaza', 'lugia', 'arceus', 'mew', 'mimikyu', 'umbreon_line', 'snorlax', 'gengar_line', 'garchomp_line', 'riolu_line', 'espeon_line'];
         const old8 = ['mewtwo', 'rayquaza', 'lugia', 'arceus', 'mew', 'mimikyu', 'umbreon_line', 'snorlax'];
-        const def20 = old8.concat(['giratina', 'dialga', 'palkia', 'kyogre', 'groudon', 'hooh', 'reshiram', 'zekrom', 'gengar_line', 'garchomp_line', 'riolu_line', 'espeon_line']);
-        const cur = st.limited.pool;
-        // 只有「還沒設定」或「還是之前的預設 8 隻」才自動擴充，老師自己改過的不動
-        if (!cur.length || (cur.length === 8 && old8.every(id => cur.includes(id)))) st.limited.pool = def20.filter(id => this.presetAvatars.some(p => p.id === id));
-        st.limited.seedVer = 2;
+        const cur = st.limited.pool, same = (a, b) => a.length === b.length && b.every(id => a.includes(id));
+        // 只有「還沒設定」或「還是之前的預設」才自動改；老師自己調整過的不動
+        if (!cur.length || same(cur, old8) || same(cur, old8.concat(rare8, ['gengar_line', 'garchomp_line', 'riolu_line', 'espeon_line']))) {
+          st.limited.pool = rare8.filter(id => this.presetAvatars.some(p => p.id === id));
+          st.limited.shinyPool = other12.filter(id => this.presetAvatars.some(p => p.id === id));
+        }
+        st.limited.seedVer = 3;
       }
       st.limited.seeded = true;
       return st.limited;
@@ -4363,24 +4383,31 @@ const __app = createApp({
       const base = (pet.evolutions && pet.evolutions[0] && pet.evolutions[0].url) || pet.url;
       return it.shiny && this.shinyReady(base) ? this.shinyUrlFor(base) : base;
     },
-    addLimitedPet() {
-      const id = this.limitedPick; if (!id) return;
+    addLimitedPet(key) {
+      const id = this.limitedPicks[key]; if (!id) return;
       const c = this.limitedCfg();
-      if (!c.pool.includes(id)) c.pool.push(id);
-      this.limitedPick = '';
+      const other = key === 'pool' ? 'shinyPool' : 'pool';
+      c[other] = c[other].filter(x => x !== id);
+      if (!c[key].includes(id)) c[key].push(id);
+      this.limitedPicks[key] = '';
       this.saveData();
     },
-    removeLimitedPet(id) { const c = this.limitedCfg(); c.pool = c.pool.filter(x => x !== id); this.saveData(); },
+    removeLimitedPet(key, id) { const c = this.limitedCfg(); c[key] = c[key].filter(x => x !== id); this.saveData(); },
+    limitedOptions(key) {
+      const c = this.limitedCfg();
+      return this.presetAvatars.filter(p => !c[key].includes(p.id));
+    },
+    // 限定扭蛋：先決定是不是異色（只會是「本週異色主角」）；不是異色就從「稀有限定」抽原色版
     grantLimited(st) {
       const c = this.limitedCfg();
-      const pool = c.pool.filter(id => this.petById(id));
-      if (!pool.length) return null;
-      const rot = c.shinyRotate !== false && pool.length > 0, feat = rot ? this.shinyFeature.nowId : '';
-      // 輪替開啟時：本週異色主角被抽中的機會是其他的 3 倍，而且只有牠有機會是異色
-      const wts = pool.map(id => (rot && id === feat ? 3 : 1)), tot = wts.reduce((a, b) => a + b, 0);
-      let roll = Math.random() * tot, pid = pool[pool.length - 1];
-      for (let i = 0; i < pool.length; i++) { if (roll < wts[i]) { pid = pool[i]; break; } roll -= wts[i]; }
-      const shiny = (!rot || pid === feat) && Math.random() * 100 < (Number(c.shinyRate) || 0);
+      const rare = c.pool.filter(id => this.petById(id)), list = this.shinyList;
+      if (!rare.length && !list.length) return null;
+      const rot = c.shinyRotate !== false;
+      let shiny = list.length > 0 && Math.random() * 100 < (Number(c.shinyRate) || 0);
+      if (!rare.length) shiny = true;
+      let pid;
+      if (shiny) pid = rot ? this.shinyFeature.nowId : list[Math.floor(Math.random() * list.length)];
+      else pid = rare[Math.floor(Math.random() * rare.length)];
       const item = { uid: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) + (this._uidN = (this._uidN || 0) + 1), pid, shiny, t: Date.now() };
       if (!st.collection) st.collection = [];
       st.collection.push(item);
@@ -4413,7 +4440,15 @@ const __app = createApp({
     // ---------- 每週任務 ／ 友你真好星期五 ----------
     weeklyCfg() {
       const w = this.daily.settings.weekly || (this.daily.settings.weekly = pkWeeklyDefaults());
-      (w.tasks || []).forEach(t => { if (t.id === 't_hw' && t.type === 'hw') { t.type = 'hwday'; if (t.name === '完成作業') t.name = '作業當天完成'; } });
+      const defBadge = { t_arrive: '破曉守時者', t_brush: '白牙聖騎士', t_meal: '空盤王者', t_hw: '作業終結者' };
+      let fix = false;
+      (w.tasks || []).forEach(t => {
+        if (t.id === 't_hw' && t.type === 'hw') { t.type = 'hwday'; if (t.name === '完成作業') t.name = '作業當天完成'; }
+        if (t.badge === undefined) { t.badge = defBadge[t.id] || t.name; fix = true; }
+      });
+      if (!Array.isArray(w.friendExclude)) { w.friendExclude = [7]; fix = true; }
+      if (w.friendBadge === undefined) { w.friendBadge = '友誼之星'; fix = true; }
+      if (fix) this.refreshBadgeNames(w);
       return w;
     },
     weekCount(st, type, mon) {
@@ -4458,10 +4493,10 @@ const __app = createApp({
             if (!wk.aw[st.id]) wk.aw[st.id] = {};
             wk.aw[st.id][t.id] = 1;
             if (!st.badges) st.badges = [];
-            if (!st.badges.some(b => b.id === bid)) st.badges.push({ id: bid, icon: t.icon, name: t.name, wk: mon });
+            if (!st.badges.some(b => b.id === bid)) st.badges.push({ id: bid, icon: t.icon, name: t.badge || t.name, wk: mon });
             this._noPts = true;
             try { if (t.exp) this.addScore(st, Number(t.exp) || 0, '每週任務達成：' + t.name, t.icon + ' 任務達成'); } finally { this._noPts = false; }
-            this.showBigFx(`${st.name} 完成「${t.name}」`, t.icon + ' 獲得徽章！', 'plus');
+            this.showBigFx(`${st.name} 完成「${t.name}」`, t.icon + ' 獲得「' + (t.badge || t.name) + '」徽章！', 'plus');
           } else if (n < t.target && got) {
             delete wk.aw[st.id][t.id];
             st.badges = (st.badges || []).filter(b => b.id !== bid);
@@ -4470,6 +4505,16 @@ const __app = createApp({
           }
         });
       } finally { this._wkBusy = false; }
+    },
+    // 把所有學生已拿到的徽章名稱，換成目前設定的名稱
+    refreshBadgeNames(w) {
+      const cfg = w || this.daily.settings.weekly; if (!cfg) return;
+      const byId = {}; (cfg.tasks || []).forEach(t => { byId[t.id] = t; });
+      this.students.forEach(st => (st.badges || []).forEach(b => {
+        const tid = String(b.id || '').replace(/^wk-\d{4}-\d{2}-\d{2}-/, '');
+        if (tid === 'friend') b.name = cfg.friendBadge || '友誼之星';
+        else if (byId[tid]) { b.name = byId[tid].badge || byId[tid].name; b.icon = byId[tid].icon; }
+      }));
     },
     taskProg(st, t) { const n = this.weekCount(st, t.type); return { n: Math.min(n, 99), done: n >= t.target }; },
     badgeCount(st) { return (st.badges || []).length; },
@@ -4486,7 +4531,7 @@ const __app = createApp({
       try {
         top.members.forEach(st => {
           if (!st.badges) st.badges = [];
-          st.badges.push({ id: 'wk-' + mon + '-friend', icon: '🤝', name: '友你真好', wk: mon });
+          st.badges.push({ id: 'wk-' + mon + '-friend', icon: '🤝', name: this.weeklyCfg().friendBadge || '友誼之星', wk: mon });
           this.addScore(st, exp, '友你真好星期五：第 ' + top.g + ' 組', '🤝 友你真好');
         });
       } finally { this._noPts = false; }
