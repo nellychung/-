@@ -680,18 +680,19 @@
       <!-- 頁面：每週任務 / 友你真好星期五 -->
       <div v-if="currentTab === 'weekly'" class="grid gap-2 lg:grid-cols-[minmax(340px,56%)_1fr] items-start">
         <div v-if="limitedAnnounce" class="lg:col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border-2 border-fuchsia-300 bg-gradient-to-r from-fuchsia-50 via-amber-50 to-sky-50 px-3 py-1.5 shadow-sm">
-          <span class="text-sm font-black text-fuchsia-800">🌟 本週扭蛋限定</span>
-          <div v-if="limitedAnnounce.shiny" class="flex items-center gap-1.5 rounded-xl bg-amber-100/70 border border-amber-300 pl-1 pr-2.5 py-0.5">
-            <img :src="limitedAnnounce.shiny.img" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-11 h-11 object-contain" />
-            <div class="leading-tight"><div class="text-[10px] font-black text-amber-700">✨ 本週異色主角</div><div class="text-sm font-black text-slate-800">{{ limitedAnnounce.shiny.name }}</div></div>
+          <span class="text-sm font-black text-fuchsia-800">🌟 本週扭蛋限定<span class="block text-[10px] text-slate-500">週一到週日</span></span>
+          <div v-if="limitedAnnounce.rare" class="flex items-center gap-1.5 rounded-xl bg-fuchsia-100/70 border border-fuchsia-300 pl-1 pr-2.5 py-0.5">
+            <img :src="limitedAnnounce.rare.img" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-11 h-11 object-contain" />
+            <img :src="limitedAnnounce.rare.imgShiny" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-11 h-11 object-contain" />
+            <div class="leading-tight"><div class="text-[10px] font-black text-fuchsia-700">👑 本週稀有主角（原色＋✨異色）</div><div class="text-sm font-black text-slate-800">{{ limitedAnnounce.rare.name }}</div></div>
           </div>
-          <div v-if="limitedAnnounce.rare.length" class="flex items-center gap-1.5">
-            <span class="text-[10px] font-black text-fuchsia-700 leading-tight">👑 稀有限定<br />（原色＋異色）</span>
+          <div v-if="limitedAnnounce.shinies.length" class="flex items-center gap-1.5 rounded-xl bg-amber-100/70 border border-amber-300 pl-2 pr-1.5 py-0.5">
+            <span class="text-[10px] font-black text-amber-700 leading-tight">✨ 本週異色<br />（只抽異色版）</span>
             <div class="flex items-center -space-x-1">
-              <img v-for="r in limitedAnnounce.rare" :key="r.id" :src="r.img" :title="r.name" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-9 h-9 object-contain rounded-full bg-white/80 border border-fuchsia-200" />
+              <img v-for="r in limitedAnnounce.shinies" :key="r.id" :src="r.img" :title="r.name" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-10 h-10 object-contain rounded-full bg-white/80 border border-amber-300" />
             </div>
           </div>
-          <span class="text-[11px] font-black text-slate-500">每次扭蛋都有機會抽到！</span>
+          <span class="text-[11px] font-black text-slate-500">每週一更換，扭蛋有機會抽到！</span>
         </div>
         <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-1.5">
           <div class="flex flex-wrap items-center justify-between gap-2 bg-orange-50 rounded-2xl px-2.5 py-1">
@@ -701,7 +702,7 @@
           <div class="flex flex-wrap gap-1.5">
             <span v-for="t in weeklyTasks" :key="t.id" class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-[12px] font-black text-amber-800">{{ t.icon }} {{ t.name }}：{{ t.target }} {{ t.type === 'hw' ? '項' : '天' }}　＋{{ t.exp }} 分</span>
           </div>
-          <div v-if="limitedActive && limitedCfg().shinyRotate !== false && shinyFeature" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">✨ 本週異色限定：{{ shinyFeature.now.name }}　<span class="text-slate-500 font-bold">用扭蛋有機會抽到（下週換成 {{ shinyFeature.next.name }}）</span></div>
+          <div v-if="limitedActive && weekPlan" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">👑 本週稀有：{{ weekPlan.rare ? petById(weekPlan.rare).name : '（未設定）' }}　✨ 本週異色：{{ weekPlan.shinies.map(i => petById(i).name).join('、') || '（未設定）' }}</div>
           <div v-if="weeklyEdit" class="rounded-2xl border border-orange-200 bg-orange-50/60 p-2 space-y-1">
             <div v-for="t in weeklyCfg().tasks" :key="t.id" class="flex flex-wrap items-center gap-1.5 text-[11px] font-black text-slate-600">
               <input type="checkbox" :checked="t.on" @change="setWeeklyTask(t, 'on', $event.target.checked)" class="w-4 h-4" />
@@ -758,11 +759,12 @@
           </div>
           <div class="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-600">
             <label class="flex items-center gap-1">每次扭蛋抽到限定的機率<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().rate" @change="saveData" class="w-16 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
-            <label class="flex items-center gap-1">其中異色的機率<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().shinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
-            <label class="flex items-center gap-1"><input type="checkbox" v-model="limitedCfg().shinyRotate" @change="saveData" class="w-4 h-4" />異色每週自動輪替</label>
-            <span class="text-fuchsia-700">→ 異色約 {{ ((Number(limitedCfg().rate) || 0) * (Number(limitedCfg().shinyRate) || 0) / 100).toFixed(2) }}%</span>
+            <label class="flex items-center gap-1">本週主角異色<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().shinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+            <label class="flex items-center gap-1">本週異色名單<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().weekShinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+            <label class="flex items-center gap-1">每週異色隻數<input type="number" min="1" max="20" v-model.number="limitedCfg().weekShinyN" @change="saveData" class="w-12 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" /></label>
+            <span class="text-fuchsia-700">→ 主角原色 {{ Math.max(0, 100 - (Number(limitedCfg().shinyRate) || 0) - (Number(limitedCfg().weekShinyRate) || 0)) }}%（以上都是「抽到限定之後」的分配）</span>
           </div>
-          <div v-if="limitedCfg().shinyRotate !== false && shinyFeature" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">✨ 本週異色主角：{{ shinyFeature.now.name }}　<span class="text-slate-500 font-bold">下週：{{ shinyFeature.next.name }}（共 {{ shinyFeature.count }} 隻，依序輪流）</span></div>
+          <div v-if="weekPlan" class="rounded-xl bg-amber-50 border border-amber-300 px-2.5 py-1 text-xs font-black text-amber-800">👑 本週主角：{{ weekPlan.rare ? petById(weekPlan.rare).name : '（未設定）' }}　<span class="text-slate-500 font-bold">下週：{{ weekPlan.rareNext ? petById(weekPlan.rareNext).name : '—' }}（稀有共 {{ weekPlan.rareCount }} 隻，輪完約 {{ weekPlan.rareCount }} 週）</span><br />✨ 本週異色：{{ weekPlan.shinies.map(i => petById(i).name).join('、') || '（未設定）' }}　<span class="text-slate-500 font-bold">下週：{{ weekPlan.shiniesNext.map(i => petById(i).name).join('、') || '—' }}（異色共 {{ weekPlan.shinyCount }} 隻，約 {{ Math.ceil(weekPlan.shinyCount / weekPlan.n) }} 週輪一圈）</span></div>
           <div v-for="L in [{ key: 'pool', title: '👑 稀有限定（原色＋異色都抽得到；原色版不能再用 25 EXP 換）' }, { key: 'shinyPool', title: '✨ 只抽異色版（原色版仍可正常更換寵物）' }]" :key="L.key" class="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/40 p-2 space-y-1.5">
             <div class="text-xs font-black text-fuchsia-800">{{ L.title }}　<span class="text-slate-500">共 {{ limitedCfg()[L.key].length }} 隻</span></div>
             <div class="flex flex-wrap items-center gap-2">
@@ -2007,7 +2009,7 @@ function pkWeekDays(mon, n) {
   return out;
 }
 function pkDailyDefaults() {
-  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [], shinyPool: [] } }, days: {}, weekly: {} };
+  return { settings: { lateTime: '07:50', lunchTime: '12:30', videoUrl: '', gargleSec: 60, brushSec: 180, boardMode: 'board', boardCells: {}, boardDate: '', boardZhuyin: true, boardCols: 8, boardNum: true, photoRev: 0, alarms: {}, weekly: pkWeeklyDefaults(), limited: { on: false, name: '限定寶可夢', rate: 5, shinyRate: 10, shinyRotate: true, pool: [], shinyPool: [] } }, days: {}, weekly: {} };
 }
 // 把一段文字拆成黑板上的「格」：連續 1~3 個數字放同一格、國字連同讀音選擇碼（IVS）放同一格
 function pkBoardTokens(text) {
@@ -3240,28 +3242,30 @@ const __app = createApp({
       }
       return out;
     },
-    limitedActive() { const c = this.limitedCfg(); return !!(c.on && (c.pool.some(id => this.petById(id)) || this.shinyList.length)); },
-    // 異色名單＝稀有限定＋只抽異色版，兩邊交錯排列，每週輪到一隻當「本週異色主角」
-    shinyList() {
-      const c = this.limitedCfg(), a = c.pool.filter(id => this.petById(id)), b = c.shinyPool.filter(id => this.petById(id) && !a.includes(id)), out = [];
-      for (let i = 0; i < Math.max(a.length, b.length); i++) { if (i < b.length) out.push(b[i]); if (i < a.length) out.push(a[i]); }
-      return out;
-    },
-    shinyFeature() {
-      const list = this.shinyList;
-      if (!list.length) return null;
+    limitedActive() { const c = this.limitedCfg(); return !!(c.on && (c.pool.some(id => this.petById(id)) || c.shinyPool.some(id => this.petById(id)))); },
+    // 每週輪替：1 隻稀有主角（原色＋異色）＋ N 隻「只抽異色版」，每週一換
+    weekPlan() {
+      const c = this.limitedCfg(), rare = c.pool.filter(id => this.petById(id));
+      const sh = c.shinyPool.filter(id => this.petById(id) && !rare.includes(id));
       const [y, m, d] = this.weekKey.split('-').map(Number);
       const wi = Math.floor(Date.UTC(y, m - 1, d) / 86400000 / 7);
-      return { now: this.petById(list[wi % list.length]), next: this.petById(list[(wi + 1) % list.length]), nowId: list[wi % list.length], count: list.length };
+      const n = Math.max(1, Math.min(20, Number(c.weekShinyN) || 5));
+      const pick = k => { const out = []; for (let i = 0; i < Math.min(n, sh.length); i++) out.push(sh[(k * n + i) % sh.length]); return out; };
+      const rn = rare.length;
+      return {
+        wi, n,
+        rare: rn ? rare[wi % rn] : null, rareNext: rn ? rare[(wi + 1) % rn] : null, rareCount: rn,
+        shinies: sh.length ? pick(wi) : [], shiniesNext: sh.length ? pick(wi + 1) : [], shinyCount: sh.length
+      };
     },
-    // 公告：本週扭蛋可以抽到的稀有寵／異色版，顯示在主頁最上面
+    // 公告：本週扭蛋可以抽到的限定寶可夢
     limitedAnnounce() {
       if (!this.limitedActive) return null;
-      const c = this.limitedCfg(), f = this.shinyFeature;
-      const rare = c.pool.filter(id => this.petById(id)).map(id => ({ id, name: this.petById(id).name, img: this.collImg({ pid: id, shiny: false }) }));
-      const shiny = c.shinyRotate !== false && f && f.now ? { name: f.now.name, img: this.collImg({ pid: f.nowId, shiny: true }) } : null;
-      if (!rare.length && !shiny) return null;
-      return { rare, shiny };
+      const w = this.weekPlan, P = id => ({ id, name: this.petById(id).name });
+      const rare = w.rare ? { ...P(w.rare), img: this.collImg({ pid: w.rare, shiny: false }), imgShiny: this.collImg({ pid: w.rare, shiny: true }) } : null;
+      const shinies = w.shinies.map(id => ({ ...P(id), img: this.collImg({ pid: id, shiny: true }) }));
+      if (!rare && !shinies.length) return null;
+      return { rare, shinies };
     },
     // 只有「稀有限定」會從一般更換寵物的清單拿掉；「只抽異色版」的原色版仍可正常選
     limitedIds() { return new Set(this.limitedCfg().pool); },
@@ -4360,10 +4364,14 @@ const __app = createApp({
     // ---------- 限定扭蛋（限定寶可夢＋異色版） ----------
     limitedCfg() {
       const st = this.daily.settings;
-      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 3, shinyRate: 10, shinyRotate: true, pool: [], shinyPool: [] };
+      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 5, shinyRate: 10, weekShinyRate: 35, weekShinyN: 5, shinyRotate: true, pool: [], shinyPool: [] };
       if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
       if (st.limited.rate === undefined) st.limited.rate = 3;
       if (st.limited.shinyRotate === undefined) st.limited.shinyRotate = true;
+      if (st.limited.weekShinyRate === undefined) st.limited.weekShinyRate = 35;
+      if (st.limited.weekShinyN === undefined) st.limited.weekShinyN = 5;
+      // 版本 4：改成「每週 1 隻主角＋5 隻異色」，限定機率 3→5；老師自己調過的機率不動
+      if (st.limited.seedVer === 3 && st.limited.rule4 !== true) { if (Number(st.limited.rate) === 3) st.limited.rate = 5; st.limited.rule4 = true; }
       if (!Array.isArray(st.limited.shinyPool)) st.limited.shinyPool = [];
       // 預設：稀有限定（原色＋異色都抽得到）8 隻；「只抽異色版」12 隻（它們的原色版維持一般換寵）
       if (st.limited.seedVer !== 3) {
@@ -4424,15 +4432,15 @@ const __app = createApp({
     },
     // 限定扭蛋：先決定是不是異色（只會是「本週異色主角」）；不是異色就從「稀有限定」抽原色版
     grantLimited(st) {
-      const c = this.limitedCfg();
-      const rare = c.pool.filter(id => this.petById(id)), list = this.shinyList;
-      if (!rare.length && !list.length) return null;
-      const rot = c.shinyRotate !== false;
-      let shiny = list.length > 0 && Math.random() * 100 < (Number(c.shinyRate) || 0);
-      if (!rare.length) shiny = true;
-      let pid;
-      if (shiny) pid = rot ? this.shinyFeature.nowId : list[Math.floor(Math.random() * list.length)];
-      else pid = rare[Math.floor(Math.random() * rare.length)];
+      const c = this.limitedCfg(), w = this.weekPlan;
+      if (!w.rare && !w.shinies.length) return null;
+      // 先決定：主角異色（最難）／本週異色名單之一／主角原色
+      const fs = Number(c.shinyRate) || 0, ws = Number(c.weekShinyRate) || 0, r = Math.random() * 100;
+      let kind = r < fs ? 'feat-shiny' : (r < fs + ws ? 'week-shiny' : 'feat');
+      if (!w.rare) kind = 'week-shiny';
+      else if (!w.shinies.length && kind === 'week-shiny') kind = 'feat';
+      let pid, shiny = kind !== 'feat';
+      if (kind === 'week-shiny') pid = w.shinies[Math.floor(Math.random() * w.shinies.length)]; else pid = w.rare;
       const item = { uid: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) + (this._uidN = (this._uidN || 0) + 1), pid, shiny, t: Date.now() };
       if (!st.collection) st.collection = [];
       st.collection.push(item);
