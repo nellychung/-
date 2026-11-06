@@ -305,7 +305,7 @@
           <div class="text-xs font-black text-amber-700">共 {{ parentState.badges.length }} 枚</div>
         </div>
         <div v-if="parentState.badges.length" class="flex flex-wrap gap-1.5">
-          <span v-for="(b, i) in [...parentState.badges].reverse()" :key="i" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ b.icon }} {{ b.name }}<span class="text-[10px] font-bold text-amber-600 ml-1">{{ String(b.wk || '').slice(5).replace('-', '/') }} 那週</span></span>
+          <span v-for="(b, i) in [...parentState.badges].reverse()" :key="i" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ b.icon }} {{ b.name }}<span class="text-[10px] font-bold text-amber-600 ml-1">{{ wkRange(b.wk) }}</span></span>
         </div>
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">還沒有徽章，每週完成任務就能拿到喔！</div>
       </div>
@@ -1561,7 +1561,7 @@
               </div>
               <span class="bg-indigo-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full shrink-0">第 {{ profileStudent.group }} 組 · {{ profileStudent.role || '組員' }}</span>
             </div>
-            <div v-if="(profileStudent.badges || []).length" class="flex flex-wrap gap-1 mt-0.5"><span v-for="b in profileStudent.badges" :key="b.id" :title="b.name + '（' + b.wk + ' 那週）'" class="text-[11px] font-black bg-amber-50 border border-amber-300 text-amber-800 rounded-full px-1.5">{{ b.icon }}{{ b.name }}</span></div>
+            <div v-if="(profileStudent.badges || []).length" class="flex flex-wrap gap-1 mt-0.5"><span v-for="b in profileStudent.badges" :key="b.id" :title="b.name + '（' + wkRange(b.wk) + '）'" class="text-[11px] font-black bg-amber-50 border border-amber-300 text-amber-800 rounded-full px-1.5">{{ b.icon }}{{ b.name }}</span></div>
             <div class="mt-0.5 space-y-0.5">
               <div class="flex items-center space-x-2 text-[11px] font-black">
                 <span class="text-amber-600">EXP：<span class="text-xs font-black">{{ profileStudent.score }}</span></span>
@@ -4097,6 +4097,12 @@ const __app = createApp({
       this.bigFx = { show: true, title, sub, kind: kind || 'plus', key: Date.now() };
       clearTimeout(this._bigFxTimer);
       this._bigFxTimer = setTimeout(() => { this.bigFx.show = false; }, 2600);
+    },
+    // 週一起算的徽章週：'2026-11-02' → '11/02~11/06'（週一到週五）
+    wkRange(wk) {
+      const m = String(wk || '').match(/^(\d+)-(\d+)-(\d+)$/); if (!m) return '';
+      const p = n => String(n).padStart(2, '0'), e = new Date(+m[1], +m[2] - 1, +m[3] + 4);
+      return p(+m[2]) + '/' + p(+m[3]) + '~' + p(e.getMonth() + 1) + '/' + p(e.getDate());
     },
     giftTag(name) { return /^\p{Extended_Pictographic}/u.test(name) ? name : '🎁 ' + name; },
     tagFromAction(action) {
