@@ -1206,7 +1206,7 @@
                   </div>
                   <div class="flex flex-wrap gap-1 mt-1">
                     <span v-for="item in directItems" :key="item.id" class="bg-white border text-[11px] px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
-                      {{ item.name }} (-{{ item.cost }}EXP)
+                      <img v-if="itemImg(item)" :src="itemImg(item)" class="w-4 h-4 object-contain" alt="" />{{ itemImg(item) ? itemLabel(item) : item.name }} (-{{ item.cost }}EXP)
                       <i @click="removeDirectItem(item.id)" class="fa-solid fa-xmark text-rose-500 cursor-pointer"></i>
                     </span>
                   </div>
@@ -1604,7 +1604,7 @@
               <div v-if="directItems.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 <button v-for="item in directItems" :key="item.id" @click="redeemDirectItem(profileStudent, item)"
                         class="p-1.5 bg-white hover:bg-teal-100/50 border border-teal-200 rounded-xl text-center transition active:scale-95 flex items-center justify-between">
-                  <div class="text-xs font-black text-slate-800 truncate">{{ item.icon || '🎁' }} {{ item.name }}</div>
+                  <div class="text-xs font-black text-slate-800 truncate flex items-center gap-1"><img v-if="itemImg(item)" :src="itemImg(item)" class="w-6 h-6 object-contain shrink-0" alt="" /><template v-if="itemImg(item)">{{ itemLabel(item) }}</template><template v-else>{{ item.icon || '🎁' }} {{ item.name }}</template></div>
                   <div class="bg-rose-500 text-white font-black text-[9px] py-0.2 px-1 rounded-md shrink-0">
                     -{{ item.cost }}
                   </div>
@@ -1999,6 +1999,8 @@ function pkWeeklyDefaults() {
   ] };
 }
 // 回傳 d 所在那一週的星期一（'YYYY-MM-DD'）
+// 長尾夾（黑色梯形夾身＋兩支銀色把手）
+const PK_BINDER_CLIP = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M14 30 L12 6 Q12 3 15 3 L18 3 L22 30 Z" fill="none" stroke="#9aa3ad" stroke-width="3" stroke-linejoin="round"/><path d="M50 30 L52 6 Q52 3 49 3 L46 3 L42 30 Z" fill="none" stroke="#9aa3ad" stroke-width="3" stroke-linejoin="round"/><path d="M6 60 L14 26 Q15 22 19 22 L45 22 Q49 22 50 26 L58 60 Z" fill="#2b2f36"/><path d="M12 56 L18 31 Q19 28 22 28 L42 28 Q45 28 46 31 L52 56 Z" fill="#3d434c"/></svg>');
 function pkMonKey(d) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7)), p = n => String(n).padStart(2, '0');
   return x.getFullYear() + '-' + p(x.getMonth() + 1) + '-' + p(x.getDate());
@@ -5142,6 +5144,13 @@ const __app = createApp({
       this.saveData();
     },
 
+    // 兌換品圖片：名稱含關鍵字時用內建圖（目前：長尾夾）
+    itemImg(item) {
+      const n = String((item && item.name) || '');
+      if (/長尾夾/.test(n)) return PK_BINDER_CLIP;
+      return '';
+    },
+    itemLabel(item) { return String((item && item.name) || '').replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, ''); },
     withIcon(name) {
       name = String(name || '').trim();
       if (/^\p{Extended_Pictographic}/u.test(name)) return name;
