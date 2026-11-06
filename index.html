@@ -1643,13 +1643,6 @@
               </div>
             </div>
 
-            <div class="bg-white p-2 rounded-2xl border border-dashed border-fuchsia-300 flex flex-wrap items-center gap-1.5">
-              <span class="text-[11px] font-black text-fuchsia-800">🎁 老師贈送</span>
-              <select v-model="giftPid" class="flex-1 min-w-0 px-1.5 py-1 rounded-lg border border-fuchsia-200 bg-white text-xs font-black"><option value="">選擇寶可夢…</option><option v-for="pv in presetAvatars" :key="pv.id" :value="pv.id">{{ pv.name }}</option></select>
-              <label class="text-[11px] font-black text-amber-700 flex items-center gap-1"><input type="checkbox" v-model="giftShiny" /> ✨異色</label>
-              <button @click="giftToCollection(profileStudent)" class="px-2.5 py-1 rounded-lg bg-fuchsia-500 text-white text-[11px] font-black active:scale-95">加入收藏冊</button>
-            </div>
-
             <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 class="text-xs font-black text-slate-800 flex items-center justify-between">
                 <span><i class="fa-solid fa-address-card text-indigo-500 mr-1"></i> 已擁有的特權卡片</span>
@@ -3114,7 +3107,6 @@ const __app = createApp({
       lunchMode: 'brush',
       weeklyEdit: false,
       limitedPicks: { pool: '', shinyPool: '' },
-      giftPid: '', giftShiny: true,
       shinyOk: {},
       limResult: { show: false, spin: false, student: null, pet: null, shiny: false, img: '' },
       petTrade: { show: false, aId: '', aUid: '', bId: '', bUid: '' },
@@ -4426,15 +4418,6 @@ const __app = createApp({
       this.saveData();
     },
     removeLimitedPet(key, id) { const c = this.limitedCfg(); c[key] = c[key].filter(x => x !== id); this.saveData(); },
-    giftToCollection(st) {
-      const pet = this.petById(this.giftPid);
-      if (!st || !pet) { this.notify('請先選一隻寶可夢'); return; }
-      if (!st.collection) st.collection = [];
-      st.collection.push({ uid: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) + (this._uidN = (this._uidN || 0) + 1), pid: pet.id, shiny: !!this.giftShiny, t: Date.now() });
-      this.addLog(st.name, `老師贈送：${this.giftShiny ? '✨異色 ' : ''}${pet.name}（收藏冊）`, 0);
-      this.notify(`已放進 ${st.name} 的收藏冊：${this.giftShiny ? '✨' : ''}${pet.name}`);
-      this.saveData();
-    },
     limitedOptions(key) {
       const c = this.limitedCfg();
       return this.presetAvatars.filter(p => !c[key].includes(p.id));
@@ -5500,7 +5483,7 @@ const __app = createApp({
   __app.config.errorHandler = function (err, inst, info) { show('[Vue ' + info + '] ' + (err && err.stack ? err.stack.split('\n').slice(0, 3).join('\n') : err)); console.error(err); };
   window.addEventListener('error', function (e) { show('[JS] ' + e.message + ' @' + (e.lineno || '?') + ':' + (e.colno || '?')); });
   window.addEventListener('unhandledrejection', function (e) { show('[Promise] ' + (e.reason && e.reason.message || e.reason)); });
-  try { window.__pk = __app.mount('#app'); show('版本 v4：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v4：啟動完成') b.remove(); }, 4000); }
+  try { __app.mount('#app'); show('版本 v4：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v4：啟動完成') b.remove(); }, 4000); }
   catch (e) { show('[mount] ' + (e && e.stack || e)); }
 })();
 </script>
