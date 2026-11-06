@@ -1993,7 +1993,7 @@ function pkWeeklyDefaults() {
     { id: 't_arrive', type: 'arrive', name: '準時到班', badge: '破曉守時者', icon: '🌅', target: 4, exp: 3, on: true },
     { id: 't_brush', type: 'brush', name: '認真刷牙', badge: '白牙聖騎士', icon: '🪥', target: 4, exp: 3, on: true },
     { id: 't_meal', type: 'meal', name: '午餐吃光光', badge: '空盤王者', icon: '🍚', target: 4, exp: 3, on: true },
-    { id: 't_hw', type: 'hwday', name: '作業當天完成', badge: '日課守護神', icon: '📚', target: 5, exp: 3, on: true }
+    { id: 't_hw', type: 'hwday', name: '作業當天完成', badge: '作業守護神', icon: '📚', target: 5, exp: 3, on: true }
   ] };
 }
 // 回傳 d 所在那一週的星期一（'YYYY-MM-DD'）
@@ -4465,13 +4465,13 @@ const __app = createApp({
     // ---------- 每週任務 ／ 友你真好星期五 ----------
     weeklyCfg() {
       const w = this.daily.settings.weekly || (this.daily.settings.weekly = pkWeeklyDefaults());
-      const defBadge = { t_arrive: '破曉守時者', t_brush: '白牙聖騎士', t_meal: '空盤王者', t_hw: '日課守護神' };
+      const defBadge = { t_arrive: '破曉守時者', t_brush: '白牙聖騎士', t_meal: '空盤王者', t_hw: '作業守護神' };
       let fix = false;
       (w.tasks || []).forEach(t => {
         if (t.id === 't_hw' && t.type === 'hw') { t.type = 'hwday'; if (t.name === '完成作業') t.name = '作業當天完成'; }
         if (t.badge === undefined) { t.badge = defBadge[t.id] || t.name; fix = true; }
       });
-      (w.tasks || []).forEach(t => { if (t.id === 't_hw' && (t.badge === '作業' + '終結者' || t.badge === '使命必達王')) { t.badge = '日課守護神'; fix = true; } });
+      (w.tasks || []).forEach(t => { if (t.id === 't_hw' && (t.badge === '作業' + '終結者' || t.badge === '使命必達王' || t.badge === '日課' + '守護神')) { t.badge = '作業守護神'; fix = true; } });
       if (!Array.isArray(w.friendExclude)) { w.friendExclude = [7]; fix = true; }
       if (w.friendBadge === undefined) { w.friendBadge = '友誼之星'; fix = true; }
       if (fix) this.refreshBadgeNames(w);
