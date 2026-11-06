@@ -51,7 +51,7 @@ function parent_(t) {
   const lv = (day.leave || {})[kid.id];
   const body = JSON.stringify({
     top: top,
-    today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '' },
+    today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', gain: Number((day.net || {})[kid.id]) || 0 },
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
     badges: (kid.badges || []).slice(-60).map(b => ({ icon: b.icon, name: b.name, wk: b.wk })),
