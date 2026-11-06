@@ -5483,7 +5483,7 @@ const __app = createApp({
   __app.config.errorHandler = function (err, inst, info) { show('[Vue ' + info + '] ' + (err && err.stack ? err.stack.split('\n').slice(0, 3).join('\n') : err)); console.error(err); };
   window.addEventListener('error', function (e) { show('[JS] ' + e.message + ' @' + (e.lineno || '?') + ':' + (e.colno || '?')); });
   window.addEventListener('unhandledrejection', function (e) { show('[Promise] ' + (e.reason && e.reason.message || e.reason)); });
-  try { __app.mount('#app'); show('版本 v4：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v4：啟動完成') b.remove(); }, 4000); }
+  try { window.__pk = __app.mount('#app'); show('版本 v4：啟動完成'); setTimeout(function(){ var b=document.getElementById('pk-err'); if (b && b.textContent.trim()==='版本 v4：啟動完成') b.remove(); }, 4000); }
   catch (e) { show('[mount] ' + (e && e.stack || e)); }
 })();
 </script>
