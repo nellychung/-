@@ -516,7 +516,7 @@
       <!-- 頁面 2：作業管理頁面 -->
       <!-- 座位表 -->
       <!-- 頁面：早自修 -->
-      <div v-if="currentTab === 'morning'" class="grid gap-2 lg:grid-cols-[minmax(250px,27%)_1fr] items-start">
+      <div v-if="currentTab === 'morning'" class="grid gap-2 lg:grid-cols-[minmax(330px,42%)_1fr] items-start">
         <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-1.5">
           <div class="flex flex-wrap items-center justify-between gap-2 bg-orange-50 rounded-2xl px-2.5 py-1">
             <span class="text-sm font-black text-[#8a3b12]">🌅 到班 {{ arrivedCount }} / {{ students.length }}</span>
@@ -528,7 +528,7 @@
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
             <template v-for="(stu, idx) in seatCells" :key="idx">
               <button v-if="stu" @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
-                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-[10px] leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black truncate block max-w-full min-h-[0.9rem]">{{ arriveText(stu) }}</span></div>
+                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black truncate block max-w-full min-h-[0.9rem]">{{ arriveText(stu) }}</span></div>
               </button>
               <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
