@@ -271,6 +271,7 @@
         <div v-if="parentState.top" class="top-crown absolute -top-5 left-1/2 -translate-x-1/2 z-20 animate-bounce" style="font-size:2.6rem" title="全班經驗值第一名"><i class="fa-solid fa-crown"></i></div>
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
         <div v-if="parentState.top" class="mt-1 inline-block bg-amber-100 text-amber-800 text-xs px-3 py-0.5 rounded-full font-black border border-amber-300">👑 全班經驗值第一名</div>
+        <div v-if="parentState.star" class="mt-1 inline-block bg-violet-100 text-violet-800 text-xs px-3 py-0.5 rounded-full font-black border border-violet-300">⚡ 今日之星・今天經驗值增加最多</div>
       </div>
 
       <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
@@ -372,6 +373,16 @@
       
       <!-- 頁面 1：全班學生列表 -->
       <div v-if="currentTab === 'dashboard'" class="space-y-2">
+        <div v-if="(topMode === 'today' ? todayTop3 : totalTop3).length" class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border-2 px-3 py-1.5 shadow-sm" :class="topMode === 'today' ? 'border-violet-300 bg-gradient-to-r from-violet-50 via-fuchsia-50 to-amber-50' : 'border-amber-300 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50'">
+          <span class="text-sm font-black" :class="topMode === 'today' ? 'text-violet-800' : 'text-amber-800'">{{ topMode === 'today' ? '⚡ 今日經驗值 TOP 3' : '👑 總經驗值 TOP 3' }}</span>
+          <div v-for="x in (topMode === 'today' ? todayTop3 : totalTop3)" :key="x.stu.id" class="flex items-center gap-1.5 rounded-xl bg-white/80 border px-2 py-0.5" :class="topMode === 'today' ? 'border-violet-200' : 'border-amber-200'">
+            <span class="text-lg leading-none">{{ ['🥇', '🥈', '🥉'][x.rank - 1] }}</span>
+            <img :src="getAvatarUrl(x.stu)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-7 h-7 object-contain" />
+            <span class="text-sm font-black text-slate-800">{{ x.stu.seatNumber }} {{ x.stu.name }}</span>
+            <span class="text-sm font-black" :class="topMode === 'today' ? 'text-violet-600' : 'text-amber-600'">{{ topMode === 'today' ? '+' : '' }}{{ x.gain }}</span>
+          </div>
+          <button @click="topMode = topMode === 'today' ? 'total' : 'today'" class="ml-auto px-2.5 py-0.5 rounded-full bg-white border border-slate-300 text-[11px] font-black text-slate-600 active:scale-95">切換：{{ topMode === 'today' ? '看總榜' : '看今日榜' }}</button>
+        </div>
         <div class="flex flex-wrap justify-between items-center gap-2 bg-gradient-to-r from-orange-50 via-rose-50 to-amber-50 px-3 py-2 rounded-2xl border border-indigo-100 shadow-xs">
           <div class="flex items-center space-x-3">
             <span class="text-xs font-black text-indigo-950 flex items-center gap-1.5">
@@ -427,6 +438,7 @@
             <div class="flex items-center gap-1 min-w-0">
               <span class="bg-slate-900/90 text-white font-black text-[15px] leading-5 min-w-[1.5rem] text-center px-1.5 rounded-full shrink-0">{{ student.seatNumber }}</span>
               <span class="font-black text-slate-800 text-xs truncate">{{ student.name }}</span>
+              <span v-if="isTodayStar(student)" class="shrink-0 ml-auto text-[10px] font-black leading-4 bg-violet-100 text-violet-700 border border-violet-300 rounded-full px-1.5" title="今日經驗值增加最多">⚡+{{ todayGainOf(student) }}</span>
             </div>
 
             <div @click="openProfileModal(student)" class="cursor-pointer min-w-0 text-center">
@@ -3112,6 +3124,7 @@ const __app = createApp({
       ytMuted: false,
       ytMsg: '',
       alarmPopup: null,
+      topMode: 'today',
       lunchMode: 'brush',
       weeklyEdit: false,
       limitedPicks: { pool: '', shinyPool: '' },
@@ -3137,7 +3150,7 @@ const __app = createApp({
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { child: null, top: false, homework: [], badges: [], today: { arrive: '', leave: '', gain: 0 }, error: '', updated: '' },
+      parentState: { child: null, top: false, star: false, homework: [], badges: [], today: { arrive: '', leave: '', gain: 0 }, error: '', updated: '' },
       students: [],
       homeworkList: [],
       logs: [],
@@ -3222,6 +3235,21 @@ const __app = createApp({
   },
   computed: {
     seatList() { return [...this.students].sort((a, b) => a.seatNumber - b.seatNumber); },
+    // 今天增加的經驗值（加加減減後；花費不算）排行：並列同名次，要大於 0 才上榜
+    todayRanking() {
+      const net = (this.daily.days[this.todayK] || {}).net || {};
+      const arr = (this.students || []).map(x => ({ stu: x, gain: Number(net[x.id]) || 0 })).filter(x => x.gain > 0)
+        .sort((a, b) => b.gain - a.gain || (a.stu.seatNumber || 0) - (b.stu.seatNumber || 0));
+      let rank = 0, prev = null;
+      arr.forEach((x, i) => { if (x.gain !== prev) { rank = i + 1; prev = x.gain; } x.rank = rank; });
+      return arr;
+    },
+    todayTop3() { return this.todayRanking.filter(x => x.rank <= 3).slice(0, 8); },
+    totalTop3() {
+      const arr = [...(this.students || [])].filter(x => (Number(x.score) || 0) > 0).sort((a, b) => (b.score - a.score) || (a.seatNumber - b.seatNumber));
+      let rank = 0, prev = null;
+      return arr.map((x, i) => { if (x.score !== prev) { rank = i + 1; prev = x.score; } return { stu: x, gain: x.score, rank }; }).filter(x => x.rank <= 3).slice(0, 8);
+    },
     dayRec() { const r = this.daily.days[this.todayK] || {}; return { arrive: r.arrive || {}, leave: r.leave || {}, brush: r.brush || {}, meal: r.meal || {} }; },
     mealWeekTop() {
       const now = new Date(this.clockTs), dow = (now.getDay() + 6) % 7;   // 週一=0
@@ -3871,7 +3899,7 @@ const __app = createApp({
             if (j && j.student) {
               this.presetAvatars = [...(j.pets || []), ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
               this.parentState.child = j.student;
-              this.parentState.top = !!j.top;
+              this.parentState.top = !!j.top; this.parentState.star = !!j.star;
               this.parentState.homework = j.homework || [];
               this.parentState.badges = j.badges || [];
               this.parentState.today = j.today || { arrive: '', leave: '', gain: 0 };
@@ -4352,6 +4380,8 @@ const __app = createApp({
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#e0e7ff" stroke="#6366f1" stroke-width="4"/><text x="50" y="64" font-size="44" text-anchor="middle" fill="#4338ca" font-family="sans-serif" font-weight="700">' + alt + '</text></svg>');
     },
 
+    isTodayStar(student) { const r = this.todayRanking; return !!student && r.length > 0 && r.some(x => x.rank === 1 && x.stu.id === student.id); },
+    todayGainOf(student) { const x = this.todayRanking.find(y => y.stu.id === student.id); return x ? x.gain : 0; },
     isTopStudent(student) {
       if (!this.students || this.students.length === 0) return false;
       const maxScore = Math.max(...this.students.map(s => s.score));

@@ -49,8 +49,12 @@ function parent_(t) {
   const day = (((st.daily || {}).days) || {})[today] || {};
   const arr = (day.arrive || {})[kid.id];
   const lv = (day.leave || {})[kid.id];
+  // 今日之星：今天經驗值增加最多的人（只回傳「是／否」，不洩漏其他人）
+  const net = day.net || {};
+  let maxNet = 0; Object.keys(net).forEach(k => { maxNet = Math.max(maxNet, Number(net[k]) || 0); });
+  const star = maxNet > 0 && (Number(net[kid.id]) || 0) === maxNet;
   const body = JSON.stringify({
-    top: top,
+    top: top, star: star,
     today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', gain: Number((day.net || {})[kid.id]) || 0 },
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
