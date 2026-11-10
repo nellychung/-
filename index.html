@@ -257,6 +257,14 @@
     }
     @keyframes starPulse{0%,100%{box-shadow:0 0 8px rgba(124,58,237,.45),0 0 14px rgba(34,211,238,.35)}50%{box-shadow:0 0 18px rgba(168,85,247,.85),0 0 30px rgba(34,211,238,.65)}}
     @media (prefers-reduced-motion: reduce){.star-card{animation:none}}
+    .star-soft{
+      border:3px solid transparent !important;
+      background:linear-gradient(#ffffff,#f8fafc) padding-box,
+                 conic-gradient(from var(--pet-ang), #7c3aed, #22d3ee, #a855f7, #f0abfc, #22d3ee, #7c3aed) border-box !important;
+      animation:petFlow 2.4s linear infinite;
+      box-shadow:0 0 14px rgba(124,58,237,.35), 0 0 22px rgba(34,211,238,.28);
+    }
+    @media (prefers-reduced-motion: reduce){.star-soft{animation:none}}
     .star-bolt{font-size:1.4rem;line-height:1;filter:drop-shadow(0 0 5px #a855f7) drop-shadow(0 0 10px #22d3ee);animation:boltFlash 1.1s ease-in-out infinite}
     @keyframes boltFlash{0%,100%{transform:scale(1) rotate(-8deg);opacity:.9}50%{transform:scale(1.25) rotate(8deg);opacity:1}}
     .top-crown{font-size:1.5rem;line-height:1;color:#fbbf24;filter:drop-shadow(0 0 4px #fff) drop-shadow(0 2px 5px rgba(217,119,6,.75))}
@@ -277,8 +285,8 @@
     <div v-if="parentState.error" class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 font-black text-sm text-center">{{ parentState.error }}</div>
     <div v-else-if="!parentState.child" class="p-6 text-center text-slate-500 font-black text-sm">載入中…</div>
     <template v-else>
-      <div class="relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : (parentState.star ? 'star-card' : '')">
-        <div v-if="parentState.star" class="star-bolt absolute -top-5 z-20" :class="parentState.top ? 'left-3' : 'left-1/2 -translate-x-1/2'" style="font-size:2.4rem" title="今日之星">⚡</div>
+      <div class="relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : (parentState.star ? 'star-soft' : '')">
+        <div v-if="parentState.star" class="top-crown absolute -top-5 z-20 animate-bounce" :class="parentState.top ? 'left-4' : 'left-1/2 -translate-x-1/2'" style="font-size:2.6rem" title="今日之星">⚡</div>
         <div v-if="parentState.top" class="top-crown absolute -top-5 left-1/2 -translate-x-1/2 z-20 animate-bounce" style="font-size:2.6rem" title="全班經驗值第一名"><i class="fa-solid fa-crown"></i></div>
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
         <div v-if="parentState.top" class="mt-1 inline-block bg-amber-100 text-amber-800 text-xs px-3 py-0.5 rounded-full font-black border border-amber-300">👑 全班經驗值第一名</div>
