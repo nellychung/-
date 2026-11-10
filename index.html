@@ -763,6 +763,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-600">
             <label class="flex items-center gap-1">每次扭蛋抽到限定的機率<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().rate" @change="saveData" class="w-16 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
+            <label class="flex items-center gap-1">每人每天最多抽到<input type="number" min="0" max="20" v-model.number="limitedCfg().maxPerDay" @change="saveData" class="w-12 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />隻（0＝不限制）</label>
             <label class="flex items-center gap-1">本週主角異色<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().shinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
             <label class="flex items-center gap-1">本週異色名單<input type="number" min="0" max="100" step="0.5" v-model.number="limitedCfg().weekShinyRate" @change="saveData" class="w-14 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" />%</label>
             <label class="flex items-center gap-1">每週異色隻數<input type="number" min="1" max="20" v-model.number="limitedCfg().weekShinyN" @change="saveData" class="w-12 px-1 py-0.5 rounded-lg border border-fuchsia-200 bg-white" /></label>
@@ -4393,12 +4394,13 @@ const __app = createApp({
     // ---------- 限定扭蛋（限定寶可夢＋異色版） ----------
     limitedCfg() {
       const st = this.daily.settings;
-      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 5, shinyRate: 10, weekShinyRate: 35, weekShinyN: 5, shinyRotate: true, pool: [], shinyPool: [] };
+      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 5, shinyRate: 10, weekShinyRate: 35, weekShinyN: 5, maxPerDay: 1, shinyRotate: true, pool: [], shinyPool: [] };
       if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
       if (st.limited.rate === undefined) st.limited.rate = 3;
       if (st.limited.shinyRotate === undefined) st.limited.shinyRotate = true;
       if (st.limited.weekShinyRate === undefined) st.limited.weekShinyRate = 35;
       if (st.limited.weekShinyN === undefined) st.limited.weekShinyN = 5;
+      if (st.limited.maxPerDay === undefined) st.limited.maxPerDay = 1;
       // 版本 4：改成「每週 1 隻主角＋5 隻異色」，限定機率 3→5；老師自己調過的機率不動
       if (st.limited.seedVer === 3 && st.limited.rule4 !== true) { if (Number(st.limited.rate) === 3) st.limited.rate = 5; st.limited.rule4 = true; }
       if (!Array.isArray(st.limited.shinyPool)) st.limited.shinyPool = [];
@@ -4460,6 +4462,12 @@ const __app = createApp({
       return this.presetAvatars.filter(p => !c[key].includes(p.id));
     },
     // 限定扭蛋：先決定是不是異色（只會是「本週異色主角」）；不是異色就從「稀有限定」抽原色版
+    // 每人每天最多抽到幾隻限定（0＝不限制）；回傳今天還能抽到幾隻
+    limitedLeftToday(st) {
+      const cap = Math.floor(Number(this.limitedCfg().maxPerDay) || 0); if (cap <= 0) return 99;
+      const k = pkTodayKey(), d = st.limDay;
+      return Math.max(0, cap - (d && d.d === k ? (d.n || 0) : 0));
+    },
     grantLimited(st) {
       const c = this.limitedCfg(), w = this.weekPlan;
       if (!w.rare && !w.shinies.length) return null;
@@ -4474,6 +4482,7 @@ const __app = createApp({
       if (!st.collection) st.collection = [];
       st.collection.push(item);
       st.gachaHit = (st.gachaHit || 0) + 1;
+      { const k = pkTodayKey(); st.limDay = (st.limDay && st.limDay.d === k) ? { d: k, n: (st.limDay.n || 0) + 1 } : { d: k, n: 1 }; }
       this.addLog(st.name, `扭蛋抽到限定寶可夢【${shiny ? '✨異色 ' : ''}${this.petById(pid).name}】`, 0);
       this.limResult = { show: true, spin: false, student: st, pet: this.petById(pid), shiny, img: this.collImg(item) };
       this.saveData();
@@ -4724,7 +4733,7 @@ const __app = createApp({
       setTimeout(() => {
         this.isGachaSpinning = false;
         // 小機率改抽到限定寶可夢（和一般扭蛋合在一起）
-        if (this.limitedActive && Math.random() * 100 < (Number(this.limitedCfg().rate) || 0)) {
+        if (this.limitedActive && this.limitedLeftToday(student) > 0 && Math.random() * 100 < (Number(this.limitedCfg().rate) || 0)) {
           this.showGachaModal = false;
           this.grantLimited(student);
           return;
