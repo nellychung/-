@@ -4394,13 +4394,15 @@ const __app = createApp({
     // ---------- 限定扭蛋（限定寶可夢＋異色版） ----------
     limitedCfg() {
       const st = this.daily.settings;
-      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 5, shinyRate: 10, weekShinyRate: 35, weekShinyN: 5, maxPerDay: 1, shinyRotate: true, pool: [], shinyPool: [] };
+      if (!st.limited) st.limited = { on: false, name: '限定寶可夢', rate: 5, shinyRate: 10, weekShinyRate: 35, weekShinyN: 5, maxPerDay: 0, shinyRotate: true, pool: [], shinyPool: [] };
       if (!Array.isArray(st.limited.pool)) st.limited.pool = [];
       if (st.limited.rate === undefined) st.limited.rate = 3;
       if (st.limited.shinyRotate === undefined) st.limited.shinyRotate = true;
       if (st.limited.weekShinyRate === undefined) st.limited.weekShinyRate = 35;
       if (st.limited.weekShinyN === undefined) st.limited.weekShinyN = 5;
-      if (st.limited.maxPerDay === undefined) st.limited.maxPerDay = 1;
+      if (st.limited.maxPerDay === undefined) st.limited.maxPerDay = 0;
+      // 預設不限制：先前自動設成 1 的改回 0（老師自己改過的其他數字不動）
+      if (!st.limited.capReset) { if (Number(st.limited.maxPerDay) === 1) st.limited.maxPerDay = 0; st.limited.capReset = true; }
       // 版本 4：改成「每週 1 隻主角＋5 隻異色」，限定機率 3→5；老師自己調過的機率不動
       if (st.limited.seedVer === 3 && st.limited.rule4 !== true) { if (Number(st.limited.rate) === 3) st.limited.rate = 5; st.limited.rule4 = true; }
       if (!Array.isArray(st.limited.shinyPool)) st.limited.shinyPool = [];
