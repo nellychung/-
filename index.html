@@ -285,7 +285,7 @@
         <div v-if="parentState.star" class="mt-1 inline-block bg-violet-100 text-violet-800 text-xs px-3 py-0.5 rounded-full font-black border border-violet-300">⚡ 今日之星・今天經驗值增加最多</div>
       </div>
 
-      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2" :class="parentState.star ? 'star-card' : ''">
+      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
         <div class="flex items-end justify-between">
           <div><div class="text-xs font-black text-slate-500">經驗值</div><div class="text-3xl font-black text-amber-600 leading-none">{{ parentState.child.score }} <span class="text-sm">EXP</span></div><div class="mt-1 text-sm font-black" :class="(parentState.today.gain||0) > 0 ? 'text-emerald-600' : ((parentState.today.gain||0) < 0 ? 'text-rose-600' : 'text-slate-400')">今天 {{ (parentState.today.gain||0) > 0 ? '+' : '' }}{{ parentState.today.gain || 0 }} EXP</div></div>
           <div class="text-right"><div class="text-xs font-black text-slate-500">等級</div><div class="text-3xl font-black text-indigo-600 leading-none">Lv.{{ getStudentLevelData(parentState.child.score).level }}</div></div>
