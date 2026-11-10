@@ -1635,7 +1635,7 @@
             </div>
 
             <div v-if="(profileStudent.collection || []).length" class="bg-white p-2.5 rounded-2xl border border-fuchsia-200 space-y-1.5">
-              <h4 class="text-xs font-black text-slate-800 flex items-center justify-between"><span>🌟 限定收藏（{{ profileStudent.collection.length }}）</span><span class="text-[9px] text-slate-500 font-bold">可設為主寵或和同學交換</span></h4>
+              <h4 class="text-xs font-black text-slate-800 flex items-center justify-between"><span>🌟 限定收藏（{{ profileStudent.collection.length }}）</span><span class="text-[9px] text-slate-500 font-bold">可設為主寵或和同學交換<template v-if="profileStudent.gachaN"> ・ 自記錄起扭蛋 {{ profileStudent.gachaN }} 次、抽到限定 {{ profileStudent.gachaHit || 0 }} 次</template></span></h4>
               <div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto custom-scroll p-0.5">
                 <div v-for="it in profileStudent.collection" :key="it.uid" class="rounded-xl border p-1.5 text-center space-y-1" :class="it.shiny ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-slate-50'">
                   <div class="w-12 h-12 mx-auto rounded-xl p-1 animal-sphere overflow-hidden flex items-center justify-center" :class="(petById(it.pid) || {}).bg"><img :src="collImg(it)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-full h-full object-contain animal-3d-img" /></div>
@@ -4228,7 +4228,8 @@ const __app = createApp({
 
       const pet = this.getStudentPetObj(student);
       if (student.customAvatar && (!pet || !pet.evolutions)) {
-        return student.customAvatar;
+        // 異色版主寵：沒有進化階段的寶可夢（如阿爾宙斯）也要顯示異色圖
+        return student.petShiny && this.shinyReady(student.customAvatar) ? this.shinyUrlFor(student.customAvatar) : student.customAvatar;
       }
 
       if (pet && pet.evolutions && pet.evolutions.length > 0) {
@@ -4472,6 +4473,7 @@ const __app = createApp({
       const item = { uid: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) + (this._uidN = (this._uidN || 0) + 1), pid, shiny, t: Date.now() };
       if (!st.collection) st.collection = [];
       st.collection.push(item);
+      st.gachaHit = (st.gachaHit || 0) + 1;
       this.addLog(st.name, `扭蛋抽到限定寶可夢【${shiny ? '✨異色 ' : ''}${this.petById(pid).name}】`, 0);
       this.limResult = { show: true, spin: false, student: st, pet: this.petById(pid), shiny, img: this.collImg(item) };
       this.saveData();
@@ -4712,6 +4714,7 @@ const __app = createApp({
         return;
       }
       this.addScore(student, -50, '消耗 EXP 啟動扭蛋機', '🎲 扭蛋');
+      student.gachaN = (student.gachaN || 0) + 1;
       this.gachaDrawingStudent = student;
       this.showGachaModal = true;
       this.isGachaSpinning = true;
