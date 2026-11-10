@@ -3712,8 +3712,9 @@ const __app = createApp({
       this.alarmPopup = { time: a.time, text: a.text || '時間到了！' };
       clearInterval(this._alRing); clearTimeout(this._alAuto);
       this.ding();
-      // 停留 5 秒後自動消失，不用按確定
-      this._alAuto = setTimeout(() => this.dismissAlarm(), 5000);
+      // 每 5 秒響一次、共響 2 次，10 秒後自動消失，不用按確定
+      this._alRing = setInterval(() => { if (this.alarmPopup) this.ding(); clearInterval(this._alRing); }, 5000);
+      this._alAuto = setTimeout(() => this.dismissAlarm(), 10000);
     },
     dismissAlarm() { this.alarmPopup = null; clearInterval(this._alRing); clearTimeout(this._alAuto); },
     testAlarm() { this.fireAlarm({ time: this.currentTimeStr.slice(0, 5), text: '這是鬧鐘測試：時間到了！' }); },
