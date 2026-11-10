@@ -3710,12 +3710,12 @@ const __app = createApp({
     delAlarm(id) { delete this.daily.settings.alarms[id]; this.saveData(); },
     fireAlarm(a) {
       this.alarmPopup = { time: a.time, text: a.text || '時間到了！' };
-      clearInterval(this._alRing);
-      let n = 0;
+      clearInterval(this._alRing); clearTimeout(this._alAuto);
       this.ding();
-      this._alRing = setInterval(() => { if (!this.alarmPopup || ++n >= 5) { clearInterval(this._alRing); return; } this.ding(); }, 5000);
+      // 停留 5 秒後自動消失，不用按確定
+      this._alAuto = setTimeout(() => this.dismissAlarm(), 5000);
     },
-    dismissAlarm() { this.alarmPopup = null; clearInterval(this._alRing); },
+    dismissAlarm() { this.alarmPopup = null; clearInterval(this._alRing); clearTimeout(this._alAuto); },
     testAlarm() { this.fireAlarm({ time: this.currentTimeStr.slice(0, 5), text: '這是鬧鐘測試：時間到了！' }); },
 
     // ---------- YouTube 播放（用 YouTube 的播放器程式，被瀏覽器擋住時自動改成靜音播放） ----------
