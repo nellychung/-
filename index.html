@@ -277,14 +277,15 @@
     <div v-if="parentState.error" class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 font-black text-sm text-center">{{ parentState.error }}</div>
     <div v-else-if="!parentState.child" class="p-6 text-center text-slate-500 font-black text-sm">載入中…</div>
     <template v-else>
-      <div class="relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : ''">
+      <div class="relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : (parentState.star ? 'star-card' : '')">
+        <div v-if="parentState.star" class="star-bolt absolute -top-5 z-20" :class="parentState.top ? 'left-3' : 'left-1/2 -translate-x-1/2'" style="font-size:2.4rem" title="今日之星">⚡</div>
         <div v-if="parentState.top" class="top-crown absolute -top-5 left-1/2 -translate-x-1/2 z-20 animate-bounce" style="font-size:2.6rem" title="全班經驗值第一名"><i class="fa-solid fa-crown"></i></div>
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
         <div v-if="parentState.top" class="mt-1 inline-block bg-amber-100 text-amber-800 text-xs px-3 py-0.5 rounded-full font-black border border-amber-300">👑 全班經驗值第一名</div>
         <div v-if="parentState.star" class="mt-1 inline-block bg-violet-100 text-violet-800 text-xs px-3 py-0.5 rounded-full font-black border border-violet-300">⚡ 今日之星・今天經驗值增加最多</div>
       </div>
 
-      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
+      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2" :class="parentState.star ? 'star-card' : ''">
         <div class="flex items-end justify-between">
           <div><div class="text-xs font-black text-slate-500">經驗值</div><div class="text-3xl font-black text-amber-600 leading-none">{{ parentState.child.score }} <span class="text-sm">EXP</span></div><div class="mt-1 text-sm font-black" :class="(parentState.today.gain||0) > 0 ? 'text-emerald-600' : ((parentState.today.gain||0) < 0 ? 'text-rose-600' : 'text-slate-400')">今天 {{ (parentState.today.gain||0) > 0 ? '+' : '' }}{{ parentState.today.gain || 0 }} EXP</div></div>
           <div class="text-right"><div class="text-xs font-black text-slate-500">等級</div><div class="text-3xl font-black text-indigo-600 leading-none">Lv.{{ getStudentLevelData(parentState.child.score).level }}</div></div>
