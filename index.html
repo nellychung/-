@@ -4398,9 +4398,10 @@ const __app = createApp({
     },
 
     // 加減分邏輯 + 1秒即時飄浮數字 (+1 / -1) 與綠/紅邊框閃爍
-    addScore(student, val, reason = '手動調整經驗值', tag = '', tmp = false) {
+    addScore(student, val, reason = '手動調整經驗值', tag = '', tmp = false, allowNeg = false) {
       const oldScore = student.score;
-      student.score = Math.max(0, student.score + val);
+      // 一般加減分最低到 0；實體兌換可以扣成負數。已經是負數時，不會被「拉回 0」，加分則從負數往上加
+      student.score = Math.max(allowNeg ? -1e9 : Math.min(0, oldScore), oldScore + val);
       const diff = student.score - oldScore;
 
       // 設定飄浮數字動畫與閃爍
@@ -4956,8 +4957,8 @@ const __app = createApp({
 
     // 實體禮品與更換寵物
     async redeemDirectItem(student, item) {
-      if (student.score < item.cost) {
-        this.notify(`經驗值不足！兌換 ${item.name} 需要 ${item.cost} EXP。`);
+      if (item.isPetChange && student.score < item.cost) {
+        this.notify(`經驗值不足！更換寵物需要 ${item.cost} EXP。`);
         return;
       }
       if (item.isPetChange) {
@@ -4967,8 +4968,10 @@ const __app = createApp({
         this.showPetSelectModal = true;
         return;
       }
-      if (!(await this.askConfirm(`確定要消耗 ${item.cost} EXP 兌換【${item.name}】嗎？`))) return;
-      this.addScore(student, -item.cost, `實體兌換【${item.name}】`, this.giftTag(item.name));
+      const after = student.score - item.cost;
+      const msg = after < 0 ? `經驗值不足，兌換後會變成 ${after} EXP（負數，之後要先補回才能抽扭蛋）。\n確定要兌換【${item.name}】嗎？` : `確定要消耗 ${item.cost} EXP 兌換【${item.name}】嗎？`;
+      if (!(await this.askConfirm(msg))) return;
+      this.addScore(student, -item.cost, `實體兌換【${item.name}】`, this.giftTag(item.name), false, true);
       this.showBigFx(`${student.name} 兌換了 ${item.name}`, `-${item.cost} EXP`, 'minus');
     },
 
