@@ -325,10 +325,10 @@
       <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
         <div class="flex items-center justify-between">
           <div class="font-black text-amber-900 text-sm">🏅 得到的徽章</div>
-          <div class="text-xs font-black text-amber-700">共 {{ parentState.badges.length }} 枚</div>
+          <div class="text-xs font-black text-amber-700">{{ badgeGroups(parentState.badges).length }} 種・累計 {{ parentState.badges.length }} 枚</div>
         </div>
         <div v-if="parentState.badges.length" class="flex flex-wrap gap-1.5">
-          <span v-for="(b, i) in [...parentState.badges].reverse()" :key="i" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ b.icon }} {{ b.name }}<span class="text-[10px] font-bold text-amber-600 ml-1">{{ wkRange(b.wk) }}</span></span>
+          <span v-for="g in badgeGroups(parentState.badges)" :key="g.name" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ g.icon }} {{ g.name }}<span v-if="g.n > 1" class="ml-1 px-1.5 rounded-full bg-amber-500 text-white text-[10px]">×{{ g.n }}</span><span class="text-[10px] font-bold text-amber-600 ml-1">最近 {{ wkRange(g.last) }}</span></span>
         </div>
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">還沒有徽章，每週完成任務就能拿到喔！</div>
       </div>
@@ -1587,7 +1587,7 @@
               </div>
               <span class="bg-indigo-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full shrink-0">第 {{ profileStudent.group }} 組 · {{ profileStudent.role || '組員' }}</span>
             </div>
-            <div v-if="(profileStudent.badges || []).length" class="flex flex-wrap gap-1 mt-0.5"><span v-for="b in profileStudent.badges" :key="b.id" :title="b.name + '（' + wkRange(b.wk) + '）'" class="text-[11px] font-black bg-amber-50 border border-amber-300 text-amber-800 rounded-full px-1.5">{{ b.icon }}{{ b.name }}</span></div>
+            <div v-if="(profileStudent.badges || []).length" class="flex flex-wrap gap-1 mt-0.5"><span v-for="g in badgeGroups(profileStudent.badges)" :key="g.name" :title="g.name + '：共 ' + g.n + ' 枚，最近 ' + wkRange(g.last)" class="text-[11px] font-black bg-amber-50 border border-amber-300 text-amber-800 rounded-full px-1.5">{{ g.icon }}{{ g.name }}<template v-if="g.n > 1"> ×{{ g.n }}</template></span></div>
             <div class="mt-0.5 space-y-0.5">
               <div class="flex items-center space-x-2 text-[11px] font-black">
                 <span class="text-amber-600">EXP：<span class="text-xs font-black">{{ profileStudent.score }}</span></span>
@@ -4632,6 +4632,17 @@ const __app = createApp({
       }));
     },
     taskProg(st, t) { const n = this.weekCount(st, t.type); return { n: Math.min(n, 99), done: n >= t.target }; },
+    // 徽章依名稱合併：同一種只顯示一個，後面加 ×次數，最近得到的排前面
+    badgeGroups(list) {
+      const m = new Map();
+      (list || []).forEach(b => {
+        const k = b.name || '';
+        const g = m.get(k) || { icon: b.icon, name: k, n: 0, last: '' };
+        g.n++; if (String(b.wk || '') >= g.last) { g.last = String(b.wk || ''); g.icon = b.icon || g.icon; }
+        m.set(k, g);
+      });
+      return [...m.values()].sort((a, b) => (b.last > a.last ? 1 : b.last < a.last ? -1 : 0));
+    },
     badgeCount(st) { return (st.badges || []).length; },
     setWeeklyTask(t, field, val) { t[field] = field === 'target' || field === 'exp' ? Math.max(0, Number(val) || 0) : val; this.saveData(); },
     async settleFriend() {
