@@ -324,13 +324,13 @@
 
       <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
         <div class="flex items-center justify-between">
-          <div class="font-black text-amber-900 text-sm">🏅 得到的徽章</div>
-          <div class="text-xs font-black text-amber-700">{{ badgeGroups(parentState.badges).length }} 種・累計 {{ parentState.badges.length }} 枚</div>
+          <div class="font-black text-amber-900 text-sm">🏅 本週得到的徽章</div>
+          <div class="text-xs font-black text-amber-700">{{ wkRange(thisWeekKey()) }}・{{ parentWeekBadges().length }} 枚</div>
         </div>
-        <div v-if="parentState.badges.length" class="flex flex-wrap gap-1.5">
-          <span v-for="g in badgeGroups(parentState.badges)" :key="g.name" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ g.icon }} {{ g.name }}<span v-if="g.n > 1" class="ml-1 px-1.5 rounded-full bg-amber-500 text-white text-[10px]">×{{ g.n }}</span><span class="text-[10px] font-bold text-amber-600 ml-1">最近 {{ wkRange(g.last) }}</span></span>
+        <div v-if="parentWeekBadges().length" class="flex flex-wrap gap-1.5">
+          <span v-for="b in parentWeekBadges()" :key="b.name" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ b.icon }} {{ b.name }}</span>
         </div>
-        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">還沒有徽章，每週完成任務就能拿到喔！</div>
+        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">本週還沒有徽章，繼續加油，完成每週任務就能拿到喔！</div>
       </div>
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
         <div class="text-sm font-black text-sky-800">🌅 今天到班時間</div>
@@ -4642,6 +4642,12 @@ const __app = createApp({
         m.set(k, g);
       });
       return [...m.values()].sort((a, b) => (b.last > a.last ? 1 : b.last < a.last ? -1 : 0));
+    },
+    thisWeekKey() { return pkMonKey(new Date()); },
+    // 家長頁只顯示「本週」拿到的徽章（每週一重新開始，不會愈累積愈多）
+    parentWeekBadges() {
+      const k = this.thisWeekKey(), seen = new Set();
+      return (this.parentState.badges || []).filter(b => b.wk === k && !seen.has(b.name) && seen.add(b.name));
     },
     badgeCount(st) { return (st.badges || []).length; },
     setWeeklyTask(t, field, val) { t[field] = field === 'target' || field === 'exp' ? Math.max(0, Number(val) || 0) : val; this.saveData(); },
