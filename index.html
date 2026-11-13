@@ -322,16 +322,6 @@
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">目前沒有作業項目</div>
       </div>
 
-      <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <div class="font-black text-amber-900 text-sm">🏅 本週得到的徽章</div>
-          <div class="text-xs font-black text-amber-700">{{ wkRange(thisWeekKey()) }}・{{ parentWeekBadges().length }} 枚</div>
-        </div>
-        <div v-if="parentWeekBadges().length" class="flex flex-wrap gap-1.5">
-          <span v-for="b in parentWeekBadges()" :key="b.name" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-xs font-black text-amber-800">{{ b.icon }} {{ b.name }}</span>
-        </div>
-        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">本週還沒有徽章，繼續加油，完成每週任務就能拿到喔！</div>
-      </div>
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
         <div class="text-sm font-black text-sky-800">🌅 今天到班時間</div>
         <div class="text-lg font-black" :class="parentState.today.leave ? 'text-slate-600' : (parentState.today.arrive ? 'text-emerald-600' : 'text-slate-400')">
