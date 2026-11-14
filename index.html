@@ -432,7 +432,7 @@
             
             <div class="flex bg-indigo-100 p-0.5 rounded-xl text-[11px] font-bold">
               <button @click="viewMode = 'all'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'all' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">全班座號</button>
-              <button @click="viewMode = 'seat'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'seat' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">依座位表</button>
+              
               <button @click="viewMode = 'grouped'" :class="['px-2 py-0.5 rounded-lg transition', viewMode === 'grouped' ? 'bg-white text-indigo-800 shadow-xs font-black' : 'text-indigo-600']">依組分區</button>
             </div>
 
@@ -454,7 +454,7 @@
         </div>
 
         <!-- 模式 A：全班緊湊卡片（27 人一頁看完） -->
-        <div v-if="viewMode === 'all' || viewMode === 'seat'" class="student-grid" :style="viewMode === 'seat' ? { gridTemplateColumns: 'repeat(' + (seatPlan.cols || 6) + ', minmax(0, 1fr))' } : null">
+        <div v-if="viewMode === 'all'" class="student-grid">
           <template v-for="(student, ci) in dashCells" :key="student ? student.id : 'e' + ci">
           <div v-if="!student" class="min-w-0"></div>
           <div v-else
@@ -3578,18 +3578,7 @@ const __app = createApp({
     oldHwCount() { return this.homeworkList.filter(h => this.hwIsOld(h)).length; },
     hwCfgTitle() { const h = this.homeworkList.find(x => x.id === this.hwCfgId); return h ? h.title : ''; },
     hwCfgDays() { const h = this.homeworkList.find(x => x.id === this.hwCfgId); return h ? this.hwDays(h) : 0; },
-    // 主頁卡片的排列：「依座位表」＝照座位表的位置（空位留白；還沒排座位的人接在最後面）
-    dashCells() {
-      if (this.viewMode !== 'seat') return this.sortedStudents;
-      const q = this.searchQuery.trim().toLowerCase();
-      const ok = s => !q || s.name.toLowerCase().includes(q) || String(s.seatNumber).includes(q);
-      const cells = this.seatCells.map(s => (s && ok(s) ? s : null));
-      const placed = new Set(this.seatCells.filter(Boolean).map(s => s.id));
-      const rest = (this.students || []).filter(s => !placed.has(s.id) && ok(s)).sort((a, b) => a.seatNumber - b.seatNumber);
-      const cols = this.seatPlan.cols || 6;
-      while (rest.length && cells.length % cols) cells.push(null);
-      return cells.concat(rest);
-    },
+    dashCells() { return this.sortedStudents; },
     sortedStudents() {
       const list = [...this.filteredStudents];
       if (this.sortBy === 'score') {
