@@ -1690,8 +1690,9 @@
                 <div v-for="hw in homeworkList" :key="hw.id" class="p-1.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[11px] shadow-xs">
                   <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
                   <div class="flex items-center space-x-1 shrink-0">
-                    <span v-if="getHwStatus(profileStudent, hw.id, 'completed')" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-indigo-600 text-white">完成</span>
-                    <span v-else class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-600">未完成</span>
+                    <span v-if="hwState(profileStudent, hw) === 'd'" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-green-600 text-white">已完成</span>
+                    <span v-else-if="hwState(profileStudent, hw) === 'f'" class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-amber-900">需訂正</span>
+                    <span v-else class="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-400 text-white">未交</span>
                   </div>
                 </div>
               </div>
