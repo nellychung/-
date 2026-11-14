@@ -286,10 +286,6 @@
     .hw-seg{display:inline-flex;background:rgba(255,255,255,.25);border-radius:999px;padding:3px;gap:2px}
     .hw-pill{padding:8px 16px;border-radius:999px;font-weight:900;font-size:13px;min-height:38px}
     .owe-strip{background:#fbbf24;color:#78350f;font-weight:900;font-size:13px;line-height:1;min-height:20px;display:flex;align-items:center;justify-content:center;border-radius:8px;box-shadow:0 1px 0 #b45309}
-    .owe-strip .zc{display:inline-flex;align-items:center}
-    .owe-strip .zy{display:inline-flex;align-items:center;margin-left:1px;font-size:4.6px;line-height:1;font-weight:700}
-    .owe-strip .st{display:flex;flex-direction:column;align-items:center}
-    .owe-strip .st b{font-weight:700}
     .btn-plus{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
     .hw-chip{display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:54px;border-radius:18px;font-weight:900;font-size:26px;padding:0 8px}
 </style>
@@ -497,7 +493,7 @@
               </div>
             </div>
 
-            <div v-if="hwOweN(student)" class="owe-strip" title="作業還欠幾份（未交＋需訂正）"><span class="zc">作<span class="zy"><span class="st"><b>ㄗ</b><b>ㄨ</b><b>ㄛ</b></span><b class="tn">ˋ</b></span></span><span class="zc">業<span class="zy"><span class="st"><b>ㄧ</b><b>ㄝ</b></span><b class="tn">ˋ</b></span></span><span class="zc ml-1">欠<span class="zy"><span class="st"><b>ㄑ</b><b>ㄧ</b><b>ㄢ</b></span><b class="tn">ˋ</b></span></span><span class="ml-1">{{ hwOweN(student) }}</span></div>
+            <div v-if="hwOweN(student)" class="owe-strip" title="作業還欠幾份（未交＋需訂正）">作業 欠 {{ hwOweN(student) }}</div>
             <div class="grid gap-1" :class="teacherMode ? 'grid-cols-2' : 'grid-cols-1'">
               <button @pointerdown="plusDown(student)" @pointerup="plusUp(student)" @pointerleave="plusAbort" @pointercancel="plusAbort" @click.stop @contextmenu.prevent title="按一下 +1；長按可輸入多分" class="btn-plus bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black rounded-lg text-xs btn-3d-emerald active:scale-95 transition" :class="teacherMode ? 'py-0.5' : 'py-1.5 text-sm'">+1</button>
               <button v-if="teacherMode" @click.stop="quickPlus(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-rose active:scale-95 transition">-1</button>
