@@ -285,6 +285,9 @@
     .hwt-sn{font-size:13px;font-weight:900;color:#4c1d95;background:#ede9fe;border-radius:8px;padding:4px 0!important}
     .hw-seg{display:inline-flex;background:rgba(255,255,255,.25);border-radius:999px;padding:3px;gap:2px}
     .hw-pill{padding:8px 16px;border-radius:999px;font-weight:900;font-size:13px;min-height:38px}
+    .owe-strip{background:#fbbf24;color:#78350f;font-weight:900;font-size:11px;line-height:1.2;padding:2px 0;border-radius:8px;text-align:center;box-shadow:0 1px 0 #b45309}
+    .btn-plus{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+    .hw-chip{display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:54px;border-radius:18px;font-weight:900;font-size:26px;padding:0 8px}
 </style>
 </head>
 <body style="margin:0">
@@ -354,7 +357,6 @@
     <header class="macaron-header text-[#8a3b12] px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md 2xl:grid 2xl:grid-cols-[1fr_auto_1fr]">
       <div class="flex items-center space-x-2.5 min-w-0 2xl:justify-self-start">
         <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap bg-white/90 text-[#8a3b12] px-3 py-1 rounded-2xl shadow-sm">
-          <i class="fa-solid fa-gamepad"></i>
           <span>智慧班級經營-寵物王國<span class="hidden min-[1700px]:inline"> (寶可夢特別版)</span></span>
         </div>
 
@@ -381,13 +383,19 @@
       <!-- 右側：隨機抽籤與頁面切換 -->
       <div class="flex items-center space-x-2 flex-wrap min-[1500px]:flex-nowrap 2xl:justify-self-end">
         <nav class="flex flex-wrap min-[1500px]:flex-nowrap items-center justify-center gap-1 bg-white/90 p-1 rounded-2xl border-2 border-white shadow-sm">
-          <button v-for="menu in pages" :key="menu.id" 
+          <button v-for="menu in visiblePages" :key="menu.id" 
                   @click="currentTab = menu.id"
                   :class="['whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 cursor-pointer', 
                           currentTab === menu.id ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md scale-105' : 'text-[#a8481a] hover:bg-orange-50']">
             <i :class="menu.icon"></i>
             <span>{{ menu.name }}</span>
           </button>
+          <template v-if="teacherMode">
+            <button @click="goStudent" title="切換成學生版" class="whitespace-nowrap px-2.5 py-1.5 rounded-xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">👩‍🏫 教師版 → 學生版</button>
+            <button @click="modeMenu = true" title="自動回學生版的時間" class="whitespace-nowrap px-1.5 py-1.5 rounded-xl text-xs font-black text-slate-400">⏱</button>
+            <button @click="toggleMute" :title="muted ? '加減分音效：已靜音' : '加減分音效：開'" class="whitespace-nowrap px-1.5 py-1.5 rounded-xl text-xs font-black text-slate-400">{{ muted ? '🔕' : '🔔' }}</button>
+          </template>
+          <button v-else @pointerdown="unlockStart" @pointerup="unlockEnd" @pointerleave="unlockEnd" @pointercancel="unlockEnd" @contextmenu.prevent class="whitespace-nowrap px-2.5 py-1.5 rounded-xl text-[11px] font-black text-slate-400 border border-slate-200 select-none">🧒 學生版・長按2秒切教師</button>
         </nav>
       </div>
     </header>
@@ -480,9 +488,10 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-1">
-              <button @click.stop="addScore(student, 1)" class="bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-emerald active:scale-95 transition">+1</button>
-              <button @click.stop="addScore(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-rose active:scale-95 transition">-1</button>
+            <div v-if="hwOweN(student)" class="owe-strip" title="未交＋需訂正">還欠 {{ hwOweN(student) }} 份</div>
+            <div class="grid gap-1" :class="teacherMode ? 'grid-cols-2' : 'grid-cols-1'">
+              <button @pointerdown="plusDown(student)" @pointerup="plusUp(student)" @pointerleave="plusAbort" @pointercancel="plusAbort" @click.stop @contextmenu.prevent title="按一下 +1；長按可輸入多分" class="btn-plus bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black rounded-lg text-xs btn-3d-emerald active:scale-95 transition" :class="teacherMode ? 'py-0.5' : 'py-1.5 text-sm'">+1</button>
+              <button v-if="teacherMode" @click.stop="quickPlus(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-rose active:scale-95 transition">-1</button>
             </div>
           </div>
         </div>
@@ -908,7 +917,24 @@
         </div>
       </div>
 
-      <div v-if="currentTab === 'homework'" class="space-y-3 max-w-[1500px] mx-auto">
+      <div v-if="currentTab === 'homework' && !teacherMode" class="space-y-3 max-w-[1100px] mx-auto">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-3xl shadow-lg font-black text-lg">📚 找找看，有沒有我的座號？</div>
+        <div v-if="!seekGroups.length" class="bg-white rounded-3xl p-8 text-center text-slate-400 font-bold">今天還沒有作業</div>
+        <div v-for="g in seekGroups" :key="g.hw.id" class="rounded-3xl p-4 border-4" :class="g.miss.length || g.fix.length ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50'">
+          <div class="flex items-center gap-2 mb-2"><span class="text-3xl">{{ g.icon }}</span><span class="text-2xl font-black text-slate-800">{{ g.hw.title }}</span>
+            <span v-if="!g.miss.length && !g.fix.length" class="text-xl font-black text-emerald-600">🎉 全部完成</span></div>
+          <div v-if="g.miss.length" class="flex flex-wrap items-center gap-2 mb-2">
+            <span class="text-lg font-black text-rose-600 w-24">😢 還沒交</span>
+            <span v-for="n in g.miss" :key="n" class="hw-chip bg-rose-400 text-white" style="box-shadow:0 3px 0 #be123c">{{ n }}</span>
+          </div>
+          <div v-if="g.fix.length" class="flex flex-wrap items-center gap-2">
+            <span class="text-lg font-black text-amber-700 w-24">✏️ 要訂正</span>
+            <span v-for="n in g.fix" :key="n" class="hw-chip bg-amber-400 text-amber-900" style="box-shadow:0 3px 0 #b45309">{{ n }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="currentTab === 'homework' && teacherMode" class="space-y-3 max-w-[1500px] mx-auto">
         <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-3xl shadow-lg flex flex-wrap items-center gap-2">
           <h2 class="text-lg font-black flex items-center gap-2 mr-1"><span>📚</span> 作業・訂正</h2>
           <button @click="hwOverview = !hwOverview" class="hw-pill bg-white/20 text-white" :class="hwOverview ? '!bg-white !text-purple-700' : ''">📊 全班總覽</button>
@@ -1547,6 +1573,32 @@
   </transition>
 
   <!-- 自訂加減經驗值 -->
+  <div v-if="plusAsk" class="fixed inset-0 z-[80] bg-slate-900/55 flex items-center justify-center p-4" @click.self="plusAsk = null">
+    <div class="bg-white rounded-3xl p-6 w-[360px] max-w-full text-center shadow-2xl space-y-3">
+      <img :src="getAvatarUrl(plusAsk)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-32 h-32 object-contain mx-auto" />
+      <div class="text-2xl font-black text-sky-900">你是 {{ plusAsk.seatNumber }} 號 {{ plusAsk.name }} 嗎？</div>
+      <div class="flex justify-center gap-3 pt-1">
+        <button @click="plusAsk = null" class="px-6 py-3 rounded-full bg-slate-200 text-slate-600 font-black text-lg">不是</button>
+        <button @click="confirmPlus" class="px-6 py-3 rounded-full text-white font-black text-lg" style="background:linear-gradient(#34d399,#059669);box-shadow:0 4px 0 #047857">是我！+1</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="modeMenu" class="fixed inset-0 z-[80] bg-slate-900/50 flex items-center justify-center p-4" @click.self="modeMenu = false">
+    <div class="bg-white rounded-3xl p-5 w-[340px] max-w-full text-center shadow-2xl space-y-3">
+      <div class="font-black text-slate-800">教師版沒有碰螢幕多久，自動回到學生版？</div>
+      <div class="grid grid-cols-3 gap-2">
+        <button v-for="n in [3, 5, 10, 30, 0]" :key="n" @click="setIdle(n)" class="py-3 rounded-2xl font-black text-sm" :class="idleMin === n ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'">{{ n === 0 ? '不自動' : n + ' 分鐘' }}</button>
+      </div>
+      <button @click="modeMenu = false" class="px-6 py-2 rounded-full bg-slate-100 font-black text-slate-600">關閉</button>
+    </div>
+  </div>
+
+  <div v-if="undoBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[85] bg-slate-900 text-white rounded-full px-5 py-3 shadow-2xl flex items-center gap-3 font-black">
+    <span>{{ undoBar.seat }} 號 {{ undoBar.delta > 0 ? '+' : '' }}{{ undoBar.delta }}</span>
+    <button @click="undoLast" class="px-4 py-1.5 rounded-full bg-amber-400 text-slate-900">↩ 還原</button>
+  </div>
+
   <div v-if="customModal.student" class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4" @click.self="customModal.student = null">
     <div class="bg-white rounded-2xl shadow-2xl p-4 w-full max-w-xs space-y-3 border-2 border-indigo-200">
       <div class="flex items-center justify-between">
@@ -1554,6 +1606,7 @@
         <button @click="customModal.student = null" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
       </div>
       <input id="custom-exp-input" type="number" min="1" inputmode="numeric" v-model.number="customModal.value" @keyup.enter="applyCustom(1)" placeholder="輸入經驗值（正整數）" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-xl text-base font-black text-slate-800 outline-none focus:border-indigo-500" />
+      <input v-model="customModal.reason" placeholder="原因（選填，例：幫忙發作業）" class="w-full px-3 py-2 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-indigo-400" />
       <div class="flex flex-wrap gap-1.5">
         <button v-for="n in [2, 5, 10, 20, 50]" :key="n" @click="customModal.value = n" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-lg border border-indigo-200">{{ n }}</button>
       </div>
@@ -3169,6 +3222,13 @@ const __app = createApp({
       homeworkList: [],
       hwShowOld: false,
       hwOverview: false,
+      teacherMode: (() => { try { return localStorage.getItem('pk_teacher') !== '0'; } catch (e) { return true; } })(),
+      idleMin: (() => { try { const v = localStorage.getItem('pk_idle'); return v === null ? 5 : Number(v); } catch (e) { return 5; } })(),
+      modeMenu: false,
+      muted: (() => { try { return localStorage.getItem('pk_mute') === '1'; } catch (e) { return false; } })(),
+      lastTouch: Date.now(),
+      plusAsk: null,
+      undoBar: null,
       hwCfgId: '',
       logs: [],
 
@@ -3232,7 +3292,7 @@ const __app = createApp({
       showCardSelectModal: false,
       selectedWildcardTarget: null,
       wildcardSelectId: '',
-      customModal: { student: null, value: '' },
+      customModal: { student: null, value: '', reason: '' },
       toast: { text: '', key: 0 },
       sheetState: { kind: 'idle', text: '尚未同步', busy: false },
 
@@ -3248,6 +3308,7 @@ const __app = createApp({
   },
 
   watch: {
+    teacherMode(v) { if (!this.visiblePages.some(p => p.id === this.currentTab)) this.currentTab = 'dashboard'; },
     currentTab(v) { if (v === 'weekly') this.students.forEach(st => this.checkWeekly(st)); }
   },
   computed: {
@@ -3396,6 +3457,17 @@ const __app = createApp({
       );
     },
 
+    visiblePages() { return this.teacherMode ? this.pages : this.pages.filter(p => p.id !== 'addStudent'); },
+    activeHw() { return this.homeworkList.filter(h => !this.hwIsOld(h)); },
+    seekGroups() {
+      const icons = ['📕', '📗', '📘', '📙', '📓', '📒', '🍎', '✏️', '📐', '🎨'];
+      const gs = this.activeHw.map((hw, i) => ({
+        hw, icon: icons[i % icons.length],
+        miss: this.seatStudents.filter(s => this.hwState(s, hw) === 'n').map(s => s.seatNumber),
+        fix: this.seatStudents.filter(s => this.hwState(s, hw) === 'f').map(s => s.seatNumber)
+      }));
+      return gs.sort((a, b) => ((b.miss.length + b.fix.length) > 0) - ((a.miss.length + a.fix.length) > 0));
+    },
     seatStudents() { return [...this.students].sort((a, b) => a.seatNumber - b.seatNumber); },
     hwCutoff() { const d = new Date(); d.setDate(d.getDate() - 14); return pkDateKey(d); },
     shownHw() { return this.hwShowOld ? this.homeworkList : this.homeworkList.filter(h => !this.hwIsOld(h)); },
@@ -3444,7 +3516,8 @@ const __app = createApp({
       catch (e) { this.reportError(name, e); }
     };
     step('讀取本機資料', () => this.loadLocalData());
-    document.addEventListener('pointerdown', () => this.unlockAudio(), { passive: true });
+    document.addEventListener('pointerdown', () => { this.unlockAudio(); this.lastTouch = Date.now(); }, { passive: true });
+    setInterval(() => this.checkIdle(), 15000);
     if (this.lunchAuto) setTimeout(() => this.loadYT().catch(() => {}), 3000);
     step('雲端同步', () => this.initCloud().then(() => { if (this._tokNew) { this._tokNew = false; this.saveData(); } }));
     step('作業檢核', () => this.startSheetSync());
@@ -4718,17 +4791,19 @@ const __app = createApp({
     },
 
     openCustom(student) {
-      this.customModal = { student, value: '' };
+      this.customModal = { student, value: '', reason: '' };
       setTimeout(() => { const el = document.getElementById('custom-exp-input'); if (el) el.focus(); }, 50);
     },
 
     applyCustom(sign) {
       const st = this.customModal.student;
       if (!st) return;
-      const n = Math.floor(Math.abs(Number(this.customModal.value)));
-      if (!n) { this.notify('請先輸入要加或扣的經驗值（正整數）'); return; }
-      this.addScore(st, sign * n, sign > 0 ? '自訂加經驗值' : '自訂扣經驗值');
-      this.customModal = { student: null, value: '' };
+      const n = Math.min(50, Math.floor(Math.abs(Number(this.customModal.value))));
+      if (!n) { this.notify('請先輸入要加或扣的經驗值（正整數，最多 50）'); return; }
+      const why = String(this.customModal.reason || '').trim();
+      this.playPM(sign > 0);
+      this.addScore(st, sign * n, (sign > 0 ? '自訂加經驗值' : '自訂扣經驗值') + (why ? '：' + why : ''));
+      this.customModal = { student: null, value: '', reason: '' };
     },
 
     addGroupScore(gNum, val) {
@@ -4740,6 +4815,63 @@ const __app = createApp({
       if (!student.homeworks || !student.homeworks[hwId]) return false;
       return !!student.homeworks[hwId][statusType];
     },
+
+    // ---------- 教師版／學生版 ----------
+    goStudent() { this.teacherMode = false; try { localStorage.setItem('pk_teacher', '0'); } catch (e) {} this.showToast('已切換成學生版'); },
+    goTeacher() { this.teacherMode = true; this.lastTouch = Date.now(); try { localStorage.setItem('pk_teacher', '1'); } catch (e) {} this.showToast('已切換成教師版'); },
+    unlockStart() { clearTimeout(this._ulT); this._ulT = setTimeout(() => this.goTeacher(), 2000); },
+    unlockEnd() { clearTimeout(this._ulT); },
+    setIdle(n) { this.idleMin = n; try { localStorage.setItem('pk_idle', String(n)); } catch (e) {} this.modeMenu = false; this.showToast(n ? `教師版 ${n} 分鐘沒碰螢幕，會自動回到學生版` : '教師版不會自動回學生版'); },
+    checkIdle() { if (this.teacherMode && this.idleMin > 0 && Date.now() - this.lastTouch > this.idleMin * 60000) this.goStudent(); },
+
+    // ---------- 主頁 +1／-1：音效、防連按、還原、長按輸入 ----------
+    hwOweN(student) { let n = 0; this.activeHw.forEach(h => { if (this.hwState(student, h) !== 'd') n++; }); return n; },
+    playPM(plus) {
+      try {
+        if (this.muted) return;
+        const ac = this._ac || (this.unlockAudio(), this._ac); if (!ac) return;
+        if (ac.state === 'suspended') ac.resume();
+        const t = ac.currentTime;
+        const tone = (f, vol, dec, type) => {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.type = type || 'sine'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+          o.start(t); o.stop(t + dec + 0.05);
+        };
+        if (plus) { tone(262, 0.55, 0.45); tone(524, 0.18, 0.3); }          // +1：柔和的木頭「咚」
+        else { tone(700, 0.4, 0.12); tone(2100, 0.1, 0.06); }               // −1：短短的「嗒」
+      } catch (e) {}
+    },
+    toggleMute() { this.muted = !this.muted; try { localStorage.setItem('pk_mute', this.muted ? '1' : '0'); } catch (e) {} this.showToast(this.muted ? '加減分音效已靜音' : '加減分音效已開啟'); },
+    quickPlus(student, val) {
+      const now = Date.now();
+      this._cool = this._cool || {};
+      if (this._cool[student.id] && now - this._cool[student.id] < 1500) return;   // 防誤觸連按
+      this._cool[student.id] = now;
+      this.playPM(val > 0);
+      this.addScore(student, val);
+      this.undoBar = { id: student.id, seat: student.seatNumber, delta: val };
+      clearTimeout(this._ubT); this._ubT = setTimeout(() => { this.undoBar = null; }, 5000);
+    },
+    undoLast() {
+      const u = this.undoBar; if (!u) return;
+      const st = this.students.find(x => x.id === u.id); this.undoBar = null; if (!st) return;
+      this.playPM(u.delta < 0);
+      this.addScore(st, -u.delta, '還原誤按');
+    },
+    plusDown(student) {
+      this.plusAbort();
+      if (!this.teacherMode) { this._pl = { id: student.id, fired: false }; return; }
+      this._pl = { id: student.id, fired: false, t: setTimeout(() => { if (this._pl) { this._pl.fired = true; this.openCustom(student); } }, 600) };
+    },
+    plusUp(student) {
+      const pl = this._pl; if (!pl || pl.id !== student.id) return;
+      clearTimeout(pl.t); this._pl = null;
+      if (pl.fired) return;
+      if (this.teacherMode) this.quickPlus(student, 1); else this.plusAsk = student;
+    },
+    plusAbort() { if (this._pl) { clearTimeout(this._pl.t); this._pl = null; } },
+    confirmPlus() { const st = this.plusAsk; this.plusAsk = null; if (st) this.quickPlus(st, 1); },
 
     // ---------- 作業・訂正：未交 → 需訂正(+1) → 已完成(期限內 +1) ----------
     hwDays(hw) { const n = Number(hw && hw.fixDays); return n >= 0 ? n : 0; },
