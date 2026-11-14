@@ -212,6 +212,8 @@
     @media (min-width:1050px){.student-grid{grid-template-columns:repeat(10,minmax(0,1fr))}}
     .pet-thumb{width:var(--ps);height:var(--ps);border-radius:1rem}
     /* 依組分區：6~7 組並排，兩排放完 */
+    .gcell{container-type:inline-size}
+    @container (max-width:250px){.gcell .mc-lav{display:none}}
     .group-grid{display:grid;gap:6px;grid-template-columns:repeat(1,minmax(0,1fr))}
     @media (min-width:640px){.group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (min-width:900px){.group-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -522,10 +524,12 @@
               </div>
             </div>
 
-            <div class="space-y-0.5">
-              <div v-for="student in getStudentsByGroup(gNum)" :key="student.id"
+            <div class="grid gap-0.5" :style="{ gridTemplateColumns: 'repeat(' + groupSeatLayout(gNum).cols + ', minmax(0, 1fr))' }">
+              <template v-for="(student, gi) in groupSeatLayout(gNum).cells" :key="student ? student.id : 'g' + gNum + '-' + gi">
+              <div v-if="!student" class="min-w-0"></div>
+              <div v-else
                    @click="openProfileModal(student)"
-                   class="bg-white px-1 py-0.5 rounded-lg border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:border-indigo-400 transition relative min-w-0"
+                   class="gcell bg-white px-1 py-0.5 rounded-lg border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:border-indigo-400 transition relative min-w-0"
                    :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
 
                 <div v-if="student.anim" :key="student.anim.key"
@@ -551,7 +555,7 @@
                     <span class="text-[10px] font-black px-1.5 rounded-full border shrink-0 whitespace-nowrap" :class="roleChipClass(student.role)">{{ student.role || '組員' }}</span>
                     <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
                   </div>
-                  <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span></div>
+                  <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span><span v-if="hwOweN(student)" class="ml-1 px-1 rounded bg-amber-400 text-amber-900">作業-{{ hwOweN(student) }}</span></div>
                 </div>
                 <div class="flex gap-1 shrink-0" @click.stop>
                   <button @click="addScore(student, 1)" class="mc-mint px-1.5 py-0.5 text-[11px] font-black rounded active:scale-95">+1</button>
@@ -559,6 +563,7 @@
                   <button @click="openCustom(student)" class="mc-lav px-1.5 py-0.5 text-[11px] font-black rounded active:scale-95" title="自訂加減經驗值">±</button>
                 </div>
               </div>
+              </template>
             </div>
           </div>
         </div>
@@ -897,6 +902,7 @@
                   <div class="text-[11px] font-black text-indigo-600">{{ stu.score }} EXP</div>
                 </div>
               </div>
+              <div v-if="hwOweN(stu)" class="owe-strip mx-1.5 mb-1" title="作業還欠幾份（未交＋需訂正）">作業-{{ hwOweN(stu) }}</div>
               <div v-if="!seatSwapMode" class="px-1.5 pb-1 space-y-1" @click.stop>
                 <div class="grid grid-cols-2 gap-1">
                   <select :value="stu.group || 1" @change="setStudentGroup(stu, $event)" title="更換小組"
@@ -4894,6 +4900,21 @@ const __app = createApp({
       this.saveData();
     },
 
+    // 依組分區：組內照座位表的實際位置排成小格子（沒座位的人接在最後面）
+    groupSeatLayout(gNum) {
+      const all = this.getStudentsByGroup(gNum), cols = this.seatPlan.cols || 6, total = (this.seatPlan.rows || 1) * cols;
+      const placed = all.filter(s => Number.isInteger(s.deskIndex) && s.deskIndex >= 0 && s.deskIndex < total);
+      const rest = all.filter(s => !placed.includes(s));
+      if (!placed.length) return { cols: 1, cells: rest };
+      const rs = [...new Set(placed.map(s => Math.floor(s.deskIndex / cols)))].sort((a, b) => a - b);
+      const cs = [...new Set(placed.map(s => s.deskIndex % cols))].sort((a, b) => a - b);
+      const cells = new Array(rs.length * cs.length).fill(null);
+      placed.forEach(s => {
+        const i = rs.indexOf(Math.floor(s.deskIndex / cols)) * cs.length + cs.indexOf(s.deskIndex % cols);
+        if (!cells[i]) cells[i] = s; else rest.push(s);
+      });
+      return { cols: cs.length, cells: cells.concat(rest) };
+    },
     getStudentsByGroup(gNum) {
       return this.sortedStudents.filter(s => (s.group || 1) === gNum);
     },
