@@ -1356,6 +1356,8 @@
       <div v-if="currentTab === 'addStudent'" class="max-w-6xl mx-auto bg-white rounded-2xl border-2 border-sky-200 p-3 space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="font-black text-sky-900 text-sm">👪 家長專屬連結</h3>
+          <button @click="checkParentServer" :disabled="!hasCloud()" class="px-3 py-1 bg-white border-2 border-sky-300 text-sky-800 font-black rounded-lg text-xs disabled:opacity-50">🔍 檢查家長頁伺服器是不是最新版</button>
+          <span v-if="parentCheck" class="text-[11px] font-black" :class="parentCheck.startsWith('✅') ? 'text-emerald-600' : 'text-rose-600'">{{ parentCheck }}</span>
           <button @click="copyAllParentLinks" :disabled="!hasCloud()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-lg text-xs disabled:opacity-50">複製全班連結（座號＋姓名＋連結）</button>
         </div>
         <p class="text-[11px] font-bold text-slate-500">每位孩子一個專屬連結，家長只看得到自己孩子的經驗值與作業狀況，看不到其他同學。請把各自的連結傳給對應的家長；連結外流時按「重設」即可讓舊連結失效。</p>
@@ -3304,6 +3306,7 @@ const __app = createApp({
       idleMin: (() => { try { const v = localStorage.getItem('pk_idle'); return v === null ? 5 : Number(v); } catch (e) { return 5; } })(),
       modeMenu: false,
       classNameDlg: null,
+      parentCheck: '',
       muted: (() => { try { return localStorage.getItem('pk_mute') === '1'; } catch (e) { return false; } })(),
       lastTouch: Date.now(),
       plusAsk: null,
@@ -4369,6 +4372,19 @@ const __app = createApp({
       if (res) res(!!ok);
     },
     hasCloud() { return !!this.cfg().endpoint; },
+    async checkParentServer() {
+      const ep = this.cfg().endpoint; const st = this.students.find(x => x.token);
+      if (!ep || !st) { this.parentCheck = '⚠️ 還沒設定雲端，或還沒有家長連結'; return; }
+      this.parentCheck = '檢查中…';
+      try {
+        const res = await fetch(ep + (ep.includes('?') ? '&' : '?') + new URLSearchParams({ action: 'parent', t: st.token }).toString());
+        const j = await res.json();
+        if (j && j.student) {
+          const ok = ('className' in j) && (j.homework || []).every(h => 'state' in h);
+          this.parentCheck = ok ? '✅ 已經是最新版（家長頁會顯示班級名稱與需訂正）' : '❌ 還是舊版：請把最新的程式碼貼到 Apps Script，並「部署 → 管理部署作業 → 編輯 → 新版本 → 部署」';
+        } else this.parentCheck = '⚠️ 讀不到資料（' + ((j && j.error) || '未知原因') + '）';
+      } catch (e) { this.parentCheck = '⚠️ 連線失敗，請確認網路後再按一次'; }
+    },
     parentLink(st) {
       const ep = this.cfg().endpoint;
       if (!ep || !st || !st.token) return '';
