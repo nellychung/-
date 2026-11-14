@@ -272,7 +272,7 @@
     .pet-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:900;color:#4338ca;background:#eef2ff;border-radius:12px;font-size:1.2em}
 
     /* 作業・訂正 */
-    .hwb{display:block;width:100%;height:54px;border-radius:16px;border:0;font-weight:900;font-size:21px;transition:transform .08s;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+    .hwb{display:block;width:100%;height:40px;border-radius:12px;border:0;font-weight:900;font-size:16px;transition:transform .08s;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
     .hwb:active{transform:scale(.9)}
     .hwb.hwc-n{background:#fb7185;color:#fff;box-shadow:0 3px 0 #be123c}
     .hwb.hwc-f{background:#fbbf24;color:#78350f;box-shadow:0 3px 0 #b45309}
@@ -952,15 +952,15 @@
               </table>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              <div v-for="hw in shownHw" :key="hw.id" class="rounded-2xl border-2 border-purple-100 bg-purple-50/40 p-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div v-for="hw in shownHw" :key="hw.id" class="rounded-2xl border-2 border-purple-100 bg-purple-50/40 p-2">
                 <div class="flex items-center gap-2 mb-2">
                   <span class="font-black text-purple-900 text-base truncate">{{ hw.title }}</span>
                   <span class="ml-auto text-xs font-black px-2 py-0.5 rounded-full" :class="hwCount(hw, 'n') + hwCount(hw, 'f') ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'">{{ hwCount(hw, 'n') + hwCount(hw, 'f') ? '未完成 ' + (hwCount(hw, 'n') + hwCount(hw, 'f')) : '🎉 全部完成' }}</span>
                   <button @click="hwCfgId = hw.id" :title="'訂正期限：' + hwDaysText(hw)" class="shrink-0 px-2 py-1 rounded-lg bg-white border border-purple-200 text-[11px] font-black text-purple-600">⚙️ {{ hwDaysText(hw) }}</button>
                   <button @click="removeHomework(hw.id)" class="text-rose-300 hover:text-rose-500 shrink-0 px-1">✕</button>
                 </div>
-                <div class="grid grid-cols-5 gap-1.5">
+                <div class="grid grid-cols-5 gap-1">
                   <button v-for="st in seatStudents" :key="st.id" class="hwb" :class="'hwc-' + hwState(st, hw)"
                           @pointerdown="hwDown(st, hw, $event)" @pointerup="hwUp(st, hw)" @pointerleave="hwAbort" @pointercancel="hwAbort" @contextmenu.prevent>{{ st.seatNumber }}</button>
                 </div>
@@ -4821,7 +4821,7 @@ const __app = createApp({
     addHomework() {
       if (!this.newHomeworkTitle.trim()) return;
       this.homeworkList.push({
-        id: 'hw_' + Date.now(),
+        id: 'hw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         title: this.newHomeworkTitle.trim(),
         date: pkTodayKey(),
         fixDays: 0
