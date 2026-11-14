@@ -1592,13 +1592,13 @@
     </div>
   </div>
 
-  <div v-if="plusAsk" class="fixed inset-0 z-[80] bg-slate-900/55 flex items-center justify-center p-4" @click.self="plusAsk = null">
-    <div class="bg-white rounded-3xl p-6 w-[360px] max-w-full text-center shadow-2xl space-y-3">
-      <img :src="getAvatarUrl(plusAsk)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-32 h-32 object-contain mx-auto" />
-      <div class="text-2xl font-black text-sky-900">你是 {{ plusAsk.seatNumber }} 號 {{ plusAsk.name }} 嗎？</div>
-      <div class="flex justify-center gap-3 pt-1">
-        <button @click="plusAsk = null" class="px-6 py-3 rounded-full bg-slate-200 text-slate-600 font-black text-lg">不是</button>
-        <button @click="confirmPlus" class="px-6 py-3 rounded-full text-white font-black text-lg" style="background:linear-gradient(#34d399,#059669);box-shadow:0 4px 0 #047857">是我！+1</button>
+  <div v-if="plusAsk" class="fixed inset-0 z-[80] bg-slate-900/35 flex items-end justify-center p-3 pb-4" @click.self="plusAsk = null">
+    <div class="bg-white rounded-3xl px-5 py-4 w-[640px] max-w-full shadow-2xl border-4 border-emerald-200 flex items-center gap-4">
+      <img :src="getAvatarUrl(plusAsk)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-20 h-20 object-contain shrink-0" />
+      <div class="flex-1 min-w-0 text-xl sm:text-2xl font-black text-sky-900 leading-snug">你是 {{ plusAsk.seatNumber }} 號 {{ plusAsk.name }} 嗎？</div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button @click="plusAsk = null" class="px-5 py-3 rounded-full bg-slate-200 text-slate-600 font-black text-lg">不是</button>
+        <button @click="confirmPlus" class="px-5 py-3 rounded-full text-white font-black text-lg" style="background:linear-gradient(#34d399,#059669);box-shadow:0 4px 0 #047857">是我！+1</button>
       </div>
     </div>
   </div>
