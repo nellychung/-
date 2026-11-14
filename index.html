@@ -931,8 +931,8 @@
                 <span class="text-[10px] font-black px-1.5 rounded-full border whitespace-nowrap truncate" :class="roleChipClass(stu.role)">{{ stu.role || '組員' }}</span>
               </div>
               <div v-if="!seatSwapMode && teacherMode" class="grid grid-cols-2 gap-1 px-1.5 pb-1.5" @click.stop>
-                <button @click="addScore(stu, 1)" class="mc-mint py-0.5 text-xs font-black rounded-lg active:scale-95 transition">+1</button>
-                <button @click="addScore(stu, -1)" class="mc-rose py-0.5 text-xs font-black rounded-lg active:scale-95 transition">-1</button>
+                <button @pointerdown="plusDown(stu)" @pointerup="plusUp(stu)" @pointerleave="plusAbort" @pointercancel="plusAbort" @contextmenu.prevent title="按一下 +1；長按可輸入多分" class="btn-plus mc-mint py-0.5 text-xs font-black rounded-lg active:scale-95 transition">+1</button>
+                <button @click="quickPlus(stu, -1)" class="mc-rose py-0.5 text-xs font-black rounded-lg active:scale-95 transition">-1</button>
               </div>
               <div v-else-if="!seatSwapMode" class="px-1.5 pb-1.5" @click.stop>
                 <button @pointerdown="plusDown(stu)" @pointerup="plusUp(stu)" @pointerleave="plusAbort" @pointercancel="plusAbort" @contextmenu.prevent class="btn-plus w-full bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black rounded-lg btn-3d-emerald active:scale-95 transition py-1.5 text-sm">+1</button>
