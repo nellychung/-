@@ -36,10 +36,14 @@ function parent_(t) {
   if (!st) return out_({ error: 'busy' });
   const kid = (st.students || []).find(s => s.token && s.token === t);
   if (!kid) return out_({ error: 'invalid' });
-  const hw = (st.homework || []).map(h => ({
-    title: h.title,
-    completed: !!(kid.homeworks && kid.homeworks[h.id] && kid.homeworks[h.id].completed)
-  }));
+  // 作業狀態：n 未交、f 需訂正、d 已完成（太舊又沒要訂正的不顯示）
+  const cut = new Date(); cut.setDate(cut.getDate() - 14);
+  const cutKey = Utilities.formatDate(cut, 'Asia/Taipei', 'yyyy-MM-dd');
+  const hw = (st.homework || []).map(h => {
+    const d = kid.homeworks && kid.homeworks[h.id];
+    const state = (!d || !d.completed) ? 'n' : (d.fix ? 'f' : 'd');
+    return { title: h.title, state: state, completed: state === 'd', date: h.date || '' };
+  }).filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
   const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
   // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
   const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
@@ -55,6 +59,7 @@ function parent_(t) {
   const star = maxNet > 0 && (Number(net[kid.id]) || 0) === maxNet;
   const body = JSON.stringify({
     top: top, star: star,
+    className: String(((st.daily || {}).settings || {}).className || ''),
     today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', gain: Number((day.net || {})[kid.id]) || 0 },
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,

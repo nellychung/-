@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<title>智慧班級經營-寵物王國</title>
+<title>智慧班級經營</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
@@ -297,7 +297,7 @@
   <!-- 家長專屬頁面（只顯示自己孩子的資料） -->
   <div v-if="parentMode" class="p-3 sm:p-5 max-w-xl mx-auto w-full space-y-3">
     <div class="text-center">
-      <div class="text-lg font-black text-indigo-900">🐾 智慧班級經營 · 寵物王國</div>
+      <div class="text-lg font-black text-indigo-900">🐾 智慧班級經營{{ parentState.className ? ' · ' + parentState.className : '' }}</div>
       <div class="text-xs font-bold text-slate-500">家長專屬頁面</div>
     </div>
     <div v-if="parentState.error" class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 font-black text-sm text-center">{{ parentState.error }}</div>
@@ -328,13 +328,18 @@
       <div class="bg-white rounded-3xl border border-emerald-200 shadow p-4 space-y-2">
         <div class="flex items-center justify-between">
           <div class="font-black text-emerald-900 text-sm">📚 作業繳交及訂正完成狀況</div>
-          <div class="text-xs font-black text-emerald-700">完成 {{ parentState.homework.filter(h => h.completed).length }} / {{ parentState.homework.length }} 項</div>
+          <div class="text-xs font-black text-emerald-700">完成 {{ parentState.homework.filter(h => hwStateOf(h) === 'd').length }} / {{ parentState.homework.length }} 項</div>
+        </div>
+        <div v-if="parentState.homework.some(h => hwStateOf(h) !== 'd')" class="text-xs font-black text-slate-600">
+          <span v-if="parentState.homework.filter(h => hwStateOf(h) === 'n').length" class="text-rose-600 mr-3">未交 {{ parentState.homework.filter(h => hwStateOf(h) === 'n').length }} 項</span>
+          <span v-if="parentState.homework.filter(h => hwStateOf(h) === 'f').length" class="text-amber-700">需訂正 {{ parentState.homework.filter(h => hwStateOf(h) === 'f').length }} 項</span>
         </div>
         <div v-if="parentState.homework.length" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           <div v-for="(hw, i) in parentState.homework" :key="i" class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
             <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
-            <span v-if="hw.completed" class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-600 text-white shrink-0">完成</span>
-            <span v-else class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-600 shrink-0">未完成</span>
+            <span v-if="hwStateOf(hw) === 'd'" class="px-2 py-0.5 rounded text-[10px] font-black bg-green-600 text-white shrink-0">已完成</span>
+            <span v-else-if="hwStateOf(hw) === 'f'" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-900 shrink-0">✎ 需訂正</span>
+            <span v-else class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-400 text-white shrink-0">未交</span>
           </div>
         </div>
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">目前沒有作業項目</div>
@@ -357,7 +362,7 @@
     <header class="macaron-header text-[#8a3b12] px-3 sm:px-5 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 shadow-md 2xl:grid 2xl:grid-cols-[1fr_auto_1fr]">
       <div class="flex items-center space-x-2.5 min-w-0 2xl:justify-self-start">
         <div class="flex items-center space-x-2 text-base sm:text-lg font-black tracking-wide whitespace-nowrap bg-white/90 text-[#8a3b12] px-3 py-1 rounded-2xl shadow-sm">
-          <span>智慧班級經營-寵物王國<span class="hidden min-[1700px]:inline"> (寶可夢特別版)</span></span>
+          <span @click="teacherMode && openClassName()" :class="teacherMode ? 'cursor-pointer' : ''" :title="teacherMode ? '點一下可以修改班級名稱' : ''">智慧班級經營<template v-if="className"> · {{ className }}</template><span v-else-if="teacherMode" class="text-[11px] text-slate-400 font-bold"> ＋班級名稱</span></span>
         </div>
 
         <div class="flex items-center bg-white/90 p-1 rounded-2xl border-2 border-white shadow-sm">
@@ -1573,6 +1578,15 @@
   </transition>
 
   <!-- 自訂加減經驗值 -->
+  <div v-if="classNameDlg !== null" class="fixed inset-0 z-[80] bg-slate-900/50 flex items-center justify-center p-4" @click.self="classNameDlg = null">
+    <div class="bg-white rounded-3xl p-5 w-[360px] max-w-full text-center shadow-2xl space-y-3">
+      <div class="font-black text-slate-800 text-base">班級名稱</div>
+      <div class="text-xs font-bold text-slate-500">會顯示在「智慧班級經營」後面，家長頁也會一起更新。留空就不顯示。</div>
+      <input id="class-name-input" v-model="classNameDlg" @keyup.enter="saveClassName" maxlength="20" placeholder="例：一年甲班" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-xl text-base font-black text-slate-800 outline-none focus:border-indigo-500 text-center" />
+      <div class="flex justify-center gap-3"><button @click="classNameDlg = null" class="px-5 py-2 rounded-full bg-slate-100 font-black text-slate-600">取消</button><button @click="saveClassName" class="px-5 py-2 rounded-full bg-indigo-600 font-black text-white">儲存</button></div>
+    </div>
+  </div>
+
   <div v-if="plusAsk" class="fixed inset-0 z-[80] bg-slate-900/55 flex items-center justify-center p-4" @click.self="plusAsk = null">
     <div class="bg-white rounded-3xl p-6 w-[360px] max-w-full text-center shadow-2xl space-y-3">
       <img :src="getAvatarUrl(plusAsk)" @error="handleImageError" data-name="寵" referrerpolicy="no-referrer" class="w-32 h-32 object-contain mx-auto" />
@@ -1956,7 +1970,7 @@
   </div>
 
   <footer class="text-center py-2 text-[10px] text-slate-400 font-bold bg-slate-50 border-t">
-    智慧班級經營-寵物王國 · 寶可夢養成與自主班級管理系統
+    智慧班級經營{{ className ? ' · ' + className : '' }} · 寶可夢養成與自主班級管理系統
   </footer>
 </div>
 
@@ -1972,9 +1986,14 @@ const PASSPHRASE = '__KEY__';   // 已自動填入你的密語
 const SHEET_ID   = '1a3XhjDEUXXWPl1X9lRb7M2wNMII5cMhbuAadu5ORkJU';
 const SHEET_NAME = '作業檢核';
 const FILE_NAME  = 'pokemon_classroom_state.json';
+const PHOTO_NAME = 'pokemon_board_photo.txt';
 
 function out_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+function photoFile_() {
+  const it = DriveApp.getFilesByName(PHOTO_NAME);
+  return it.hasNext() ? it.next() : null;
 }
 function file_() {
   const it = DriveApp.getFilesByName(FILE_NAME);
@@ -1985,25 +2004,53 @@ function file_() {
 function parent_(t) {
   t = String(t || '');
   if (t.length < 16) return out_({ error: 'invalid' });
-  const f = file_();
-  if (!f) return out_({ error: 'invalid' });
-  const st = (JSON.parse(f.getBlob().getDataAsString()).state) || {};
+  // 家長頁面常被同時開啟：結果暫存 20 秒，減少讀取雲端硬碟的次數，也比較不會偶爾失敗
+  const cache = CacheService.getScriptCache();
+  const ck = 'p_' + t;
+  try { const hit = cache.get(ck); if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON); } catch (x) {}
+  let st = null;
+  for (let i = 0; i < 3 && !st; i++) {          // 剛好遇到老師端存檔、讀到一半時，稍等再讀
+    try {
+      const f = file_();
+      if (!f) break;
+      st = (JSON.parse(f.getBlob().getDataAsString()).state) || {};
+    } catch (e) { Utilities.sleep(400); }
+  }
+  if (!st) return out_({ error: 'busy' });
   const kid = (st.students || []).find(s => s.token && s.token === t);
   if (!kid) return out_({ error: 'invalid' });
-  const hw = (st.homework || []).map(h => ({
-    title: h.title,
-    completed: !!(kid.homeworks && kid.homeworks[h.id] && kid.homeworks[h.id].completed)
-  }));
+  // 作業狀態：n 未交、f 需訂正、d 已完成（太舊又沒要訂正的不顯示）
+  const cut = new Date(); cut.setDate(cut.getDate() - 14);
+  const cutKey = Utilities.formatDate(cut, 'Asia/Taipei', 'yyyy-MM-dd');
+  const hw = (st.homework || []).map(h => {
+    const d = kid.homeworks && kid.homeworks[h.id];
+    const state = (!d || !d.completed) ? 'n' : (d.fix ? 'f' : 'd');
+    return { title: h.title, state: state, completed: state === 'd', date: h.date || '' };
+  }).filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
   const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
   // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
   const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
   const top = maxScore > 0 && Number(kid.score) === maxScore;
-  return out_({
-    top: top,
+  // 今天到校／請假（只回傳這位孩子自己的）
+  const today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+  const day = (((st.daily || {}).days) || {})[today] || {};
+  const arr = (day.arrive || {})[kid.id];
+  const lv = (day.leave || {})[kid.id];
+  // 今日之星：今天經驗值增加最多的人（只回傳「是／否」，不洩漏其他人）
+  const net = day.net || {};
+  let maxNet = 0; Object.keys(net).forEach(k => { maxNet = Math.max(maxNet, Number(net[k]) || 0); });
+  const star = maxNet > 0 && (Number(net[kid.id]) || 0) === maxNet;
+  const body = JSON.stringify({
+    top: top, star: star,
+    className: String(((st.daily || {}).settings || {}).className || ''),
+    today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', gain: Number((day.net || {})[kid.id]) || 0 },
     student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
     homework: hw,
+    badges: (kid.badges || []).slice(-60).map(b => ({ icon: b.icon, name: b.name, wk: b.wk })),
     pets: pets
   });
+  try { cache.put(ck, body, 20); } catch (x) {}
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e) {
@@ -2016,6 +2063,10 @@ function doGet(e) {
       if (!f) return out_({ state: null, rev: 0 });
       const o = JSON.parse(f.getBlob().getDataAsString());
       return out_({ state: o.state, rev: o.rev });
+    }
+    if (action === 'photo') {
+      const pf = photoFile_();
+      return out_({ data: pf ? pf.getBlob().getDataAsString() : '' });
     }
     if (action === 'rev') {
       // 很輕量的「資料有沒有更新」查詢，讓其他裝置可以幾秒內同步
@@ -2040,6 +2091,27 @@ function doGet(e) {
           props.setProperty('gridDim', dim);
         }
       } catch (x) {}
+      // 作業名稱（A 欄）：依字數與欄寬自動縮放字級，單行顯示，不動欄寬
+      try {
+        const colA = sh.getRange(2, 1, Math.max(range.getNumRows() - 1, 1), 1);
+        const names = colA.getValues().map(r => String(r[0]));
+        const sig = names.join('|') + '#' + sh.getColumnWidth(1);
+        const props2 = PropertiesService.getScriptProperties();
+        if (props2.getProperty('nameSig') !== sig) {
+          const w = sh.getColumnWidth(1) - 10; // 可用寬度（像素）
+          const sizes = names.map(function (t) {
+            let units = 0;
+            for (const ch of t) units += ch.charCodeAt(0) > 255 ? 1 : 0.55;
+            if (!units) return [10];
+            const pt = Math.floor(w / (units * 1.9));
+            return [Math.max(7, Math.min(14, pt))];
+          });
+          colA.setWrap(false).setHorizontalAlignment('center').setVerticalAlignment('middle');
+          colA.setFontSizes(sizes);
+          sh.setRowHeights(2, Math.max(range.getNumRows() - 1, 1), 21);
+          props2.setProperty('nameSig', sig);
+        }
+      } catch (x) {}
       const values = range.getValues().map(r => r.map(c => String(c)));
       return out_({ values: values });
     }
@@ -2055,6 +2127,12 @@ function doPost(e) {
     if (e.parameter.key !== PASSPHRASE) return out_({ error: '密語錯誤' });
     lock.waitLock(20000);
     const body = JSON.parse(e.postData.contents);
+    if (e.parameter.action === 'photo') {
+      const pf = photoFile_();
+      const data = String(body.data || '');
+      if (pf) pf.setContent(data); else DriveApp.createFile(PHOTO_NAME, data, MimeType.PLAIN_TEXT);
+      return out_({ ok: true });
+    }
     const f = file_();
     let rev = 1;
     if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
@@ -3217,7 +3295,7 @@ const __app = createApp({
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { child: null, top: false, star: false, homework: [], badges: [], today: { arrive: '', leave: '', gain: 0 }, error: '', updated: '' },
+      parentState: { className: '', child: null, top: false, star: false, homework: [], badges: [], today: { arrive: '', leave: '', gain: 0 }, error: '', updated: '' },
       students: [],
       homeworkList: [],
       hwShowOld: false,
@@ -3225,6 +3303,7 @@ const __app = createApp({
       teacherMode: (() => { try { return localStorage.getItem('pk_teacher') !== '0'; } catch (e) { return true; } })(),
       idleMin: (() => { try { const v = localStorage.getItem('pk_idle'); return v === null ? 5 : Number(v); } catch (e) { return 5; } })(),
       modeMenu: false,
+      classNameDlg: null,
       muted: (() => { try { return localStorage.getItem('pk_mute') === '1'; } catch (e) { return false; } })(),
       lastTouch: Date.now(),
       plusAsk: null,
@@ -3308,6 +3387,7 @@ const __app = createApp({
   },
 
   watch: {
+    className(v) { if (!this.parentMode) document.title = '智慧班級經營' + (v ? '-' + v : ''); },
     teacherMode(v) { if (!this.visiblePages.some(p => p.id === this.currentTab)) this.currentTab = 'dashboard'; },
     currentTab(v) { if (v === 'weekly') this.students.forEach(st => this.checkWeekly(st)); }
   },
@@ -3457,6 +3537,7 @@ const __app = createApp({
       );
     },
 
+    className() { return String((this.daily && this.daily.settings && this.daily.settings.className) || '').trim(); },
     visiblePages() { return this.teacherMode ? this.pages : this.pages.filter(p => p.id !== 'addStudent'); },
     activeHw() { return this.homeworkList.filter(h => !this.hwIsOld(h)); },
     seekGroups() {
@@ -3997,6 +4078,8 @@ const __app = createApp({
               this.parentState.child = j.student;
               this.parentState.top = !!j.top; this.parentState.star = !!j.star;
               this.parentState.homework = j.homework || [];
+              this.parentState.className = String(j.className || '');
+              document.title = '智慧班級經營' + (this.parentState.className ? '-' + this.parentState.className : '');
               this.parentState.badges = j.badges || [];
               this.parentState.today = j.today || { arrive: '', leave: '', gain: 0 };
               this.parentState.error = '';
@@ -4815,6 +4898,11 @@ const __app = createApp({
       if (!student.homeworks || !student.homeworks[hwId]) return false;
       return !!student.homeworks[hwId][statusType];
     },
+
+    openClassName() { this.classNameDlg = this.className; setTimeout(() => { const el = document.getElementById('class-name-input'); if (el) el.focus(); }, 50); },
+    saveClassName() { this.daily.settings.className = String(this.classNameDlg || '').trim().slice(0, 20); this.classNameDlg = null; this.saveData(); },
+    // 家長頁的作業狀態：n 未交、f 需訂正、d 已完成（舊版伺服器只有 completed）
+    hwStateOf(h) { if (h && h.state) return h.state; return h && h.completed ? 'd' : 'n'; },
 
     // ---------- 教師版／學生版 ----------
     goStudent() { this.teacherMode = false; try { localStorage.setItem('pk_teacher', '0'); } catch (e) {} this.showToast('已切換成學生版'); },
