@@ -493,7 +493,7 @@
               </div>
             </div>
 
-            <div v-if="hwOweN(student)" class="owe-strip" title="作業還欠幾份（未交＋需訂正）">作業 欠 {{ hwOweN(student) }}</div>
+            <div v-if="hwOweN(student)" class="owe-strip" title="作業還欠幾份（未交＋需訂正）">作業-{{ hwOweN(student) }}</div>
             <div class="grid gap-1" :class="teacherMode ? 'grid-cols-2' : 'grid-cols-1'">
               <button @pointerdown="plusDown(student)" @pointerup="plusUp(student)" @pointerleave="plusAbort" @pointercancel="plusAbort" @click.stop @contextmenu.prevent title="按一下 +1；長按可輸入多分" class="btn-plus bg-gradient-to-b from-emerald-400 to-emerald-600 text-white font-black rounded-lg text-xs btn-3d-emerald active:scale-95 transition" :class="teacherMode ? 'py-0.5' : 'py-1.5 text-sm'">+1</button>
               <button v-if="teacherMode" @click.stop="quickPlus(student, -1)" class="bg-gradient-to-b from-rose-400 to-rose-600 text-white font-black py-0.5 rounded-lg text-xs btn-3d-rose active:scale-95 transition">-1</button>
