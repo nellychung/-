@@ -338,7 +338,7 @@
           <div v-for="(hw, i) in parentState.homework" :key="i" class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
             <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
             <span v-if="hwStateOf(hw) === 'd'" class="px-2 py-0.5 rounded text-[10px] font-black bg-green-600 text-white shrink-0">已完成</span>
-            <span v-else-if="hwStateOf(hw) === 'f'" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-900 shrink-0">✎ 需訂正</span>
+            <span v-else-if="hwStateOf(hw) === 'f'" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-900 shrink-0">需訂正</span>
             <span v-else class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-400 text-white shrink-0">未交</span>
           </div>
         </div>
