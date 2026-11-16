@@ -59,6 +59,23 @@
     *:nth-child(7n) img[data-name="寵"]{animation-name:petIdleB;animation-duration:3.3s;animation-delay:-.4s}
     .flash-green img[data-name="寵"]{animation:petJump .7s ease-out 1 !important}
     @media (prefers-reduced-motion:reduce){img[data-name="寵"]{animation:none !important}}
+    /* 午餐頁：中間舞台（時鐘／影片／倒數計時會自動切換），三個方塊用同一個元素，只換位置與大小，影片才不會重新載入 */
+    .lk-stage{display:grid;grid-template-columns:minmax(0,1fr) 230px;grid-template-rows:1fr auto;gap:8px;align-items:start}
+    .lk-main{grid-column:1;grid-row:1 / span 2;min-height:calc(100vh - 250px);align-self:stretch}
+    .lk-s1{grid-column:2;grid-row:1}
+    .lk-s2{grid-column:2;grid-row:2;align-self:end}
+    .ck-svg{width:150px;height:150px}
+    .ck-big .ck-svg{width:min(92%,max(220px,calc(100vh - 380px)));height:auto;aspect-ratio:1}
+    .ck-big .ck-digit{font-size:clamp(3rem,8vw,6.5rem);margin-top:.5rem}
+    .tm-digits{font-size:2.2rem}
+    .tm-big .tm-digits{font-size:clamp(6rem,24vw,18rem)}
+    .tm-big .tm-done{font-size:2.2rem}
+    .tm-big button{font-size:1.15rem;padding:.55rem 1.4rem;border-radius:.9rem}
+    .tm-big input{font-size:1.15rem;width:4.5rem;padding:.4rem}
+    .tm-big{gap:.8rem}
+    .lk-video{aspect-ratio:16/9;width:100%}
+    .lk-video-main{width:min(100%,calc((100vh - 235px) * 16 / 9));justify-self:center;align-self:center;min-height:0}
+    @media (max-width:1023px){.lk-stage{grid-template-columns:1fr}.lk-main,.lk-s1,.lk-s2{grid-column:1;grid-row:auto;min-height:0}}
     .animal-3d-img {
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
       transition: transform 0.3s ease;
@@ -656,7 +673,7 @@
       </div>
 
       <!-- 頁面：午餐（用 v-show，切到別頁影片也不會中斷） -->
-      <div v-show="currentTab === 'lunch'" class="grid gap-2 lg:grid-cols-[minmax(300px,24%)_1fr_200px] items-start">
+      <div v-show="currentTab === 'lunch'" class="grid gap-2 lg:grid-cols-[minmax(300px,24%)_1fr] items-start">
         <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-1.5">
           <div class="bg-orange-50 rounded-2xl px-1.5 py-1 flex gap-1.5">
             <button @click="lunchMode = 'brush'" class="flex-1 rounded-xl px-2 py-1 text-sm font-black border-2 transition" :class="lunchMode === 'brush' ? 'bg-emerald-500 text-white border-emerald-600 shadow' : 'bg-white text-[#8a3b12] border-orange-200'">🪥 刷牙 {{ Object.keys(dayRec.brush).length }} / {{ students.length }}</button>
@@ -687,17 +704,38 @@
             <button @click="toggleLunchAuto" class="px-3 py-1 rounded-xl font-black border" :class="lunchAuto ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-white text-slate-500 border-slate-300'">{{ lunchAuto ? '✓ 這台自動播放＋鬧鐘' : '這台不自動執行' }}</button>
             <button @click="testLunch" class="px-2 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 font-black">🧪 測試</button>
           </div>
-          <div class="bg-black rounded-3xl overflow-hidden shadow-lg relative" style="aspect-ratio:16/9;width:min(100%, calc((100vh - 235px) * 16 / 9));margin:0 auto">
-            <div id="ytHost" v-show="lunchPlaying" class="absolute inset-0 w-full h-full"></div>
-            <button v-if="!lunchPlaying" @click="playLunchNow" class="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-2 text-white font-black"
-                    :style="lunchThumb ? { backgroundImage: 'url(' + lunchThumb + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : { background: '#1f2937' }">
-              <span class="bg-black/55 rounded-3xl px-6 py-3 text-center">
-                <span class="block text-5xl">▶</span>
-                <span class="block text-sm mt-1">{{ lunchEmbed ? ('點一下播放（' + (daily.settings.lunchTime || '12:30') + ' 自動開始）') : '請先貼上 YouTube 網址' }}</span>
-              </span>
-            </button>
+          <div class="lk-stage">
+          <div v-show="lunchPlaying" class="bg-black rounded-3xl overflow-hidden shadow-lg relative lk-video" :class="lunchStage === 'video' ? 'lk-main lk-video-main' : 'lk-s2'">
+            <div id="ytHost" class="absolute inset-0 w-full h-full"></div>
             <button v-if="lunchPlaying && ytMuted" @click="unmuteYT" class="absolute top-2 left-2 z-10 px-4 py-2 rounded-2xl bg-amber-400 text-slate-900 font-black text-lg shadow-lg">🔊 開聲音</button>
             <div v-if="ytMsg" class="absolute bottom-2 left-2 right-2 z-10 text-center text-sm font-black bg-rose-600/90 text-white rounded-xl px-3 py-1">{{ ytMsg }}</div>
+          </div>
+          <div class="ck-box bg-white/90 rounded-3xl border-2 border-orange-200 p-2 flex flex-col items-center justify-center" :class="lunchStage === 'clock' ? 'lk-main ck-big' : 'lk-s1'">
+            <svg viewBox="0 0 200 200" class="ck-svg">
+              <circle cx="100" cy="100" r="97" fill="#fffaf0" stroke="#fb923c" stroke-width="5" />
+              <line v-for="t in clockTicks" :key="t.i" :x1="t.x1" :y1="t.y1" :x2="t.x2" :y2="t.y2" :stroke="t.major ? '#7c2d12' : '#d6a77a'" :stroke-width="t.major ? 3 : 1" stroke-linecap="round" />
+              <text v-for="c in clockNums" :key="c.n" :x="c.x" :y="c.y" text-anchor="middle" font-size="17" font-weight="900" fill="#7c2d12">{{ c.n }}</text>
+              <line x1="100" y1="100" x2="100" y2="58" stroke="#7c2d12" stroke-width="7" stroke-linecap="round" :transform="'rotate(' + analog.h + ' 100 100)'" />
+              <line x1="100" y1="100" x2="100" y2="30" stroke="#a8481a" stroke-width="5" stroke-linecap="round" :transform="'rotate(' + analog.m + ' 100 100)'" />
+              <line x1="100" y1="116" x2="100" y2="22" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" :transform="'rotate(' + analog.s + ' 100 100)'" />
+              <circle cx="100" cy="100" r="6" fill="#e11d48" />
+            </svg>
+            <div class="ck-digit text-xl font-black text-[#d9480f] tabular-nums leading-none">{{ currentTimeStr }}</div>
+          </div>
+          <div class="tm-box bg-white/90 rounded-2xl border-2 p-2 flex flex-col items-center justify-center gap-1" :class="[lunchStage === 'timer' ? 'lk-main tm-big' : 'lk-s2', timers[timerMode].running && timers[timerMode].left <= 10 ? 'tm-ring border-rose-400' : 'border-orange-200']">
+            <div class="flex gap-1">
+              <button @click="setTimerMode('gargle')" class="px-2 py-0.5 rounded-lg text-[11px] font-black border" :class="timerMode === 'gargle' ? 'bg-sky-500 text-white border-sky-600' : 'bg-white text-slate-500 border-slate-200'">💧漱口 {{ Math.round((daily.settings.gargleSec || 60) / 60 * 10) / 10 }}分</button>
+              <button @click="setTimerMode('brush')" class="px-2 py-0.5 rounded-lg text-[11px] font-black border" :class="timerMode === 'brush' ? 'bg-sky-500 text-white border-sky-600' : 'bg-white text-slate-500 border-slate-200'">🪥刷牙 {{ Math.round((daily.settings.brushSec || 180) / 60 * 10) / 10 }}分</button>
+            </div>
+            <div class="tm-digits font-black tabular-nums leading-none" :class="timers[timerMode].running && timers[timerMode].left <= 10 ? 'text-rose-600' : 'text-[#d9480f]'">{{ fmtTimer(timers[timerMode].left) }}</div>
+            <div v-if="timerDoneMsg" class="tm-done font-black text-rose-600">⏰ 時間到！</div>
+            <div class="flex gap-1">
+              <button v-if="!timers[timerMode].running" @click="startTimer(timerMode)" class="px-3 py-1 rounded-lg bg-emerald-500 text-white font-black text-xs">▶ 開始</button>
+              <button v-else @click="pauseTimer(timerMode)" class="px-3 py-1 rounded-lg bg-amber-400 text-slate-900 font-black text-xs">⏸ 暫停</button>
+              <button @click="resetTimer(timerMode)" class="px-2 py-1 rounded-lg bg-white text-slate-500 border border-slate-200 font-black text-xs">重設</button>
+              <input type="number" min="0.5" max="60" step="0.5" :value="(daily.settings[timerMode + 'Sec'] || 60) / 60" @change="setTimerMin(timerMode, $event.target.value)" title="分鐘" class="w-12 px-1 text-center rounded-lg border border-orange-200 bg-white font-black text-xs" />
+            </div>
+          </div>
           </div>
 
           <div class="bg-white/90 rounded-2xl border border-orange-200 px-3 py-1.5 text-[11px] font-black text-slate-600">
@@ -718,34 +756,6 @@
                 </div>
               </div>
               <div class="flex gap-2"><button @click="addAlarm" class="px-3 py-1 rounded-xl bg-gradient-to-r from-orange-400 to-rose-400 text-white font-black shadow-sm">＋ 新增鬧鐘</button><button @click="testAlarm" class="px-3 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 font-black">🔔 試響</button></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 flex flex-col items-center">
-            <svg viewBox="0 0 200 200" style="width:170px;height:170px">
-              <circle cx="100" cy="100" r="97" fill="#fffaf0" stroke="#fb923c" stroke-width="5" />
-              <line v-for="t in clockTicks" :key="t.i" :x1="t.x1" :y1="t.y1" :x2="t.x2" :y2="t.y2" :stroke="t.major ? '#7c2d12' : '#d6a77a'" :stroke-width="t.major ? 3 : 1" stroke-linecap="round" />
-              <text v-for="c in clockNums" :key="c.n" :x="c.x" :y="c.y" text-anchor="middle" font-size="17" font-weight="900" fill="#7c2d12">{{ c.n }}</text>
-              <line x1="100" y1="100" x2="100" y2="58" stroke="#7c2d12" stroke-width="7" stroke-linecap="round" :transform="'rotate(' + analog.h + ' 100 100)'" />
-              <line x1="100" y1="100" x2="100" y2="30" stroke="#a8481a" stroke-width="5" stroke-linecap="round" :transform="'rotate(' + analog.m + ' 100 100)'" />
-              <line x1="100" y1="116" x2="100" y2="22" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" :transform="'rotate(' + analog.s + ' 100 100)'" />
-              <circle cx="100" cy="100" r="6" fill="#e11d48" />
-            </svg>
-            <div class="text-xl font-black text-[#d9480f] tabular-nums leading-none">{{ currentTimeStr }}</div>
-          </div>
-          <div class="bg-white/90 rounded-2xl border-2 p-2 flex flex-col items-center gap-1" :class="timers[timerMode].running && timers[timerMode].left <= 10 ? 'tm-ring border-rose-400' : 'border-orange-200'">
-            <div class="flex gap-1">
-              <button @click="setTimerMode('gargle')" class="px-2 py-0.5 rounded-lg text-[11px] font-black border" :class="timerMode === 'gargle' ? 'bg-sky-500 text-white border-sky-600' : 'bg-white text-slate-500 border-slate-200'">💧漱口 {{ Math.round((daily.settings.gargleSec || 60) / 60 * 10) / 10 }}分</button>
-              <button @click="setTimerMode('brush')" class="px-2 py-0.5 rounded-lg text-[11px] font-black border" :class="timerMode === 'brush' ? 'bg-sky-500 text-white border-sky-600' : 'bg-white text-slate-500 border-slate-200'">🪥刷牙 {{ Math.round((daily.settings.brushSec || 180) / 60 * 10) / 10 }}分</button>
-            </div>
-            <div class="font-black tabular-nums leading-none" :class="timers[timerMode].running && timers[timerMode].left <= 10 ? 'text-rose-600' : 'text-[#d9480f]'" style="font-size:2.4rem">{{ fmtTimer(timers[timerMode].left) }}</div>
-            <div class="flex gap-1">
-              <button v-if="!timers[timerMode].running" @click="startTimer(timerMode)" class="px-3 py-1 rounded-lg bg-emerald-500 text-white font-black text-xs">▶ 開始</button>
-              <button v-else @click="pauseTimer(timerMode)" class="px-3 py-1 rounded-lg bg-amber-400 text-slate-900 font-black text-xs">⏸ 暫停</button>
-              <button @click="resetTimer(timerMode)" class="px-2 py-1 rounded-lg bg-white text-slate-500 border border-slate-200 font-black text-xs">重設</button>
-              <input type="number" min="0.5" max="60" step="0.5" :value="(daily.settings[timerMode + 'Sec'] || 60) / 60" @change="setTimerMin(timerMode, $event.target.value)" title="分鐘" class="w-12 px-1 text-center rounded-lg border border-orange-200 bg-white font-black text-xs" />
             </div>
           </div>
         </div>
@@ -3294,6 +3304,8 @@ const __app = createApp({
       boardPhoto: '',
       photoMsg: '',
       lunchPlaying: false,
+      timerFocus: false,
+      timerDoneMsg: false,
       lunchAuto: (() => { try { return localStorage.getItem('pk_lunchAuto') !== '0'; } catch (e) { return true; } })(),
       ytMuted: false,
       ytMsg: '',
@@ -3585,6 +3597,8 @@ const __app = createApp({
     hwCfgTitle() { const h = this.homeworkList.find(x => x.id === this.hwCfgId); return h ? h.title : ''; },
     hwCfgDays() { const h = this.homeworkList.find(x => x.id === this.hwCfgId); return h ? this.hwDays(h) : 0; },
     dashCells() { return this.sortedStudents; },
+    // 午餐頁中間要顯示什麼：倒數計時 > 影片 > 大時鐘
+    lunchStage() { return this.timerFocus ? 'timer' : (this.lunchPlaying ? 'video' : 'clock'); },
     sortedStudents() {
       const list = [...this.filteredStudents];
       if (this.sortBy === 'score') {
@@ -4014,6 +4028,11 @@ const __app = createApp({
       const vars = { autoplay: 1, rel: 0, playsinline: 1 };
       const cfg = { width: '100%', height: '100%', playerVars: vars, events: {
         onReady: e => { try { e.target.playVideo(); } catch (x) {} setTimeout(() => this.checkPlaying(), 2500); },
+        onStateChange: e => {
+          if (e.data !== 0) return;
+          try { const pl = this._yt.getPlaylist && this._yt.getPlaylist(); if (pl && pl.length && this._yt.getPlaylistIndex() < pl.length - 1) return; } catch (x) {}
+          setTimeout(() => this.stopLunch(), 300);
+        },
         onError: () => { this.ytMsg = '這支影片不允許嵌入播放，請換一支影片'; }
       } };
       if (v.id) { cfg.videoId = v.id; if (v.list) vars.list = v.list; } else { vars.listType = 'playlist'; vars.list = v.list; }
@@ -4075,16 +4094,22 @@ const __app = createApp({
       this.unlockAudio();
       if (t.left <= 0) t.left = Number(this.daily.settings[k + 'Sec']) || 60;
       t.endAt = Date.now() + t.left * 1000; t.running = true;
+      this.timerFocus = true; this.timerDoneMsg = false; clearTimeout(this._tfT);
     },
     pauseTimer(k) { const t = this.timers[k]; if (t.running) { t.left = Math.max(0, Math.ceil((t.endAt - Date.now()) / 1000)); t.running = false; } },
-    resetTimer(k) { const t = this.timers[k]; t.running = false; t.left = Number(this.daily.settings[k + 'Sec']) || 60; },
+    resetTimer(k) { const t = this.timers[k]; t.running = false; t.left = Number(this.daily.settings[k + 'Sec']) || 60; this.timerFocus = false; this.timerDoneMsg = false; clearTimeout(this._tfT); },
     tickTimers() {
       const now = Date.now();
       ['gargle', 'brush'].forEach(k => {
         const t = this.timers[k];
         if (!t.running) return;
         t.left = Math.max(0, Math.ceil((t.endAt - now) / 1000));
-        if (t.left <= 0) { t.running = false; this.timerRing(k); }
+        if (t.left <= 0) {
+          t.running = false; this.timerRing(k);
+          // 時間到：大大的「時間到！」停 8 秒，再回到時鐘
+          this.timerDoneMsg = true; clearTimeout(this._tfT);
+          this._tfT = setTimeout(() => { this.timerFocus = false; this.timerDoneMsg = false; t.left = Number(this.daily.settings[k + 'Sec']) || 60; }, 8000);
+        }
       });
     },
     fmtTimer(sec) { sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); },
