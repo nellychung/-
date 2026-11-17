@@ -609,7 +609,7 @@
               <input type="time" v-model="daily.settings.lateTime" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" /></label>
             <button @click="openLeave" class="px-2.5 py-0.5 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">🙋 請假</button>
           </div>
-          <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
+          <div class="grid gap-1.5 grid-cols-5">
             <template v-for="stu in studentsBySeatNo" :key="stu.id">
               <button @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
                 <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black truncate block max-w-full min-h-[0.9rem]">{{ arriveText(stu) }}</span></div>
