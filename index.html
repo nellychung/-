@@ -886,7 +886,8 @@
             <button v-if="hasSuggest" @click="applyAllSuggestGroups" class="px-2.5 py-1 rounded-xl bg-indigo-500 text-white font-black shadow-sm">套用建議組別</button>
             <button v-if="hasSuggest" @click="clearSuggestGroups" class="px-2.5 py-1 rounded-xl bg-white text-slate-500 border border-slate-200 font-black">清除建議</button>
             <button v-if="seatPlan.undo" @click="undoSeatShuffle" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 font-black">↩ 復原</button>
-            <button @click="resetSeatsBySeatNumber" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 font-black">依座號重排</button></template>
+            <button @click="resetSeatsBySeatNumber" class="px-2.5 py-1 rounded-xl bg-white text-[#a8481a] border border-orange-200 font-black">依座號重排</button>
+            <button @click="exportSeatImage" class="px-3 py-1 rounded-xl bg-sky-500 text-white font-black shadow-sm">📷 匯出圖片</button></template>
           </div>
         </div>
         <div class="text-center"><span class="inline-block px-10 py-0.5 rounded-b-2xl bg-slate-200 text-slate-600 text-xs font-black tracking-widest">講　台</span></div>
@@ -4352,6 +4353,57 @@ const __app = createApp({
       const q = String(this.seatSearch || '').trim();
       if (!q || !st) return false;
       return st.name.includes(q) || String(st.seatNumber) === q;
+    },
+    // 把目前座位表畫成圖片（PNG），可存起來、印出來或傳給別人
+    async exportSeatImage() {
+      const cols = this.seatPlan.cols || 6, rows = this.seatPlan.rows || 1, cells = this.seatCells;
+      const CW = 200, CH = 104, G = 12, M = 36, HEAD = 96, FOOT = 40;
+      const W = M * 2 + cols * CW + (cols - 1) * G, H = HEAD + 44 + rows * CH + (rows - 1) * G + M + FOOT;
+      const cv = document.createElement('canvas'); const K = 2; cv.width = W * K; cv.height = H * K;
+      const g = cv.getContext('2d'); g.scale(K, K);
+      const FONT = '"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC",sans-serif';
+      const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+      g.fillStyle = '#fffaf3'; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#7c2d12'; g.font = '900 34px ' + FONT; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      g.fillText((this.className || '') + ' 座位表', M, 52);
+      g.fillStyle = '#a16207'; g.font = '700 18px ' + FONT;
+      const dt = new Date(); g.fillText(dt.getFullYear() + '/' + (dt.getMonth() + 1) + '/' + dt.getDate(), M, 80);
+      // 講台
+      const bw = Math.min(360, W - M * 2); rr((W - bw) / 2, HEAD - 6, bw, 34, 17); g.fillStyle = '#e2e8f0'; g.fill();
+      g.fillStyle = '#475569'; g.font = '800 18px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('講　台', W / 2, HEAD + 11);
+      const COLORS = ['#f97316', '#0ea5e9', '#22c55e', '#a855f7', '#ec4899', '#eab308', '#14b8a6', '#ef4444', '#6366f1', '#84cc16'];
+      cells.forEach((stu, idx) => {
+        const r = Math.floor(idx / cols), c = idx % cols;
+        const x = M + c * (CW + G), y = HEAD + 44 + r * (CH + G);
+        if (!stu) { rr(x, y, CW, CH, 16); g.setLineDash([6, 6]); g.strokeStyle = '#cbd5e1'; g.lineWidth = 2; g.stroke(); g.setLineDash([]); return; }
+        const col = COLORS[((stu.group || 1) - 1) % COLORS.length];
+        rr(x, y, CW, CH, 16); g.fillStyle = '#ffffff'; g.fill(); g.strokeStyle = col; g.lineWidth = 3; g.stroke();
+        g.save(); rr(x, y, CW, CH, 16); g.clip(); g.fillStyle = col; g.fillRect(x, y, CW, 26); g.restore();
+        g.fillStyle = '#ffffff'; g.font = '800 16px ' + FONT; g.textAlign = 'left'; g.textBaseline = 'middle';
+        g.fillText('第 ' + (stu.group || 1) + ' 組', x + 12, y + 14);
+        const role = stu.role && stu.role !== '組員' ? stu.role : '';
+        if (role) { g.textAlign = 'right'; g.fillText(role, x + CW - 12, y + 14); }
+        g.beginPath(); g.arc(x + 32, y + 66, 22, 0, Math.PI * 2); g.fillStyle = '#0f172a'; g.fill();
+        g.fillStyle = '#ffffff'; g.font = '900 22px ' + FONT; g.textAlign = 'center'; g.fillText(String(stu.seatNumber), x + 32, y + 67);
+        g.fillStyle = '#1e293b'; g.textAlign = 'left';
+        let fs = 32; g.font = '900 ' + fs + 'px ' + FONT;
+        while (g.measureText(stu.name).width > CW - 76 && fs > 16) { fs -= 2; g.font = '900 ' + fs + 'px ' + FONT; }
+        g.fillText(stu.name, x + 64, y + 66);
+      });
+      g.fillStyle = '#94a3b8'; g.font = '600 14px ' + FONT; g.textAlign = 'right'; g.textBaseline = 'alphabetic';
+      g.fillText('智慧班級經營', W - M, H - 14);
+      const name = (this.className || '班級') + '_座位表_' + dt.getFullYear() + String(dt.getMonth() + 1).padStart(2, '0') + String(dt.getDate()).padStart(2, '0') + '.png';
+      cv.toBlob(async blob => {
+        if (!blob) { this.showToast('匯出失敗，請再試一次'); return; }
+        try {
+          const f = new File([blob], name, { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [f] }) && /iPad|iPhone|Android/i.test(navigator.userAgent)) { await navigator.share({ files: [f], title: name }); return; }
+        } catch (e) { if (e && e.name === 'AbortError') return; }
+        const url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        this.showToast('已匯出圖片：' + name);
+      }, 'image/png');
     },
     toggleSwapMode() {
       this.seatSwapMode = !this.seatSwapMode;
