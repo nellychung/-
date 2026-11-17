@@ -609,16 +609,14 @@
               <input type="time" v-model="daily.settings.lateTime" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" /></label>
             <button @click="openLeave" class="px-2.5 py-0.5 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">🙋 請假</button>
           </div>
-          <div class="text-center"><span class="inline-block px-8 rounded-b-xl bg-slate-200 text-slate-500 text-[10px] font-black tracking-widest">講　台</span></div>
           <div class="grid gap-1" :style="{ gridTemplateColumns: 'repeat(' + seatPlan.cols + ', minmax(0, 1fr))' }">
-            <template v-for="(stu, idx) in seatCells" :key="idx">
-              <button v-if="stu" @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
+            <template v-for="stu in studentsBySeatNo" :key="stu.id">
+              <button @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
                 <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black truncate block max-w-full min-h-[0.9rem]">{{ arriveText(stu) }}</span></div>
               </button>
-              <div v-else class="rounded-xl border border-dashed border-slate-200 min-h-[2.4rem]"></div>
             </template>
           </div>
-          <div class="text-[10px] font-bold text-slate-400 px-1">座位依「座位表」排列。點座號＝記下現在時間，準時 +1 分，遲到（紅色）不加分；再點一次可修改時間或取消。</div>
+          <div class="text-[10px] font-bold text-slate-400 px-1">依座號排列。點座號＝記下現在時間，準時 +1 分，遲到（紅色）不加分；再點一次可修改時間或取消。</div>
         </div>
 
         <div class="space-y-2">
@@ -3610,6 +3608,7 @@ const __app = createApp({
     dashCells() { return this.sortedStudents; },
     // 午餐頁中間要顯示什麼：倒數計時 > 影片 > 大時鐘
     lunchStage() { return this.timerFocus ? 'timer' : (this.lunchPlaying ? 'video' : 'clock'); },
+    studentsBySeatNo() { return (this.students || []).slice().sort((a, b) => (Number(a.seatNumber) || 0) - (Number(b.seatNumber) || 0)); },
     sortedStudents() {
       const list = [...this.filteredStudents];
       if (this.sortBy === 'score') {
