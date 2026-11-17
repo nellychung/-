@@ -1,7 +1,7 @@
 /* 智慧班級經營：離線用 Service Worker
  * 作用：把網頁、程式庫、字體、寵物圖存在這台裝置，沒有網路也能開、能加分、能批改作業。
  * 網頁有改版時，只要有網路，開啟就會自動拿到最新版。 */
-const CORE_CACHE = 'pk-core-v1';      // 網頁本身（版本號改了就會重新下載）
+const CORE_CACHE = 'pk-core-v2';      // 網頁本身（版本號改了就會重新下載）
 const IMG_CACHE  = 'pk-img-v1';       // 寵物圖（很大，不跟著改版重下載）
 const LIB_CACHE  = 'pk-lib-v1';       // Tailwind、Vue、字體
 const CORE = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
@@ -37,7 +37,7 @@ function timeout(ms) { return new Promise((_, rej) => setTimeout(() => rej(new E
 async function networkFirst(req, cacheName, key) {
   const cache = await caches.open(cacheName);
   try {
-    const res = await Promise.race([fetch(req), timeout(4000)]);
+    const res = await Promise.race([fetch(req, { cache: 'no-cache' }), timeout(4000)]);
     if (res && res.ok) cache.put(key, res.clone());
     return res;
   } catch (_) {
