@@ -601,7 +601,7 @@
       <!-- 頁面 2：作業管理頁面 -->
       <!-- 座位表 -->
       <!-- 頁面：早自修 -->
-      <div v-if="currentTab === 'morning'" class="grid gap-2 lg:grid-cols-[minmax(330px,42%)_1fr] items-start">
+      <div v-if="currentTab === 'morning'" class="grid gap-2 lg:grid-cols-[minmax(300px,32%)_1fr] items-start">
         <div class="bg-white/90 rounded-3xl border-2 border-orange-200 p-2 space-y-1.5">
           <div class="flex flex-wrap items-center justify-between gap-2 bg-orange-50 rounded-2xl px-2.5 py-1">
             <span class="text-sm font-black text-[#8a3b12]">🌅 到班 {{ arrivedCount }} / {{ students.length }}</span>
@@ -645,7 +645,7 @@
           </div>
 
           <!-- 直書、由右到左：最右邊是日期，往左依序是第 1、2…6 行，每行 7 格由上往下 -->
-          <div v-if="daily.settings.boardMode !== 'photo'" class="cl-board" :class="daily.settings.boardZhuyin ? 'zy' : ''" style="--bh:max(300px, calc(100vh - 300px))">
+          <div v-if="daily.settings.boardMode !== 'photo'" class="cl-board" :class="daily.settings.boardZhuyin ? 'zy' : ''" style="--bh:max(340px, calc(100vh - 245px))">
             <div class="flex flex-row-reverse items-stretch w-full" style="gap:calc(var(--bh) / 40);height:var(--bh)">
               <div class="cl-date" :style="{ '--du': boardDateParts.units, height: 'var(--bh)' }"><template v-for="(pt, i) in boardDateParts.parts" :key="i"><span :class="pt.n ? 'tcy' : ''">{{ pt.t }}</span></template></div>
               <div class="flex-1 min-w-0" :style="{ display: 'grid', direction: 'rtl', gridTemplateColumns: 'repeat(' + boardCols + ', minmax(0, 1fr))', gridTemplateRows: (boardNumOn ? 'minmax(0, .75fr) ' : '') + 'repeat(7, minmax(0, 1fr))' }">
