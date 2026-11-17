@@ -582,6 +582,7 @@
                     <span class="truncate">{{ student.name }}</span>
                     <span class="text-[10px] font-black px-1.5 rounded-full border shrink-0 whitespace-nowrap" :class="roleChipClass(student.role)">{{ student.role || '組員' }}</span>
                     <i v-if="isTopStudent(student)" class="fa-solid fa-crown text-amber-400 text-[10px]"></i>
+                    <span v-if="isTodayStar(student)" class="shrink-0 text-[11px] leading-none" title="今日之星">⚡</span>
                   </div>
                   <div class="text-[10px] font-bold truncate"><span class="text-amber-600">Lv.{{ getStudentLevelData(student.score).level }}</span> <span class="text-indigo-600">{{ student.score }} EXP</span><span v-if="hwOweN(student)" class="ml-1 px-1 rounded bg-amber-400 text-amber-900">作業-{{ hwOweN(student) }}</span></div>
                 </div>
@@ -897,7 +898,8 @@
                  seatSwapMode ? 'cursor-pointer hover:border-orange-400' : (stu ? 'cursor-pointer' : ''),
                  seatSelected === idx ? 'ring-4 ring-orange-400 border-orange-400' : '',
                  seatMatch(stu) ? 'ring-4 ring-pink-400 animate-pulse' : '',
-                 stu && stu.anim ? (stu.anim.type === '+1' ? 'flash-green' : 'flash-red') : '']">
+                 stu && stu.anim ? (stu.anim.type === '+1' ? 'flash-green' : 'flash-red') : '',
+                 stu && !seatSwapMode ? (isTopStudent(stu) ? 'top-card' : (isTodayStar(stu) ? 'star-card' : '')) : '']">
             <span class="absolute top-0.5 right-1 text-[9px] font-bold text-slate-300">{{ Math.floor(idx / seatPlan.cols) + 1 }}-{{ idx % seatPlan.cols + 1 }}</span>
             <template v-if="stu">
               <div v-if="stu.anim" :key="stu.anim.key"
@@ -911,6 +913,7 @@
                 <span class="bg-slate-900/90 text-white font-black text-sm leading-5 min-w-[1.4rem] text-center px-1 rounded-full shrink-0">{{ stu.seatNumber }}</span>
                 <span class="font-black text-slate-800 text-sm truncate">{{ stu.name }}</span>
                 <i v-if="isTopStudent(stu)" class="fa-solid fa-crown text-amber-400 text-xs shrink-0"></i>
+                <span v-if="isTodayStar(stu)" class="shrink-0 ml-auto text-[10px] font-black leading-4 bg-violet-100 text-violet-700 border border-violet-300 rounded-full px-1.5" title="今日之星：今天經驗值增加最多">⚡今日之星</span>
               </div>
               <div class="flex items-center gap-1.5 px-1.5 py-1 min-w-0">
                 <div class="animal-sphere p-0.5 flex items-center justify-center overflow-hidden shrink-0"
