@@ -543,9 +543,8 @@
         </div>
 
         <!-- 模式 B：小組分區（各組並排） -->
-        <div v-else class="flex gap-1.5 items-start">
-          <div v-for="(band, bi) in groupBands" :key="bi" class="flex flex-col gap-1.5 min-w-0" :style="{ flex: band.span + ' 1 0%' }">
-          <div v-for="gNum in band.groups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0">
+        <div v-else class="group-grid">
+          <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0">
             <div class="flex justify-between items-center mb-1 pb-1 border-b">
               <span class="mc-badge font-black text-xs px-2 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
               <div class="flex space-x-1">
@@ -554,10 +553,9 @@
               </div>
             </div>
 
-            <div class="grid gap-0.5" :style="{ gridTemplateColumns: 'repeat(' + groupSeatLayout(gNum).cols + ', minmax(0, 1fr))' }">
-              <template v-for="(student, gi) in groupSeatLayout(gNum).cells" :key="student ? student.id : 'g' + gNum + '-' + gi">
-              <div v-if="!student" class="min-w-0"></div>
-              <div v-else
+            <div class="space-y-0.5">
+              <template v-for="student in getStudentsByGroup(gNum)" :key="student.id">
+              <div
                    @click="openProfileModal(student)"
                    class="gcell bg-white px-1 py-0.5 rounded-lg border border-slate-200 flex items-center gap-1.5 cursor-pointer hover:border-indigo-400 transition relative min-w-0"
                    :class="student.anim ? (student.anim.type === '+1' ? 'flash-green' : 'flash-red') : ''">
@@ -595,7 +593,6 @@
               </div>
               </template>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -1642,6 +1639,13 @@
       <div class="font-black text-slate-800">教師版沒有碰螢幕多久，自動回到學生版？</div>
       <div class="grid grid-cols-3 gap-2">
         <button v-for="n in [3, 5, 10, 30, 0]" :key="n" @click="setIdle(n)" class="py-3 rounded-2xl font-black text-sm" :class="idleMin === n ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'">{{ n === 0 ? '不自動' : n + ' 分鐘' }}</button>
+      </div>
+      <div v-if="backupInfo().length" class="border-t pt-2 space-y-1 text-left">
+        <div class="text-xs font-black text-slate-500">🕘 本機自動備份（資料不小心被蓋掉時可還原）</div>
+        <div v-for="b in backupInfo()" :key="b.i" class="flex items-center justify-between gap-2 text-xs font-bold text-slate-600">
+          <span>{{ b.label }}　作業完成 {{ b.n }} 格</span>
+          <button @click="restoreBackup(b.i)" class="px-3 py-1 rounded-full bg-amber-400 text-slate-900 font-black">還原</button>
+        </div>
       </div>
       <button @click="modeMenu = false" class="px-6 py-2 rounded-full bg-slate-100 font-black text-slate-600">關閉</button>
     </div>
@@ -3305,6 +3309,7 @@ const __app = createApp({
       photoMsg: '',
       lunchPlaying: false,
       timerFocus: false,
+      backupTick: 0,
       timerDoneMsg: false,
       lunchAuto: (() => { try { return localStorage.getItem('pk_lunchAuto') !== '0'; } catch (e) { return true; } })(),
       ytMuted: false,
@@ -3607,28 +3612,6 @@ const __app = createApp({
       return list.sort((a, b) => a.seatNumber - b.seatNumber);
     },
 
-    // 依組分區：各組方塊照教室座位表的位置擺（座位表左邊的組在畫面左邊、前排的組在上面）
-    groupBands() {
-      const cols = this.seatPlan.cols || 6, total = (this.seatPlan.rows || 1) * cols;
-      const info = this.availableGroups.map(g => {
-        const ds = this.students.filter(s => (s.group || 1) === g && Number.isInteger(s.deskIndex) && s.deskIndex >= 0 && s.deskIndex < total).map(s => s.deskIndex);
-        if (!ds.length) return { g, none: true };
-        const cs = ds.map(d => d % cols), rs = ds.map(d => Math.floor(d / cols));
-        return { g, c0: Math.min(...cs), c1: Math.max(...cs), rm: rs.reduce((a, b) => a + b, 0) / rs.length };
-      });
-      const placed = info.filter(x => !x.none).sort((a, b) => a.c0 - b.c0 || a.rm - b.rm);
-      const bands = [];
-      placed.forEach(x => {
-        const b = bands.find(bd => x.c0 <= bd.c1 && x.c1 >= bd.c0);
-        if (b) { b.items.push(x); b.c0 = Math.min(b.c0, x.c0); b.c1 = Math.max(b.c1, x.c1); }
-        else bands.push({ items: [x], c0: x.c0, c1: x.c1 });
-      });
-      bands.sort((a, b) => a.c0 - b.c0);
-      const out = bands.map(bd => ({ span: bd.c1 - bd.c0 + 1, groups: bd.items.sort((a, b) => a.rm - b.rm).map(x => x.g) }));
-      const none = info.filter(x => x.none).map(x => x.g);
-      if (none.length) out.push({ span: 1, groups: none });
-      return out.length ? out : [{ span: 1, groups: this.availableGroups }];
-    },
     availableGroups() {
       const groups = new Set(this.students.map(s => s.group || 1));
       return Array.from(groups).sort((a, b) => a - b);
@@ -4941,21 +4924,6 @@ const __app = createApp({
       this.saveData();
     },
 
-    // 依組分區：組內照座位表的實際位置排成小格子（沒座位的人接在最後面）
-    groupSeatLayout(gNum) {
-      const all = this.getStudentsByGroup(gNum), cols = this.seatPlan.cols || 6, total = (this.seatPlan.rows || 1) * cols;
-      const placed = all.filter(s => Number.isInteger(s.deskIndex) && s.deskIndex >= 0 && s.deskIndex < total);
-      const rest = all.filter(s => !placed.includes(s));
-      if (!placed.length) return { cols: 1, cells: rest };
-      const rs = [...new Set(placed.map(s => Math.floor(s.deskIndex / cols)))].sort((a, b) => a - b);
-      const cs = [...new Set(placed.map(s => s.deskIndex % cols))].sort((a, b) => a - b);
-      const cells = new Array(rs.length * cs.length).fill(null);
-      placed.forEach(s => {
-        const i = rs.indexOf(Math.floor(s.deskIndex / cols)) * cs.length + cs.indexOf(s.deskIndex % cols);
-        if (!cells[i]) cells[i] = s; else rest.push(s);
-      });
-      return { cols: cs.length, cells: cells.concat(rest) };
-    },
     getStudentsByGroup(gNum) {
       return this.sortedStudents.filter(s => (s.group || 1) === gNum);
     },
@@ -5071,7 +5039,7 @@ const __app = createApp({
       const pl = this._pl; if (!pl || pl.id !== student.id) return;
       clearTimeout(pl.t); this._pl = null;
       if (pl.fired) return;
-      if (this.teacherMode) this.quickPlus(student, 1); else this.plusAsk = student;
+      this.quickPlus(student, 1);
     },
     plusAbort() { if (this._pl) { clearTimeout(this._pl.t); this._pl = null; } },
     confirmPlus() { const st = this.plusAsk; this.plusAsk = null; if (st) this.quickPlus(st, 1); },
@@ -5667,12 +5635,25 @@ const __app = createApp({
       const seq = this._saveSeq || 0;
       try {
         let payload = null, baseRev = this._rev || 0;
+        if (!this._baseState) {
+          // 還不知道雲端長怎樣（例如開機時連線失敗）：不能直接把這台的舊資料蓋上去。雲端有資料就改用雲端的。
+          const cur0 = await this.gas('GET', { action: 'load' });
+          if (cur0.state) {
+            this.saveBackup(true);
+            this._baseState = JSON.parse(JSON.stringify(cur0.state)); this._rev = cur0.rev;
+            this.applyRemoteState(cur0.state, false); this.saveCloudBase();
+            this._dirty = false;
+            this.syncStatus.text = '已同步至雲端 ' + new Date().toLocaleTimeString('zh-TW', { hour12: false });
+            return;
+          }
+        }
         if (this._baseState) {
           // 先看雲端有沒有別台改過；有的話合併（分數用差額），不會蓋掉別台的加減分
           const cur = await this.gas('GET', { action: 'load' });
           baseRev = cur.rev;
           if (cur.state && cur.rev !== this._rev) {
             payload = pkMergeStates(this._baseState, this.snapshotState(), cur.state);
+            this.saveBackup();
             this.applyRemoteState(payload, true);
           }
         }
@@ -5725,9 +5706,21 @@ const __app = createApp({
 
     async pullFromCloud(first) {
       if (this._dirty || this._pushing) return;
+      const seq0 = this._saveSeq || 0;
       try {
         const r = await this.gas('GET', { action: 'load' });
+        // 等雲端回應的這段時間，如果這台又改了資料（或正在上傳），這份回應已經過時，丟掉，免得蓋掉剛改的
+        if (this._dirty || this._pushing || (this._saveSeq || 0) !== seq0) return;
         if (r.state && (first || r.rev !== this._rev)) {
+          // 防倒退：雲端的作業完成格數比這台少很多（≥3 格）＝雲端是舊資料（例如別台舊資料被誤上傳）。保留這台的進度，改成以這台為準合併回雲端
+          if (!first && this.pkHwLoss(this.students, r.state.students) >= 3) {
+            this.saveBackup(true);
+            this._baseState = JSON.parse(JSON.stringify(r.state)); this._rev = r.rev;
+            this.showToast('雲端資料比這台舊，已保留這台的作業進度並重新上傳');
+            this.saveData();
+            return;
+          }
+          this.saveBackup();
           this._baseState = JSON.parse(JSON.stringify(r.state));
           this.applyRemoteState(r.state, !first);
           this._rev = r.rev; this.saveCloudBase();
@@ -5741,6 +5734,49 @@ const __app = createApp({
       } catch (e) {
         this.syncStatus.text = navigator.onLine === false ? '離線中（用這台存的資料）' : '雲端讀取失敗：' + (e.message || '網路錯誤');
       }
+    },
+
+    // 本機自動備份（最近 3 份；平常每 10 分鐘最多一份）。作業資料若被意外蓋掉，可從 ⏱ 選單還原
+    saveBackup(force) {
+      try {
+        const list = JSON.parse(localStorage.getItem('pk_backups') || '[]');
+        const now = Date.now();
+        if (!force && list.length && now - list[0].t < 600000) return;
+        list.unshift({ t: now, state: this.snapshotState() });
+        localStorage.setItem('pk_backups', JSON.stringify(list.slice(0, 3)));
+      } catch (e) { try { localStorage.removeItem('pk_backups'); } catch (x) {} }
+    },
+    backupInfo() {
+      void this.backupTick;
+      try {
+        return JSON.parse(localStorage.getItem('pk_backups') || '[]').map((b, i) => {
+          let n = 0; (b.state.students || []).forEach(st => Object.values(st.homeworks || {}).forEach(d => { if (d && d.completed) n++; }));
+          return { i, label: new Date(b.t).toLocaleString('zh-TW', { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }), n };
+        });
+      } catch (e) { return []; }
+    },
+    async restoreBackup(i) {
+      let list = []; try { list = JSON.parse(localStorage.getItem('pk_backups') || '[]'); } catch (e) {}
+      const b = list[i]; if (!b) return;
+      if (!(await this.askConfirm('要還原成「' + new Date(b.t).toLocaleString('zh-TW', { hour12: false }) + '」的資料嗎？這之後的改動會消失。'))) return;
+      this.saveBackup(true);
+      this.applyRemoteState(b.state, false);
+      this.modeMenu = false; this.backupTick++;
+      this.saveData();
+      this.showToast('已還原');
+    },
+    // 作業「完成」的格子：這台有、雲端沒有的數量
+    pkHwLoss(localStudents, remoteStudents) {
+      const R = new Map((remoteStudents || []).map(x => [x.id, x]));
+      let loss = 0;
+      (localStudents || []).forEach(st => {
+        const r = R.get(st.id); if (!r) return;
+        Object.entries(st.homeworks || {}).forEach(([k, d]) => {
+          const rd = (r.homeworks || {})[k];
+          if (d && d.completed && rd && !rd.completed) loss++;
+        });
+      });
+      return loss;
     },
 
     // 記住「上次跟雲端同步時的樣子」：離線改了資料、重開機後，連線時才能跟別台正確合併，不會蓋掉別人的
