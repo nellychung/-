@@ -609,10 +609,10 @@
               <input type="time" v-model="daily.settings.lateTime" @change="saveDaily" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white font-black text-xs" /></label>
             <button @click="openLeave" class="px-2.5 py-0.5 rounded-xl bg-white text-[#a8481a] border border-orange-200 text-[11px] font-black">🙋 請假</button>
           </div>
-          <div class="grid gap-1.5 grid-cols-5">
+          <div class="grid gap-1 grid-cols-5">
             <template v-for="stu in studentsBySeatNo" :key="stu.id">
-              <button @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
-                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black truncate block max-w-full min-h-[0.9rem]">{{ arriveText(stu) }}</span></div>
+              <button @click="arriveTap(stu)" class="rounded-xl border-2 px-1 py-0.5 text-center leading-tight transition active:scale-95 min-w-0" :class="arriveClass(stu)">
+                <div class="flex flex-col items-center text-center min-w-0"><div class="flex flex-wrap items-center justify-center gap-x-1.5 leading-none"><span class="text-xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-[11px] leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 py-0.5">{{ stu.score }}</span></div><span class="text-[10px] leading-tight font-black truncate block max-w-full min-h-[0.8rem]">{{ arriveText(stu) }}</span></div>
               </button>
             </template>
           </div>
@@ -675,11 +675,11 @@
             <button @click="lunchMode = 'brush'" class="flex-1 rounded-xl px-2 py-1 text-sm font-black border-2 transition" :class="lunchMode === 'brush' ? 'bg-emerald-500 text-white border-emerald-600 shadow' : 'bg-white text-[#8a3b12] border-orange-200'">🪥 刷牙 {{ Object.keys(dayRec.brush).length }} / {{ students.length }}</button>
             <button @click="lunchMode = 'meal'" class="flex-1 rounded-xl px-2 py-1 text-sm font-black border-2 transition" :class="lunchMode === 'meal' ? 'bg-amber-500 text-white border-amber-600 shadow' : 'bg-white text-[#8a3b12] border-orange-200'">🍚 吃光光 {{ Object.keys(dayRec.meal).length }} / {{ students.length }}</button>
           </div>
-          <div class="grid gap-1.5 grid-cols-5">
+          <div class="grid gap-1 grid-cols-5">
             <template v-for="stu in studentsBySeatNo" :key="stu.id">
-              <button @click="lunchMode === 'meal' ? mealTap(stu) : brushTap(stu)" class="rounded-xl border-2 px-1 py-1 text-center leading-tight transition active:scale-95 min-w-0"
+              <button @click="lunchMode === 'meal' ? mealTap(stu) : brushTap(stu)" class="rounded-xl border-2 px-1 py-0.5 text-center leading-tight transition active:scale-95 min-w-0"
                       :class="(lunchMode === 'meal' ? dayRec.meal[stu.id] : dayRec.brush[stu.id]) ? (lunchMode === 'meal' ? 'bg-amber-600 border-amber-800 text-white shadow-inner' : 'bg-emerald-600 border-emerald-800 text-white shadow-inner') : 'bg-white border-orange-200 text-[#8a3b12] hover:bg-orange-50'">
-                <div class="flex flex-col items-center text-center min-w-0 gap-0.5"><span class="text-2xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-xs leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-0.5">{{ stu.score }}</span><span class="text-[11px] leading-tight font-black block min-h-[0.9rem]">{{ (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
+                <div class="flex flex-col items-center text-center min-w-0"><div class="flex flex-wrap items-center justify-center gap-x-1.5 leading-none"><span class="text-xl leading-none font-black">{{ stu.seatNumber }}</span><span class="text-[11px] leading-none font-black text-amber-700 bg-white/80 border border-amber-200 rounded-full px-1.5 py-0.5">{{ stu.score }}</span></div><span class="text-[10px] leading-tight font-black block min-h-[0.8rem]">{{ (dayRec.brush[stu.id] ? '🪥' : '') + (dayRec.meal[stu.id] ? '🍚' : '') }}</span></div>
               </button>
             </template>
           </div>
