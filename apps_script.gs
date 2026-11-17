@@ -94,7 +94,7 @@ function doGet(e) {
         rev = f ? String(JSON.parse(f.getBlob().getDataAsString()).rev || 0) : '0';
         props.setProperty('rev', rev);
       }
-      return out_({ rev: Number(rev) });
+      return out_({ rev: Number(rev), v: 2 });
     }
     if (action === 'sheet') {
       const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
@@ -151,8 +151,10 @@ function doPost(e) {
       return out_({ ok: true });
     }
     const f = file_();
-    let rev = 1;
-    if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
+    const curRev = f ? (JSON.parse(f.getBlob().getDataAsString()).rev || 0) : 0;
+    // 防止兩台同時存檔時互相蓋掉：存檔者必須是「看過最新版」的人，否則請他重新合併再存
+    if (body.base !== undefined && body.base !== null && Number(body.base) !== curRev) return out_({ error: 'CONFLICT:' + curRev });
+    const rev = curRev + 1;
     const content = JSON.stringify({ rev: rev, state: body.state });
     if (f) f.setContent(content); else DriveApp.createFile(FILE_NAME, content, MimeType.PLAIN_TEXT);
     PropertiesService.getScriptProperties().setProperty('rev', String(rev));

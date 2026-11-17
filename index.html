@@ -2121,7 +2121,7 @@ function doGet(e) {
         rev = f ? String(JSON.parse(f.getBlob().getDataAsString()).rev || 0) : '0';
         props.setProperty('rev', rev);
       }
-      return out_({ rev: Number(rev) });
+      return out_({ rev: Number(rev), v: 2 });
     }
     if (action === 'sheet') {
       const sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
@@ -2178,8 +2178,10 @@ function doPost(e) {
       return out_({ ok: true });
     }
     const f = file_();
-    let rev = 1;
-    if (f) { rev = (JSON.parse(f.getBlob().getDataAsString()).rev || 0) + 1; }
+    const curRev = f ? (JSON.parse(f.getBlob().getDataAsString()).rev || 0) : 0;
+    // 防止兩台同時存檔時互相蓋掉：存檔者必須是「看過最新版」的人，否則請他重新合併再存
+    if (body.base !== undefined && body.base !== null && Number(body.base) !== curRev) return out_({ error: 'CONFLICT:' + curRev });
+    const rev = curRev + 1;
     const content = JSON.stringify({ rev: rev, state: body.state });
     if (f) f.setContent(content); else DriveApp.createFile(FILE_NAME, content, MimeType.PLAIN_TEXT);
     PropertiesService.getScriptProperties().setProperty('rev', String(rev));
@@ -4448,7 +4450,9 @@ const __app = createApp({
         const j = await res.json();
         if (j && j.student) {
           const ok = ('className' in j) && (j.homework || []).every(h => 'state' in h);
-          this.parentCheck = ok ? '✅ 已經是最新版（家長頁會顯示班級名稱與需訂正）' : '❌ 還是舊版：請把最新的程式碼貼到 Apps Script，並「部署 → 管理部署作業 → 編輯 → 新版本 → 部署」';
+          let v2 = true;
+          try { const rv = await this.gas('GET', { action: 'rev' }); v2 = (rv && rv.v >= 2); } catch (e) {}
+          this.parentCheck = ok && !v2 ? '⚠️ 家長頁是新版，但雲端程式還沒有「兩台同時使用不互相蓋掉」的保護，請再貼一次最新程式碼並部署新版本' : ok ? '✅ 已經是最新版（家長頁會顯示班級名稱與需訂正，兩台同時使用也不會互相蓋掉）' : '❌ 還是舊版：請把最新的程式碼貼到 Apps Script，並「部署 → 管理部署作業 → 編輯 → 新版本 → 部署」';
         } else this.parentCheck = '⚠️ 讀不到資料（' + ((j && j.error) || '未知原因') + '）';
       } catch (e) { this.parentCheck = '⚠️ 連線失敗，請確認網路後再按一次'; }
     },
@@ -5662,10 +5666,15 @@ const __app = createApp({
         this._rev = r.rev;
         this._baseState = JSON.parse(JSON.stringify(payload));
         this.saveCloudBase();
+        this._conflicts = 0;
         if ((this._saveSeq || 0) === seq) this._dirty = false;
         this.syncStatus.text = '已同步至雲端 ' + new Date().toLocaleTimeString('zh-TW', { hour12: false });
       } catch (e) {
-        if (navigator.onLine === false) {
+        if (/CONFLICT/.test(String(e && e.message))) {
+          // 剛好別台也存檔了：重新讀雲端、合併後再存（最多連試 6 次）
+          this._conflicts = (this._conflicts || 0) + 1;
+          if (this._conflicts <= 6) this._again = true; else { this._conflicts = 0; this._saveTimer = setTimeout(() => this.pushToCloud(), 4000); }
+        } else if (navigator.onLine === false) {
           this.isOffline = true;   // 離線：資料已存在這台，等「連上網路」事件再自動同步，不用一直重試
           this.syncStatus.text = '離線中（已存在這台，連線後自動同步）';
         } else {
