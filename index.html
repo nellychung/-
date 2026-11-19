@@ -360,7 +360,19 @@
       </div>
 
       <div class="bg-white rounded-3xl border border-emerald-200 shadow p-4 space-y-2">
-        <div class="font-black text-emerald-900 text-sm">📚 作業繳交及訂正狀況</div>
+        <button @click="parentState.hwOpen = !parentState.hwOpen" class="w-full flex items-center justify-between gap-2 text-left active:scale-[.99]">
+          <span class="font-black text-emerald-900 text-sm">📚 作業繳交及訂正狀況</span>
+          <span class="flex items-center gap-2 text-xs font-black shrink-0">
+            <template v-if="parentHwSum().total === 0"><span class="text-slate-400">沒有作業</span></template>
+            <template v-else>
+              <span v-if="parentHwSum().n" class="text-rose-600">未交 {{ parentHwSum().n }}</span>
+              <span v-if="parentHwSum().f" class="text-amber-700">需訂正 {{ parentHwSum().f }}</span>
+              <span :class="parentHwSum().d === parentHwSum().total ? 'text-emerald-700' : 'text-slate-500'">完成 {{ parentHwSum().d }}/{{ parentHwSum().total }}<template v-if="parentHwSum().d === parentHwSum().total"> ✓</template></span>
+            </template>
+            <span class="text-slate-400 text-sm transition-transform" :class="parentState.hwOpen ? 'rotate-180' : ''">▾</span>
+          </span>
+        </button>
+        <template v-if="parentState.hwOpen">
         <div v-for="g in parentHwGroups()" :key="g.label" class="space-y-1.5">
           <div class="text-xs font-black text-emerald-800 pt-1">{{ g.label }}</div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -373,6 +385,7 @@
           </div>
         </div>
         <div v-if="!parentHwGroups().length" class="text-center py-2 text-slate-400 text-xs font-bold">這一天沒有作業項目</div>
+        </template>
       </div>
 
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
@@ -3366,7 +3379,7 @@ const __app = createApp({
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { className: '', child: null, homework: [], days: [], idx: 0, error: '', updated: '' },
+      parentState: { className: '', child: null, homework: [], days: [], idx: 0, hwOpen: false, error: '', updated: '' },
       students: [],
       homeworkList: [],
       hwShowOld: false,
@@ -5069,6 +5082,11 @@ const __app = createApp({
         const day = d[k] || {};
         return (day.bdg && day.bdg[st.id] && Object.keys(day.bdg[st.id]).length) || (day.brush && day.brush[st.id]) || (day.meal && day.meal[st.id]);
       })).sort((a, b) => a.seatNumber - b.seatNumber);
+    },
+    parentHwSum() {
+      const r = { total: 0, d: 0, n: 0, f: 0 };
+      this.parentHwGroups().forEach(g => g.items.forEach(h => { r.total++; r[this.hwStateOf(h)]++; }));
+      return r;
     },
     // 作業分組：選到的那天「全部」列出；更早的作業只列還沒完成的
     parentHwGroups() {
