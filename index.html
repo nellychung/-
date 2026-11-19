@@ -340,54 +340,44 @@
     <div v-if="parentState.error" class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 font-black text-sm text-center">{{ parentState.error }}</div>
     <div v-else-if="!parentState.child" class="p-6 text-center text-slate-500 font-black text-sm">載入中…</div>
     <template v-else>
-      <div class="relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-5 text-center" :class="parentState.top ? 'top-card' : (parentState.star ? 'star-soft' : '')">
-        <div v-if="parentState.star" class="top-crown absolute -top-5 z-20 animate-bounce" :class="parentState.top ? 'left-4' : 'left-1/2 -translate-x-1/2'" style="font-size:2.6rem" title="今日之星">⚡</div>
-        <div v-if="parentState.top" class="top-crown absolute -top-5 left-1/2 -translate-x-1/2 z-20 animate-bounce" style="font-size:2.6rem" title="全班經驗值第一名"><i class="fa-solid fa-crown"></i></div>
+      <div class="bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-3xl border border-indigo-100 shadow p-4 text-center">
         <div class="text-2xl font-black text-slate-800">{{ parentState.child.seatNumber }} 號 {{ parentState.child.name }}</div>
-        <div v-if="parentState.top" class="mt-1 inline-block bg-amber-100 text-amber-800 text-xs px-3 py-0.5 rounded-full font-black border border-amber-300">👑 全班經驗值第一名</div>
-        <div v-if="parentState.star" class="mt-1 inline-block bg-violet-100 text-violet-800 text-xs px-3 py-0.5 rounded-full font-black border border-violet-300">⚡ 今日之星・今天經驗值增加最多</div>
+        <div class="mt-3 flex items-center justify-center gap-2">
+          <button @click="parentGo(1)" :disabled="parentState.idx >= parentState.days.length - 1" class="w-11 h-11 rounded-full bg-white border-2 border-indigo-200 text-indigo-700 font-black text-lg disabled:opacity-30 active:scale-95">◀</button>
+          <div class="min-w-[11rem] px-3 py-2 bg-white rounded-2xl border-2 border-indigo-200 font-black text-indigo-900 text-base">
+            {{ parentDateLabel(parentDay() && parentDay().date) }}<span v-if="parentState.idx === 0" class="ml-1 text-[11px] text-rose-500">今天</span>
+          </div>
+          <button @click="parentGo(-1)" :disabled="parentState.idx <= 0" class="w-11 h-11 rounded-full bg-white border-2 border-indigo-200 text-indigo-700 font-black text-lg disabled:opacity-30 active:scale-95">▶</button>
+        </div>
       </div>
 
       <div class="bg-white rounded-3xl border border-amber-200 shadow p-4 space-y-2">
-        <div class="flex items-end justify-between">
-          <div><div class="text-xs font-black text-slate-500">經驗值</div><div class="text-3xl font-black text-amber-600 leading-none">{{ parentState.child.score }} <span class="text-sm">EXP</span></div><div class="mt-1 text-sm font-black" :class="(parentState.today.gain||0) > 0 ? 'text-emerald-600' : ((parentState.today.gain||0) < 0 ? 'text-rose-600' : 'text-slate-400')">今天 {{ (parentState.today.gain||0) > 0 ? '+' : '' }}{{ parentState.today.gain || 0 }} EXP</div></div>
-          <div class="text-right"><div class="text-xs font-black text-slate-500">等級</div><div class="text-3xl font-black text-indigo-600 leading-none">Lv.{{ getStudentLevelData(parentState.child.score).level }}</div></div>
+        <div class="font-black text-amber-800 text-sm">🌟 今日成長分享</div>
+        <div v-if="parentDay() && parentDay().badges.length" class="flex flex-wrap gap-2">
+          <span v-for="(b, i) in parentDay().badges" :key="i" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border-2 border-amber-200 text-sm font-black text-amber-900"><span class="text-lg leading-none">{{ b.icon }}</span>{{ b.text }}</span>
         </div>
-        <div class="exp-bar exp-bar-lg" title="升級進度">
-                <div class="exp-fill" :class="getStudentLevelData(parentState.child.score).progressPercent >= 80 && getStudentLevelData(parentState.child.score).level < 100 ? 'almost' : ''" :style="{ width: getStudentLevelData(parentState.child.score).progressPercent + '%' }"></div>
-              </div>
-        <div class="text-xs font-bold text-slate-600 text-center">
-          <template v-if="getStudentLevelData(parentState.child.score).level >= 100">已達最高等級 🎉</template>
-          <template v-else>再 {{ getStudentLevelData(parentState.child.score).nextLevelExp - parentState.child.score }} EXP 升到 Lv.{{ getStudentLevelData(parentState.child.score).level + 1 }}</template>
-        </div>
+        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">這一天還沒有徽章，老師會陸續記錄喔</div>
       </div>
 
       <div class="bg-white rounded-3xl border border-emerald-200 shadow p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <div class="font-black text-emerald-900 text-sm">📚 作業繳交及訂正完成狀況</div>
-          <div class="text-xs font-black text-emerald-700">完成 {{ parentState.homework.filter(h => hwStateOf(h) === 'd').length }} / {{ parentState.homework.length }} 項</div>
-        </div>
-        <div v-if="parentState.homework.some(h => hwStateOf(h) !== 'd')" class="text-xs font-black text-slate-600">
-          <span v-if="parentState.homework.filter(h => hwStateOf(h) === 'n').length" class="text-rose-600 mr-3">未交 {{ parentState.homework.filter(h => hwStateOf(h) === 'n').length }} 項</span>
-          <span v-if="parentState.homework.filter(h => hwStateOf(h) === 'f').length" class="text-amber-700">需訂正 {{ parentState.homework.filter(h => hwStateOf(h) === 'f').length }} 項</span>
-        </div>
-        <div v-if="parentState.homework.length" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-          <div v-for="(hw, i) in parentState.homework" :key="i" class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+        <div class="font-black text-emerald-900 text-sm">📚 作業繳交及訂正狀況</div>
+        <div v-if="parentHwList().length" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          <div v-for="(hw, i) in parentHwList()" :key="i" class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
             <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
             <span v-if="hwStateOf(hw) === 'd'" class="px-2 py-0.5 rounded text-[10px] font-black bg-green-600 text-white shrink-0">已完成</span>
             <span v-else-if="hwStateOf(hw) === 'f'" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-900 shrink-0">需訂正</span>
             <span v-else class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-400 text-white shrink-0">未交</span>
           </div>
         </div>
-        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">目前沒有作業項目</div>
+        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">這一天沒有作業項目</div>
       </div>
 
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
-        <div class="text-sm font-black text-sky-800">🌅 今天到班時間</div>
-        <div class="text-lg font-black" :class="parentState.today.leave ? 'text-slate-600' : (parentState.today.arrive ? 'text-emerald-600' : 'text-slate-400')">
-          <template v-if="parentState.today.leave">請假（{{ parentState.today.leave }}）</template>
-          <template v-else-if="parentState.today.arrive">{{ String(parentState.today.arrive).slice(0, 5) }}</template>
-          <template v-else>尚未到班</template>
+        <div class="text-sm font-black text-sky-800">🌅 到班時間</div>
+        <div class="text-lg font-black" :class="parentDay() && parentDay().leave ? 'text-slate-600' : (parentDay() && parentDay().arrive ? 'text-emerald-600' : 'text-slate-400')">
+          <template v-if="parentDay() && parentDay().leave">請假（{{ parentDay().leave }}）</template>
+          <template v-else-if="parentDay() && parentDay().arrive">{{ parentDay().arrive }}</template>
+          <template v-else>{{ parentState.idx === 0 ? '尚未到班' : '沒有紀錄' }}</template>
         </div>
       </div>
       <div class="text-center text-[11px] font-bold text-slate-400">資料每分鐘自動更新 · 更新於 {{ parentState.updated }}</div>
@@ -1664,6 +1654,13 @@
       </div>
       <input id="custom-exp-input" type="number" min="1" inputmode="numeric" v-model.number="customModal.value" @keyup.enter="applyCustom(1)" placeholder="輸入經驗值（正整數）" class="w-full px-3 py-2 border-2 border-indigo-200 rounded-xl text-base font-black text-slate-800 outline-none focus:border-indigo-500" />
       <input v-model="customModal.reason" placeholder="原因（選填，例：幫忙發作業）" class="w-full px-3 py-2 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-indigo-400" />
+      <div v-if="teacherMode" class="pt-1 border-t border-slate-200">
+        <div class="text-[11px] font-black text-slate-500 mb-1">🏅 給今日徽章（家長頁會看到，同時 +1 分；再點一次可取消）</div>
+        <div class="flex flex-wrap gap-1.5">
+          <button v-for="b in badgeDefs()" :key="b.k" @click="toggleBadge(customModal.student, b.k)" class="px-2 py-1 rounded-full text-xs font-black border-2 active:scale-95" :class="badgeHas(customModal.student, b.k) ? 'bg-amber-300 border-amber-500 text-amber-900' : 'bg-white border-slate-200 text-slate-700'">{{ b.icon }} {{ b.text }}</button>
+        </div>
+        <div class="mt-1.5 text-[11px] font-bold text-slate-400">本週還沒有徽章：<template v-if="weekNoBadge().length">{{ weekNoBadge().map(x => x.seatNumber + '號').join('、') }}</template><template v-else>全班都有了 🎉</template></div>
+      </div>
       <div class="flex flex-wrap gap-1.5">
         <button v-for="n in [2, 5, 10, 20, 50]" :key="n" @click="customModal.value = n" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-lg border border-indigo-200">{{ n }}</button>
       </div>
@@ -2066,32 +2063,47 @@ function parent_(t) {
   // 作業狀態：n 未交、f 需訂正、d 已完成（太舊又沒要訂正的不顯示）
   const cut = new Date(); cut.setDate(cut.getDate() - 14);
   const cutKey = Utilities.formatDate(cut, 'Asia/Taipei', 'yyyy-MM-dd');
-  const hw = (st.homework || []).map(h => {
+  const hwAll = (st.homework || []).map(h => {
     const d = kid.homeworks && kid.homeworks[h.id];
     const state = (!d || !d.completed) ? 'n' : (d.fix ? 'f' : 'd');
     return { title: h.title, state: state, completed: state === 'd', date: h.date || '' };
-  }).filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
-  const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
-  // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
-  const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
-  const top = maxScore > 0 && Number(kid.score) === maxScore;
-  // 今天到校／請假（只回傳這位孩子自己的）
+  });
+  const hw = hwAll.filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
+  // 最近 30 天：每天的到校、請假、徽章（自動 + 老師給的）、當天作業（只回傳這位孩子自己的）
+  const BD = { focus: ['👂', '上課專心'], nap: ['😴', '午休安靜休息'], duty: ['🎖️', '認真負責'], help: ['🤝', '樂於助人'], speak: ['🙋', '勇於發言／嘗試'], clean: ['🧹', '打掃認真'], tidy: ['🪑', '座位整齊乾淨'], grow: ['🌱', '有進步'] };
+  const lateT = String((((st.daily || {}).settings) || {}).lateTime || '07:50');
+  const allDays = ((st.daily || {}).days) || {};
   const today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
-  const day = (((st.daily || {}).days) || {})[today] || {};
-  const arr = (day.arrive || {})[kid.id];
-  const lv = (day.leave || {})[kid.id];
-  // 今日之星：今天經驗值增加最多的人（只回傳「是／否」，不洩漏其他人）
-  const net = day.net || {};
-  let maxNet = 0; Object.keys(net).forEach(k => { maxNet = Math.max(maxNet, Number(net[k]) || 0); });
-  const star = maxNet > 0 && (Number(net[kid.id]) || 0) === maxNet;
+  const keys = Object.keys(allDays);
+  if (keys.indexOf(today) < 0) keys.push(today);
+  keys.sort().reverse();
+  const days = keys.slice(0, 30).map(dk => {
+    const dy = allDays[dk] || {};
+    const arr = (dy.arrive || {})[kid.id];
+    const lv = (dy.leave || {})[kid.id];
+    const dh = hwAll.filter(h => h.date === dk);
+    const bs = [];
+    if (arr && !lv) {
+      const late = (arr.late !== undefined && arr.late !== null) ? !!arr.late : String(arr.t).slice(0, 5) > lateT;
+      if (!late) bs.push({ icon: '⏰', text: '準時到校' });
+    }
+    if (dh.length && dh.every(h => h.state === 'd')) bs.push({ icon: '📘', text: '作業完成' });
+    if ((dy.brush || {})[kid.id]) bs.push({ icon: '🪥', text: '認真刷牙' });
+    if ((dy.meal || {})[kid.id]) bs.push({ icon: '🍚', text: '吃光光' });
+    const mb = (dy.bdg || {})[kid.id] || {};
+    Object.keys(BD).forEach(k => {
+      if (!mb[k]) return;
+      let text = BD[k][1];
+      if (k === 'duty' && typeof mb[k] === 'string' && mb[k] !== '1') text = '擔任' + mb[k] + '認真負責';
+      bs.push({ icon: BD[k][0], text: text });
+    });
+    return { date: dk, arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', badges: bs, hw: dh.map(h => ({ title: h.title, state: h.state })) };
+  });
   const body = JSON.stringify({
-    top: top, star: star,
     className: String(((st.daily || {}).settings || {}).className || ''),
-    today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', gain: Number((day.net || {})[kid.id]) || 0 },
-    student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
+    student: { seatNumber: kid.seatNumber, name: kid.name },
     homework: hw,
-    badges: (kid.badges || []).slice(-60).map(b => ({ icon: b.icon, name: b.name, wk: b.wk })),
-    pets: pets
+    days: days
   });
   try { cache.put(ck, body, 20); } catch (x) {}
   return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
@@ -2197,6 +2209,12 @@ function doPost(e) {
 // 隨機換座位：同組過、隔壁過的盡量不要再同組／同桌，並遵守老師指定的「不要同組／不要同桌」
 // ---------- 早自修／午餐 資料 ----------
 function pkDateKey(d) { const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+const PK_BADGES = [
+  { k: 'focus', icon: '👂', text: '上課專心' }, { k: 'nap', icon: '😴', text: '午休安靜休息' },
+  { k: 'duty', icon: '🎖️', text: '認真負責' }, { k: 'help', icon: '🤝', text: '樂於助人' },
+  { k: 'speak', icon: '🙋', text: '勇於發言／嘗試' }, { k: 'clean', icon: '🧹', text: '打掃認真' },
+  { k: 'tidy', icon: '🪑', text: '座位整齊乾淨' }, { k: 'grow', icon: '🌱', text: '有進步' }
+];
 function pkTodayKey() { const n = new Date(), p = x => String(x).padStart(2, '0'); return n.getFullYear() + '-' + p(n.getMonth() + 1) + '-' + p(n.getDate()); }
 function pkWeeklyDefaults() {
   return { friendExp: 10, friendExclude: [7], friendBadge: '友誼之星', tasks: [
@@ -3343,7 +3361,7 @@ const __app = createApp({
       alertState: { show: false, msg: '' },
       confirmState: { show: false, msg: '', resolve: null },
       parentMode: (typeof location !== 'undefined') && new URLSearchParams(location.search).has('p'),
-      parentState: { className: '', child: null, top: false, star: false, homework: [], badges: [], today: { arrive: '', leave: '', gain: 0 }, error: '', updated: '' },
+      parentState: { className: '', child: null, homework: [], days: [], idx: 0, error: '', updated: '' },
       students: [],
       homeworkList: [],
       hwShowOld: false,
@@ -3680,6 +3698,7 @@ const __app = createApp({
       if (!r.pts) r.pts = {};
       if (!r.net) r.net = {};
       if (!r.hw) r.hw = {};
+      if (!r.bdg) r.bdg = {};
       const keys = Object.keys(d).sort();
       if (keys.length > 30) keys.slice(0, keys.length - 30).forEach(x => { delete d[x]; });
       return r;
@@ -4147,14 +4166,14 @@ const __app = createApp({
             if (timer) clearTimeout(timer);
             const j = await res.json();
             if (j && j.student) {
-              this.presetAvatars = [...(j.pets || []), ...FULL_64_POKEMON_POOL.filter(x => !x.isCustom)];
               this.parentState.child = j.student;
-              this.parentState.top = !!j.top; this.parentState.star = !!j.star;
               this.parentState.homework = j.homework || [];
               this.parentState.className = String(j.className || '');
               document.title = '智慧班級經營' + (this.parentState.className ? '-' + this.parentState.className : '');
-              this.parentState.badges = j.badges || [];
-              this.parentState.today = j.today || { arrive: '', leave: '', gain: 0 };
+              const keep = this.parentState.days && this.parentState.days[this.parentState.idx];
+              this.parentState.days = j.days || [];
+              const ni = keep ? this.parentState.days.findIndex(x => x.date === keep.date) : 0;
+              this.parentState.idx = ni >= 0 ? ni : 0;
               this.parentState.error = '';
               this.parentState.updated = new Date().toLocaleTimeString('zh-TW', { hour12: false });
               return;
@@ -4501,7 +4520,7 @@ const __app = createApp({
         const res = await fetch(ep + (ep.includes('?') ? '&' : '?') + new URLSearchParams({ action: 'parent', t: st.token }).toString());
         const j = await res.json();
         if (j && j.student) {
-          const ok = ('className' in j) && (j.homework || []).every(h => 'state' in h);
+          const ok = ('className' in j) && Array.isArray(j.days) && (j.homework || []).every(h => 'state' in h);
           let v2 = true;
           try { const rv = await this.gas('GET', { action: 'rev' }); v2 = (rv && rv.v >= 2); } catch (e) {}
           this.parentCheck = ok && !v2 ? '⚠️ 家長頁是新版，但雲端程式還沒有「兩台同時使用不互相蓋掉」的保護，請再貼一次最新程式碼並部署新版本' : ok ? '✅ 已經是最新版（家長頁會顯示班級名稱與需訂正，兩台同時使用也不會互相蓋掉）' : '❌ 還是舊版：請把最新的程式碼貼到 Apps Script，並「部署 → 管理部署作業 → 編輯 → 新版本 → 部署」';
@@ -5017,6 +5036,43 @@ const __app = createApp({
       setTimeout(() => { const el = document.getElementById('custom-exp-input'); if (el) el.focus(); }, 50);
     },
 
+    badgeDefs() { return PK_BADGES; },
+    badgeHas(st, k) { const b = this.ensureDay().bdg[st.id]; return !!(b && b[k]); },
+    async toggleBadge(st, k) {
+      const def = PK_BADGES.find(x => x.k === k);
+      if (!def) return;
+      const r = this.ensureDay();
+      if (this.badgeHas(st, k)) {
+        if (!(await this.askConfirm(`取消 ${st.seatNumber} 號 ${st.name} 今天的「${def.text}」徽章？\n（同時扣回 1 分）`))) return;
+        delete r.bdg[st.id][k];
+        if (!Object.keys(r.bdg[st.id]).length) delete r.bdg[st.id];
+        this.addScore(st, -1, '取消徽章：' + def.text, '', false, true);
+        return;
+      }
+      if (!r.bdg[st.id]) r.bdg[st.id] = {};
+      const role = String(st.role || '').trim();
+      r.bdg[st.id][k] = (k === 'duty' && role && role !== '組員') ? role : '1';
+      this.playPM(true);
+      this.addScore(st, 1, '獲得徽章：' + def.text);
+      this.showToast && this.showToast(`${def.icon} ${st.name} 獲得「${def.text}」+1`);
+    },
+    // 這個星期（週一起）還沒拿到任何徽章的孩子
+    weekNoBadge() {
+      const d = this.daily.days, mon = pkMonKey(new Date());
+      const keys = Object.keys(d).filter(k => k >= mon);
+      return this.students.filter(st => !keys.some(k => {
+        const day = d[k] || {};
+        return (day.bdg && day.bdg[st.id] && Object.keys(day.bdg[st.id]).length) || (day.brush && day.brush[st.id]) || (day.meal && day.meal[st.id]);
+      })).sort((a, b) => a.seatNumber - b.seatNumber);
+    },
+    parentHwList() { const d = this.parentDay(); return !d ? [] : (this.parentState.idx === 0 ? this.parentState.homework : (d.hw || [])); },
+    parentDay() { return (this.parentState.days || [])[this.parentState.idx] || null; },
+    parentGo(n) { const i = this.parentState.idx + n; if (i >= 0 && i < (this.parentState.days || []).length) this.parentState.idx = i; },
+    parentDateLabel(d) {
+      if (!d) return '';
+      const w = '日一二三四五六'[new Date(d + 'T00:00:00').getDay()];
+      return Number(d.slice(5, 7)) + '月' + Number(d.slice(8, 10)) + '日（' + w + '）';
+    },
     applyCustom(sign) {
       const st = this.customModal.student;
       if (!st) return;

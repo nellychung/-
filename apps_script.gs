@@ -39,32 +39,47 @@ function parent_(t) {
   // 作業狀態：n 未交、f 需訂正、d 已完成（太舊又沒要訂正的不顯示）
   const cut = new Date(); cut.setDate(cut.getDate() - 14);
   const cutKey = Utilities.formatDate(cut, 'Asia/Taipei', 'yyyy-MM-dd');
-  const hw = (st.homework || []).map(h => {
+  const hwAll = (st.homework || []).map(h => {
     const d = kid.homeworks && kid.homeworks[h.id];
     const state = (!d || !d.completed) ? 'n' : (d.fix ? 'f' : 'd');
     return { title: h.title, state: state, completed: state === 'd', date: h.date || '' };
-  }).filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
-  const pets = (st.pets || []).filter(p => p && p.id === kid.petId);
-  // 是否為全班經驗值第一名（只回傳「是／否」，不洩漏其他人的分數）
-  const maxScore = Math.max.apply(null, (st.students || []).map(s => Number(s.score) || 0));
-  const top = maxScore > 0 && Number(kid.score) === maxScore;
-  // 今天到校／請假（只回傳這位孩子自己的）
+  });
+  const hw = hwAll.filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
+  // 最近 30 天：每天的到校、請假、徽章（自動 + 老師給的）、當天作業（只回傳這位孩子自己的）
+  const BD = { focus: ['👂', '上課專心'], nap: ['😴', '午休安靜休息'], duty: ['🎖️', '認真負責'], help: ['🤝', '樂於助人'], speak: ['🙋', '勇於發言／嘗試'], clean: ['🧹', '打掃認真'], tidy: ['🪑', '座位整齊乾淨'], grow: ['🌱', '有進步'] };
+  const lateT = String((((st.daily || {}).settings) || {}).lateTime || '07:50');
+  const allDays = ((st.daily || {}).days) || {};
   const today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
-  const day = (((st.daily || {}).days) || {})[today] || {};
-  const arr = (day.arrive || {})[kid.id];
-  const lv = (day.leave || {})[kid.id];
-  // 今日之星：今天經驗值增加最多的人（只回傳「是／否」，不洩漏其他人）
-  const net = day.net || {};
-  let maxNet = 0; Object.keys(net).forEach(k => { maxNet = Math.max(maxNet, Number(net[k]) || 0); });
-  const star = maxNet > 0 && (Number(net[kid.id]) || 0) === maxNet;
+  const keys = Object.keys(allDays);
+  if (keys.indexOf(today) < 0) keys.push(today);
+  keys.sort().reverse();
+  const days = keys.slice(0, 30).map(dk => {
+    const dy = allDays[dk] || {};
+    const arr = (dy.arrive || {})[kid.id];
+    const lv = (dy.leave || {})[kid.id];
+    const dh = hwAll.filter(h => h.date === dk);
+    const bs = [];
+    if (arr && !lv) {
+      const late = (arr.late !== undefined && arr.late !== null) ? !!arr.late : String(arr.t).slice(0, 5) > lateT;
+      if (!late) bs.push({ icon: '⏰', text: '準時到校' });
+    }
+    if (dh.length && dh.every(h => h.state === 'd')) bs.push({ icon: '📘', text: '作業完成' });
+    if ((dy.brush || {})[kid.id]) bs.push({ icon: '🪥', text: '認真刷牙' });
+    if ((dy.meal || {})[kid.id]) bs.push({ icon: '🍚', text: '吃光光' });
+    const mb = (dy.bdg || {})[kid.id] || {};
+    Object.keys(BD).forEach(k => {
+      if (!mb[k]) return;
+      let text = BD[k][1];
+      if (k === 'duty' && typeof mb[k] === 'string' && mb[k] !== '1') text = '擔任' + mb[k] + '認真負責';
+      bs.push({ icon: BD[k][0], text: text });
+    });
+    return { date: dk, arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', badges: bs, hw: dh.map(h => ({ title: h.title, state: h.state })) };
+  });
   const body = JSON.stringify({
-    top: top, star: star,
     className: String(((st.daily || {}).settings || {}).className || ''),
-    today: { arrive: arr ? String(arr.t).slice(0, 5) : '', leave: lv || '', gain: Number((day.net || {})[kid.id]) || 0 },
-    student: { seatNumber: kid.seatNumber, name: kid.name, score: kid.score, petId: kid.petId, customAvatar: kid.customAvatar || '' },
+    student: { seatNumber: kid.seatNumber, name: kid.name },
     homework: hw,
-    badges: (kid.badges || []).slice(-60).map(b => ({ icon: b.icon, name: b.name, wk: b.wk })),
-    pets: pets
+    days: days
   });
   try { cache.put(ck, body, 20); } catch (x) {}
   return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
