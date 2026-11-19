@@ -357,6 +357,12 @@
           <span v-for="(b, i) in parentDay().badges" :key="i" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border-2 border-amber-200 text-sm font-black text-amber-900"><span class="text-lg leading-none">{{ b.icon }}</span>{{ b.text }}</span>
         </div>
         <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">這一天還沒有徽章，老師會陸續記錄喔</div>
+        <div v-if="parentWeekStats().length" class="pt-2 border-t border-amber-100">
+          <div class="text-[11px] font-black text-slate-500 mb-1">📊 本週累積（{{ parentWeekRange() }}）</div>
+          <div class="flex flex-wrap gap-x-3 gap-y-1.5">
+            <span v-for="w in parentWeekStats()" :key="w.k" class="inline-flex items-center gap-1 text-xs font-black text-slate-700"><span class="text-base leading-none">{{ w.icon }}</span>{{ w.text }} <span class="text-emerald-600">{{ w.n }}{{ w.unit }}</span></span>
+          </div>
+        </div>
       </div>
 
       <div class="bg-white rounded-3xl border border-emerald-200 shadow p-4 space-y-2">
@@ -5082,6 +5088,29 @@ const __app = createApp({
         const day = d[k] || {};
         return (day.bdg && day.bdg[st.id] && Object.keys(day.bdg[st.id]).length) || (day.brush && day.brush[st.id]) || (day.meal && day.meal[st.id]);
       })).sort((a, b) => a.seatNumber - b.seatNumber);
+    },
+    // 選到的那天所在的那一週（週一～週日）
+    parentWeekBounds() {
+      const d = this.parentDay();
+      if (!d) return null;
+      const p = x => String(x).padStart(2, '0'), f = t => t.getFullYear() + '-' + p(t.getMonth() + 1) + '-' + p(t.getDate());
+      const t = new Date(d.date + 'T00:00:00'), off = (t.getDay() + 6) % 7;
+      const a = new Date(t); a.setDate(t.getDate() - off);
+      const b = new Date(a); b.setDate(a.getDate() + 6);
+      return { a: f(a), b: f(b) };
+    },
+    parentWeekRange() { const w = this.parentWeekBounds(); return w ? Number(w.a.slice(5, 7)) + '/' + Number(w.a.slice(8, 10)) + '～' + Number(w.b.slice(5, 7)) + '/' + Number(w.b.slice(8, 10)) : ''; },
+    parentWeekStats() {
+      const w = this.parentWeekBounds();
+      if (!w) return [];
+      const m = new Map(), auto = ['⏰', '📘', '🪥', '🍚'];
+      (this.parentState.days || []).filter(d => d.date >= w.a && d.date <= w.b).forEach(d => {
+        (d.badges || []).forEach(b => {
+          const g = m.get(b.icon) || { k: b.icon, icon: b.icon, text: b.text.indexOf('擔任') === 0 ? '認真負責' : b.text, n: 0, unit: auto.includes(b.icon) ? '天' : '次' };
+          g.n++; m.set(b.icon, g);
+        });
+      });
+      return [...m.values()].sort((a, b) => b.n - a.n);
     },
     parentHwSum() {
       const r = { total: 0, d: 0, n: 0, f: 0 };
