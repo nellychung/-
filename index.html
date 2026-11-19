@@ -395,7 +395,7 @@
       </div>
 
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
-        <div class="text-sm font-black text-sky-800">🌅 到班時間<span class="ml-1 text-xs text-sky-600">（本週準時 {{ parentOnTimeDays() }} 天）</span></div>
+        <div class="text-sm font-black text-sky-800">🌅 到班時間</div>
         <div class="text-lg font-black" :class="parentDay() && parentDay().leave ? 'text-slate-600' : (parentDay() && parentDay().arrive ? 'text-emerald-600' : 'text-slate-400')">
           <template v-if="parentDay() && parentDay().leave">請假（{{ parentDay().leave }}）</template>
           <template v-else-if="parentDay() && parentDay().arrive">{{ parentDay().arrive }}</template>
@@ -5111,11 +5111,6 @@ const __app = createApp({
         });
       });
       return [...m.values()].sort((a, b) => b.n - a.n);
-    },
-    parentOnTimeDays() {
-      const w = this.parentWeekBounds();
-      if (!w) return 0;
-      return (this.parentState.days || []).filter(d => d.date >= w.a && d.date <= w.b && (d.badges || []).some(b => b.icon === '⏰')).length;
     },
     parentHwSum() {
       const r = { total: 0, d: 0, n: 0, f: 0 };
