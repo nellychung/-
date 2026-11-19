@@ -44,7 +44,7 @@ function parent_(t) {
     const state = (!d || !d.completed) ? 'n' : (d.fix ? 'f' : 'd');
     return { title: h.title, state: state, completed: state === 'd', date: h.date || '' };
   });
-  const hw = hwAll.filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
+  const hw = hwAll.filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed, date: h.date }));
   // 最近 30 天：每天的到校、請假、徽章（自動 + 老師給的）、當天作業（只回傳這位孩子自己的）
   const BD = { focus: ['👂', '上課專心'], nap: ['😴', '午休安靜休息'], duty: ['🎖️', '認真負責'], help: ['🤝', '樂於助人'], speak: ['🙋', '勇於發言／嘗試'], clean: ['🧹', '打掃認真'], tidy: ['🪑', '座位整齊乾淨'], grow: ['🌱', '有進步'] };
   const lateT = String((((st.daily || {}).settings) || {}).lateTime || '07:50');
@@ -58,6 +58,8 @@ function parent_(t) {
     const arr = (dy.arrive || {})[kid.id];
     const lv = (dy.leave || {})[kid.id];
     const dh = hwAll.filter(h => h.date === dk);
+    const gone = (dy.hwGone || {});
+    Object.keys(gone).forEach(id => { const g = gone[id]; if (g && g.s && g.s[kid.id]) dh.push({ title: g.t, state: g.s[kid.id] }); });
     const bs = [];
     if (arr && !lv) {
       const late = (arr.late !== undefined && arr.late !== null) ? !!arr.late : String(arr.t).slice(0, 5) > lateT;

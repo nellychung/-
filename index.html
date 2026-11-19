@@ -361,15 +361,18 @@
 
       <div class="bg-white rounded-3xl border border-emerald-200 shadow p-4 space-y-2">
         <div class="font-black text-emerald-900 text-sm">📚 作業繳交及訂正狀況</div>
-        <div v-if="parentHwList().length" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-          <div v-for="(hw, i) in parentHwList()" :key="i" class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-            <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
-            <span v-if="hwStateOf(hw) === 'd'" class="px-2 py-0.5 rounded text-[10px] font-black bg-green-600 text-white shrink-0">已完成</span>
-            <span v-else-if="hwStateOf(hw) === 'f'" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-900 shrink-0">需訂正</span>
-            <span v-else class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-400 text-white shrink-0">未交</span>
+        <div v-for="g in parentHwGroups()" :key="g.label" class="space-y-1.5">
+          <div class="text-xs font-black text-emerald-800 pt-1">{{ g.label }}</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <div v-for="(hw, i) in g.items" :key="i" class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+              <span class="font-black text-slate-800 truncate mr-1">{{ hw.title }}</span>
+              <span v-if="hwStateOf(hw) === 'd'" class="px-2 py-0.5 rounded text-[10px] font-black bg-green-600 text-white shrink-0">已完成</span>
+              <span v-else-if="hwStateOf(hw) === 'f'" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-900 shrink-0">需訂正</span>
+              <span v-else class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-400 text-white shrink-0">未交</span>
+            </div>
           </div>
         </div>
-        <div v-else class="text-center py-2 text-slate-400 text-xs font-bold">這一天沒有作業項目</div>
+        <div v-if="!parentHwGroups().length" class="text-center py-2 text-slate-400 text-xs font-bold">這一天沒有作業項目</div>
       </div>
 
       <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-sm p-3 flex items-center justify-between gap-2">
@@ -2068,7 +2071,7 @@ function parent_(t) {
     const state = (!d || !d.completed) ? 'n' : (d.fix ? 'f' : 'd');
     return { title: h.title, state: state, completed: state === 'd', date: h.date || '' };
   });
-  const hw = hwAll.filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed }));
+  const hw = hwAll.filter(h => !(h.date && h.date < cutKey && h.state !== 'f')).map(h => ({ title: h.title, state: h.state, completed: h.completed, date: h.date }));
   // 最近 30 天：每天的到校、請假、徽章（自動 + 老師給的）、當天作業（只回傳這位孩子自己的）
   const BD = { focus: ['👂', '上課專心'], nap: ['😴', '午休安靜休息'], duty: ['🎖️', '認真負責'], help: ['🤝', '樂於助人'], speak: ['🙋', '勇於發言／嘗試'], clean: ['🧹', '打掃認真'], tidy: ['🪑', '座位整齊乾淨'], grow: ['🌱', '有進步'] };
   const lateT = String((((st.daily || {}).settings) || {}).lateTime || '07:50');
@@ -2082,6 +2085,8 @@ function parent_(t) {
     const arr = (dy.arrive || {})[kid.id];
     const lv = (dy.leave || {})[kid.id];
     const dh = hwAll.filter(h => h.date === dk);
+    const gone = (dy.hwGone || {});
+    Object.keys(gone).forEach(id => { const g = gone[id]; if (g && g.s && g.s[kid.id]) dh.push({ title: g.t, state: g.s[kid.id] }); });
     const bs = [];
     if (arr && !lv) {
       const late = (arr.late !== undefined && arr.late !== null) ? !!arr.late : String(arr.t).slice(0, 5) > lateT;
@@ -5065,7 +5070,23 @@ const __app = createApp({
         return (day.bdg && day.bdg[st.id] && Object.keys(day.bdg[st.id]).length) || (day.brush && day.brush[st.id]) || (day.meal && day.meal[st.id]);
       })).sort((a, b) => a.seatNumber - b.seatNumber);
     },
-    parentHwList() { const d = this.parentDay(); return !d ? [] : (this.parentState.idx === 0 ? this.parentState.homework : (d.hw || [])); },
+    // 作業分組：選到的那天「全部」列出；更早的作業只列還沒完成的
+    parentHwGroups() {
+      const d = this.parentDay();
+      if (!d) return [];
+      const md = x => Number(x.slice(5, 7)) + '/' + Number(x.slice(8, 10));
+      const g = [];
+      if ((d.hw || []).length) g.push({ label: md(d.date) + ' 作業', items: d.hw });
+      const by = {};
+      (this.parentState.homework || []).forEach(h => {
+        if (this.hwStateOf(h) === 'd') return;
+        const k = h.date || '';
+        if (k && k >= d.date) return;
+        (by[k] = by[k] || []).push(h);
+      });
+      Object.keys(by).sort().reverse().forEach(k => g.push({ label: k ? md(k) + ' 作業（還沒完成）' : '其他作業（還沒完成）', items: by[k] }));
+      return g;
+    },
     parentDay() { return (this.parentState.days || [])[this.parentState.idx] || null; },
     parentGo(n) { const i = this.parentState.idx + n; if (i >= 0 && i < (this.parentState.days || []).length) this.parentState.idx = i; },
     parentDateLabel(d) {
@@ -5247,6 +5268,16 @@ const __app = createApp({
 
     async removeHomework(hwId) {
       if (!(await this.askConfirm('確定要刪除這項作業紀錄嗎？'))) return;
+      // 刪除前先把「當天作業」的結果存進當天紀錄，家長頁當天仍會看到
+      const hw = this.homeworkList.find(h => h.id === hwId);
+      if (hw && hw.date) {
+        const d = this.daily.days;
+        if (!d[hw.date]) d[hw.date] = { arrive: {}, leave: {}, brush: {}, meal: {}, pts: {}, net: {}, hw: {}, bdg: {} };
+        if (!d[hw.date].hwGone) d[hw.date].hwGone = {};
+        const sn = {};
+        this.students.forEach(st => { sn[st.id] = this.hwState(st, hw); });
+        d[hw.date].hwGone[hwId] = { t: hw.title, s: sn };
+      }
       this.homeworkList = this.homeworkList.filter(h => h.id !== hwId);
       this.saveData();
     },
