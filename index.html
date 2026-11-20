@@ -5814,7 +5814,12 @@ const __app = createApp({
         ? { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }
         : { method: 'GET' };
       const res = await fetch(url, opt);
-      const j = await res.json();
+      const txt = await res.text();
+      let j;
+      try { j = JSON.parse(txt); } catch (x) {
+        const t = String(txt || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90);
+        throw new Error('雲端回傳的不是資料（HTTP ' + res.status + '）：' + (t || '空白') + '——多半是部署或權限問題');
+      }
       if (j && j.error) throw new Error(j.error);
       return j;
     },
