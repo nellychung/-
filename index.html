@@ -4713,7 +4713,7 @@ const __app = createApp({
       const level = this.getStudentLevelData(student.score).level;
       if (level < 1) return '寵物蛋';
       const pet = this.getStudentPetObj(student);
-      if (student.customAvatar && (!pet || !pet.evolutions)) return '第 1 階段';
+      if (student.customAvatar && (!pet || !pet.evolutions)) return /^pk\//.test(String(student.customAvatar)) ? '唯一型態' : '第 1 階段';   // 寶可夢圖（如抽到的阿爾宙斯）＝唯一型態；老師上傳的照片維持第 1 階段
       const evos = (pet && pet.evolutions) || [];
       if (evos.length < 2) return '唯一型態';
       let idx = 0;
