@@ -418,6 +418,7 @@
           <button @click="showPickerModal = true" class="whitespace-nowrap px-2.5 py-1 rounded-xl text-xs font-black bg-amber-200 text-amber-900 hover:bg-amber-300 transition flex items-center gap-1 shadow-sm">
             <i class="fa-solid fa-dice"></i> 隨機抽籤
           </button>
+          <button v-if="teacherMode" @click="openBadgeBatch()" class="whitespace-nowrap ml-1 px-2.5 py-1 rounded-xl text-xs font-black bg-amber-300 text-amber-900 hover:bg-amber-400 transition shadow-sm">🏅 發徽章</button>
         </div>
 
       <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shadow-inner"
@@ -1666,6 +1667,39 @@
   <div v-if="undoBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[85] bg-slate-900 text-white rounded-full px-5 py-3 shadow-2xl flex items-center gap-3 font-black">
     <span>{{ undoBar.seat }} 號 {{ undoBar.delta > 0 ? '+' : '' }}{{ undoBar.delta }}</span>
     <button @click="undoLast" class="px-4 py-1.5 rounded-full bg-amber-400 text-slate-900">↩ 還原</button>
+  </div>
+
+  <!-- 一次給多人徽章 -->
+  <div v-if="badgeBatch.show" class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-3" @click.self="badgeBatch.show = false">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-black text-amber-900">🏅 一次發徽章（每人 +1 分）</h3>
+        <button @click="badgeBatch.show = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
+      </div>
+      <div>
+        <div class="text-xs font-black text-slate-500 mb-1">① 選徽章</div>
+        <div class="flex flex-wrap gap-1.5">
+          <button v-for="b in badgeDefs()" :key="b.k" @click="badgeBatch.k = b.k; badgeBatch.sel = {}" class="px-3 py-1.5 rounded-full text-sm font-black border-2 active:scale-95" :class="badgeBatch.k === b.k ? 'bg-amber-300 border-amber-500 text-amber-900' : 'bg-white border-slate-200 text-slate-700'">{{ b.icon }} {{ b.text }}</button>
+        </div>
+      </div>
+      <div v-if="badgeBatch.k">
+        <div class="text-xs font-black text-slate-500 mb-1">② 點選孩子（可多選；已拿過今天這個徽章的會變灰）</div>
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          <button @click="batchPickAll()" class="px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black">全選</button>
+          <button @click="badgeBatch.sel = {}" class="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-black">清除</button>
+          <button v-for="r in batchRoles()" :key="r" @click="batchPickRole(r)" class="px-2.5 py-1 rounded-full border text-xs font-black" :class="roleChipClass(r)">選全部「{{ r }}」</button>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+          <button v-for="st in studentsBySeatNo" :key="st.id" @click="batchToggle(st)" :disabled="badgeHas(st, badgeBatch.k)"
+            class="p-1.5 rounded-xl border-2 text-left active:scale-95 disabled:opacity-40" :class="badgeBatch.sel[st.id] ? 'bg-amber-200 border-amber-500' : 'bg-white border-slate-200'">
+            <div class="flex items-center gap-1"><span class="bg-slate-700 text-white text-[11px] font-black rounded-full px-1.5">{{ st.seatNumber }}</span><span class="text-sm font-black text-slate-800 truncate">{{ st.name }}</span><span v-if="badgeBatch.sel[st.id]" class="ml-auto text-amber-700 font-black">✓</span></div>
+            <div class="mt-0.5 text-[10px] font-black px-1.5 rounded-full border inline-block" :class="roleChipClass(st.role)">{{ st.role || '組員' }}</div>
+          </button>
+        </div>
+        <button @click="applyBadgeBatch()" :disabled="!batchCount()" class="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-b from-amber-400 to-amber-600 text-white font-black text-sm disabled:opacity-40 active:scale-95">給 {{ batchCount() }} 人「{{ (badgeDefs().find(x => x.k === badgeBatch.k) || {}).text }}」+1 分</button>
+        <div v-if="badgeBatch.k === 'duty'" class="mt-1 text-[11px] font-bold text-slate-400">家長會看到每個孩子自己的職務，例如「擔任秩序長認真負責」。</div>
+      </div>
+    </div>
   </div>
 
   <div v-if="customModal.student" class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4" @click.self="customModal.student = null">
@@ -3483,6 +3517,7 @@ const __app = createApp({
       toast: { text: '', key: 0 },
 
       showPickerModal: false,
+      badgeBatch: { show: false, k: '', sel: {} },
       isPicking: false,
       pickedStudent: null,
 
@@ -5078,6 +5113,28 @@ const __app = createApp({
     },
 
     badgeDefs() { return PK_BADGES; },
+    openBadgeBatch() { this.badgeBatch = { show: true, k: '', sel: {} }; },
+    batchToggle(st) { const m = { ...this.badgeBatch.sel }; if (m[st.id]) delete m[st.id]; else m[st.id] = true; this.badgeBatch.sel = m; },
+    batchEligible() { return this.studentsBySeatNo.filter(st => !this.badgeHas(st, this.badgeBatch.k)); },
+    batchPickAll() { const m = {}; this.batchEligible().forEach(st => { m[st.id] = true; }); this.badgeBatch.sel = m; },
+    batchPickRole(r) { const m = { ...this.badgeBatch.sel }; this.batchEligible().filter(st => (st.role || '組員') === r).forEach(st => { m[st.id] = true; }); this.badgeBatch.sel = m; },
+    batchRoles() { const set = new Set(); this.studentsBySeatNo.forEach(st => { const r = st.role || '組員'; if (r !== '組員') set.add(r); }); return [...set]; },
+    batchCount() { return this.batchEligible().filter(st => this.badgeBatch.sel[st.id]).length; },
+    applyBadgeBatch() {
+      const def = PK_BADGES.find(x => x.k === this.badgeBatch.k);
+      const list = this.batchEligible().filter(st => this.badgeBatch.sel[st.id]);
+      if (!def || !list.length) return;
+      const r = this.ensureDay();
+      list.forEach(st => {
+        if (!r.bdg[st.id]) r.bdg[st.id] = {};
+        const role = String(st.role || '').trim();
+        r.bdg[st.id][def.k] = (def.k === 'duty' && role && role !== '組員') ? role : '1';
+        this.addScore(st, 1, '獲得徽章：' + def.text);
+      });
+      this.playPM(true);
+      this.showToast(`${def.icon} ${list.length} 人獲得「${def.text}」+1`);
+      this.badgeBatch = { show: false, k: '', sel: {} };
+    },
     badgeHas(st, k) { const b = this.ensureDay().bdg[st.id]; return !!(b && b[k]); },
     async toggleBadge(st, k) {
       const def = PK_BADGES.find(x => x.k === k);
