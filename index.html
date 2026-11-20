@@ -423,7 +423,7 @@
       <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shadow-inner"
              :class="isOffline ? 'bg-slate-200 text-slate-700 border-slate-400' : (syncStatus.isSyncing ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white/90 text-emerald-700 border-emerald-300')">
           <i class="fa-solid" :class="syncStatus.isSyncing ? 'fa-spin fa-rotate' : 'fa-cloud-check'"></i>
-          <span @click="configureCloud" class="cursor-pointer underline decoration-dotted whitespace-nowrap">{{ isOffline && cfg().endpoint ? '離線中・資料存在這台，連線後自動同步' : syncStatus.text }}</span>
+          <span @click="/^雲端儲存失敗/.test(syncStatus.text) ? notify(syncStatus.text + '\n\n（要改雲端設定，請到「名單設定」）') : configureCloud()" class="cursor-pointer underline decoration-dotted whitespace-nowrap">{{ isOffline && cfg().endpoint ? '離線中・資料存在這台，連線後自動同步' : syncStatus.text }}</span>
         </div>
       </div>
 
