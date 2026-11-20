@@ -4715,7 +4715,7 @@ const __app = createApp({
       const pet = this.getStudentPetObj(student);
       if (student.customAvatar && (!pet || !pet.evolutions)) return '第 1 階段';
       const evos = (pet && pet.evolutions) || [];
-      if (evos.length < 2) return '第 1 階段';
+      if (evos.length < 2) return '唯一型態';
       let idx = 0;
       evos.forEach((evo, i) => { if (level >= evo.minLv) idx = i; });
       return `第 ${idx + 1} 階段` + (idx === evos.length - 1 ? ' (最終形態)' : '');
@@ -4724,7 +4724,7 @@ const __app = createApp({
     // 每個階段一種顏色：蛋＝灰、1＝天藍、2＝綠、3＝紫、4以上＝粉紅、最終形態＝金色
     stageClass(student) {
       const n = this.getStageName(student);
-      if (n.includes('最終')) return 'bg-amber-300 text-amber-900 border-amber-500 shadow-sm';
+      if (n.includes('最終') || n === '唯一型態') return 'bg-amber-300 text-amber-900 border-amber-500 shadow-sm';
       if (n === '寵物蛋') return 'bg-slate-100 text-slate-600 border-slate-300';
       const k = Number((n.match(/\d+/) || [1])[0]);
       return ['bg-sky-100 text-sky-700 border-sky-300', 'bg-emerald-100 text-emerald-700 border-emerald-300', 'bg-violet-100 text-violet-700 border-violet-300'][k - 1] || 'bg-rose-100 text-rose-700 border-rose-300';
