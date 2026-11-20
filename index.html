@@ -468,6 +468,14 @@
       
       <!-- 頁面 1：全班學生列表 -->
       <div v-if="currentTab === 'dashboard'" class="space-y-2">
+        <div v-if="friendDone || leadInfo" @click="teacherMode && (currentTab = 'weekly')" class="px-3 py-1.5 rounded-2xl border-2 text-sm font-black flex flex-wrap items-center gap-x-3 gap-y-0.5" :class="[friendDone ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-gradient-to-r from-amber-100 to-yellow-100 border-amber-400 text-amber-900', teacherMode ? 'cursor-pointer' : '']">
+          <template v-if="friendDone"><span>🤝 本週友你真好：第 {{ friendDone.g }} 組 🎉</span></template>
+          <template v-else>
+            <span>🏆 本週領先：<template v-for="(x, i) in leadInfo.leaders" :key="x.g">{{ i ? '、' : '' }}第 {{ x.g }} 組</template><template v-if="leadInfo.leaders.length > 1">（並列）</template>　平均每人 +{{ leadInfo.avg.toFixed(1) }}</span>
+            <span v-if="leadInfo.next" class="text-xs text-amber-700">第 {{ leadInfo.next.g }} 組 +{{ leadInfo.next.avg.toFixed(1) }}</span>
+          </template>
+          <button v-if="teacherMode && !friendDone && leadInfo" @click.stop="settleFriend" class="ml-auto px-3 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-black shadow active:scale-95">🏆 立即結算友你真好</button>
+        </div>
         <div class="flex flex-wrap justify-between items-center gap-2 bg-gradient-to-r from-orange-50 via-rose-50 to-amber-50 px-3 py-2 rounded-2xl border border-indigo-100 shadow-xs">
           <div class="flex items-center space-x-3">
             <span class="text-xs font-black text-indigo-950 flex items-center gap-1.5">
@@ -565,9 +573,9 @@
 
         <!-- 模式 B：小組分區（各組並排） -->
         <div v-else class="group-grid">
-          <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0">
+          <div v-for="gNum in availableGroups" :key="gNum" class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-1.5 rounded-xl border-2 border-slate-200 min-w-0" :style="leadSet[gNum] ? { borderColor: '#f59e0b', boxShadow: '0 0 0 3px rgba(251,191,36,.45)', background: '#fffbeb' } : {}">
             <div class="flex justify-between items-center mb-1 pb-1 border-b">
-              <span class="mc-badge font-black text-xs px-2 py-0.5 rounded-lg">第 {{ gNum }} 組</span>
+              <span class="mc-badge font-black text-xs px-2 py-0.5 rounded-lg">{{ leadSet[gNum] ? '👑 ' : '' }}第 {{ gNum }} 組<template v-if="leadSet[gNum]"> · 本週領先</template></span>
               <div class="flex space-x-1">
                 <button @click="addGroupScore(gNum, 1)" class="mc-mint px-2 py-0.5 text-[11px] font-black rounded-lg transition">+1 全組</button>
                 <button @click="addGroupScore(gNum, -1)" class="mc-rose px-2 py-0.5 text-[11px] font-black rounded-lg transition">-1 全組</button>
@@ -815,6 +823,10 @@
             </div>
             <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🤝 友你真好獎勵：全組每人加
               <input type="number" min="0" max="100" :value="weeklyCfg().friendExp" @change="weeklyCfg().friendExp = Math.max(0, Number($event.target.value) || 0); saveData()" class="w-14 px-1 py-0.5 rounded-lg border border-orange-200 bg-white" /> 分</div>
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-black text-slate-600">
+              <label class="flex items-center gap-1"><input type="checkbox" :checked="weeklyCfg().friendAuto" @change="weeklyCfg().friendAuto = $event.target.checked; saveData()" class="w-4 h-4" />星期五自動結算友你真好，時間</label>
+              <input type="time" :value="weeklyCfg().friendTime" @change="weeklyCfg().friendTime = $event.target.value || '12:40'; saveData()" class="px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" />
+              <span class="text-slate-400 font-bold">（老師版開著時才會執行；所有裝置都會跳出視窗）</span></div>
             <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🚫 友你真好不計入的組別（測試組等，用逗號分開）：
               <input :value="(weeklyCfg().friendExclude || []).join(',')" @change="weeklyCfg().friendExclude = $event.target.value.split(/[,，\s]+/).map(Number).filter(n => n > 0); saveData()" class="w-24 px-1.5 py-0.5 rounded-lg border border-orange-200 bg-white" /></div>
             <div class="flex items-center gap-1.5 text-[11px] font-black text-slate-600">🤝 友你真好徽章名稱：
@@ -1610,6 +1622,18 @@
           <button @click="showShuffleModal = false" class="py-3 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg">取消</button>
           <button @click="runSeatShuffle" class="py-3 rounded-2xl bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white font-black text-lg shadow-md">🎲 開始隨機排座位</button>
         </div>
+      </div>
+    </div>
+    <div v-if="friendPopup.show" class="fixed inset-0 z-[400] bg-black/60 flex items-center justify-center p-4" @click.self="friendPopup.show = false">
+      <div class="bg-gradient-to-b from-amber-50 to-orange-100 rounded-[2rem] border-4 border-amber-400 shadow-2xl w-full max-w-xl p-6 text-center space-y-3">
+        <div class="text-6xl">🤝🎉</div>
+        <div class="text-2xl font-black text-amber-800">本週「友你真好」</div>
+        <div class="text-5xl sm:text-6xl font-black text-orange-600">第 {{ friendPopup.g }} 組</div>
+        <div class="text-lg font-black text-slate-700">獲得「{{ friendPopup.badge }}」徽章，全組每人 +{{ friendPopup.exp }} 分！</div>
+        <div class="flex flex-wrap justify-center gap-1.5">
+          <span v-for="n in friendPopup.names" :key="n" class="px-3 py-1 rounded-full bg-white border-2 border-amber-300 text-base font-black text-amber-900">{{ n }}</span>
+        </div>
+        <button @click="friendPopup.show = false" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-lg active:scale-95">太棒了！</button>
       </div>
     </div>
     <div v-if="bigFx.show" :key="bigFx.key" class="fixed inset-0 z-[320] pointer-events-none flex items-center justify-center px-4">
@@ -3526,6 +3550,7 @@ const __app = createApp({
 
       showPickerModal: false,
       badgeBatch: { show: false, k: '', sel: {} },
+      friendPopup: { show: false, g: 0, exp: 0, names: [], badge: '' },
       isPicking: false,
       pickedStudent: null,
 
@@ -3620,6 +3645,15 @@ const __app = createApp({
     weekDayKeys() { return pkWeekDays(this.weekKey, 7); },
     weeklyTasks() { return this.weeklyCfg().tasks.filter(t => t.on); },
     friendDone() { const w = (this.daily.weekly || {})[this.weekKey]; return w && w.friend ? w.friend : null; },
+    // 本週領先的組別（平均每人加分最高；並列都算）
+    leadInfo() {
+      const gs = this.groupStandings;
+      if (!gs.length || !(gs[0].avg > 0)) return null;
+      const top = gs[0].avg, leaders = gs.filter(x => Math.abs(x.avg - top) < 1e-9);
+      const next = gs.find(x => x.avg < top - 1e-9) || null;
+      return { leaders, next, avg: top };
+    },
+    leadSet() { const o = {}; ((this.leadInfo && this.leadInfo.leaders) || []).forEach(x => { o[x.g] = true; }); return o; },
     groupStandings() {
       const keys = this.weekDayKeys, gs = {};
       this.students.forEach(st => { const g = st.group || 1; (gs[g] = gs[g] || []).push(st); });
@@ -4642,6 +4676,7 @@ const __app = createApp({
       this.todayK = pkTodayKey();
       // 午餐播放與鬧鐘：只在這台有開「自動執行」、週一到週五才會動作
       if (!this.parentMode && this.lunchAuto) this.checkTimedEvents(now);
+      if (!this.parentMode) { this.checkFriendAuto(now); this.checkFriendPopup(); }
     },
 
     // 梯度經驗值計算精確實作
@@ -4984,6 +5019,8 @@ const __app = createApp({
       (w.tasks || []).forEach(t => { if (t.id === 't_hw' && (t.badge === '作業' + '終結者' || t.badge === '使命必達王' || t.badge === '日課' + '守護神' || t.badge === '作業' + '守護神')) { t.badge = '書卷聖劍士'; fix = true; } });
       if (!Array.isArray(w.friendExclude)) { w.friendExclude = [7]; fix = true; }
       if (w.friendBadge === undefined) { w.friendBadge = '友誼之星'; fix = true; }
+      if (w.friendAuto === undefined) w.friendAuto = true;
+      if (!w.friendTime) w.friendTime = '12:40';
       if (fix) this.refreshBadgeNames(w);
       return w;
     },
@@ -5073,13 +5110,21 @@ const __app = createApp({
     badgeCount(st) { return (st.badges || []).length; },
     setWeeklyTask(t, field, val) { t[field] = field === 'target' || field === 'exp' ? Math.max(0, Number(val) || 0) : val; this.saveData(); },
     async settleFriend() {
-      const mon = this.weekKey, wk = this.weekAw(mon);
+      const wk = this.weekAw(this.weekKey);
       if (wk.friend) { this.notify('這個星期已經結算過了'); return; }
       const top = this.groupStandings[0];
       if (!top || top.avg <= 0) { this.notify('這個星期還沒有人加到分'); return; }
       const exp = Number(this.weeklyCfg().friendExp) || 0;
       if (!(await this.askConfirm(`結算「友你真好」：第 ${top.g} 組（平均每人 +${top.avg.toFixed(1)}）每人加 ${exp} 分並獲得徽章。\n每週只能結算一次，確定嗎？`))) return;
-      wk.friend = { g: top.g, t: Date.now() };
+      this.doSettleFriend();
+    },
+    doSettleFriend() {
+      const mon = this.weekKey, wk = this.weekAw(mon);
+      if (wk.friend) return false;
+      const top = this.groupStandings[0];
+      if (!top || top.avg <= 0) return false;
+      const exp = Number(this.weeklyCfg().friendExp) || 0;
+      wk.friend = { g: top.g, t: Date.now(), exp };
       this._noPts = true;
       try {
         top.members.forEach(st => {
@@ -5088,8 +5133,39 @@ const __app = createApp({
           this.addScore(st, exp, '友你真好星期五：第 ' + top.g + ' 組', '🤝 友你真好');
         });
       } finally { this._noPts = false; }
-      this.showBigFx(`第 ${top.g} 組 友你真好！`, `全組 +${exp}`, 'plus');
       this.saveData();
+      this.showFriendPopup(wk.friend);
+      return true;
+    },
+    // 星期五到了設定的時間（預設 12:40）自動結算；只有老師版會動作，避免兩台同時結算
+    checkFriendAuto(now) {
+      if (!this.teacherMode) return;
+      const c = this.weeklyCfg();
+      if (!c.friendAuto || now.getDay() !== 5) return;
+      const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      if (hm < (c.friendTime || '12:40') || this.friendDone) return;
+      const k = pkTodayKey();
+      if (this._friendTry === k) return;
+      // 雲端設定好了的話，要先讀到雲端資料才結算，避免用舊資料算錯
+      if (this.cfg().endpoint && !this._baseState) return;
+      this._friendTry = k;
+      this.doSettleFriend();
+    },
+    showFriendPopup(f) {
+      if (!f) return;
+      try { localStorage.setItem('pk_friendShown', this.weekKey + ':' + f.t); } catch (e) {}
+      const names = this.students.filter(st => (st.group || 1) === f.g).sort((a, b) => a.seatNumber - b.seatNumber).map(st => st.name);
+      this.friendPopup = { show: true, g: f.g, exp: f.exp != null ? f.exp : (Number(this.weeklyCfg().friendExp) || 0), names, badge: this.weeklyCfg().friendBadge || '友誼之星' };
+      clearTimeout(this._fpT); this._fpT = setTimeout(() => { this.friendPopup.show = false; }, 60000);
+      this.playPM && this.playPM(true);
+    },
+    // 別台裝置（例如學生版）結算完成後，同步過來也會跳出視窗
+    checkFriendPopup() {
+      const f = this.friendDone;
+      if (!f || this.friendPopup.show || Date.now() - f.t > 3 * 3600 * 1000) return;
+      let shown = ''; try { shown = localStorage.getItem('pk_friendShown') || ''; } catch (e) {}
+      if (shown === this.weekKey + ':' + f.t) return;
+      this.showFriendPopup(f);
     },
 
     getStudentsByGroup(gNum) {
