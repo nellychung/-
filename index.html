@@ -48,6 +48,14 @@
     }
 
     /* 寶可夢頭像：待機小動作（輕輕彈跳、搖擺；每隻節奏不同），加分時開心跳一下 */
+    /* 最終形態：亮晶晶的金色（流動光澤＋閃爍星星） */
+    .stage-gold{position:relative;color:#7a4a00;border-color:#e0a200;font-weight:900;
+      background:linear-gradient(110deg,#ffd84a 0%,#ffb300 25%,#fff8c9 45%,#ffc928 60%,#ff9f00 80%,#ffd84a 100%);background-size:260% 100%;
+      animation:goldShine 2.2s linear infinite;box-shadow:0 0 6px 1px rgba(255,190,30,.75),inset 0 0 3px rgba(255,255,255,.8);text-shadow:0 1px 0 rgba(255,255,255,.7)}
+    .stage-gold::after{content:'✦';position:absolute;top:-6px;right:-4px;font-size:10px;color:#fff;text-shadow:0 0 4px #ffb300,0 0 8px #ffd84a;animation:goldTwinkle 1.4s ease-in-out infinite}
+    @keyframes goldShine{0%{background-position:0% 0}100%{background-position:260% 0}}
+    @keyframes goldTwinkle{0%,100%{opacity:.2;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1.25) rotate(45deg)}}
+    @media (prefers-reduced-motion: reduce){.stage-gold,.stage-gold::after{animation:none}}
     @keyframes petIdleA{0%,100%{transform:translateY(0) rotate(0) scale(1,1)}20%{transform:translateY(0) scale(1.05,.93)}45%{transform:translateY(-7%) rotate(-3deg) scale(.98,1.04)}70%{transform:translateY(0) rotate(2deg) scale(1.03,.96)}85%{transform:translateY(-2%) rotate(0)}}
     @keyframes petIdleB{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4%) rotate(4deg)}50%{transform:translateY(0) rotate(0) scale(1.04)}75%{transform:translateY(-4%) rotate(-4deg)}}
     @keyframes petIdleC{0%,100%{transform:scale(1)}50%{transform:translateY(-3%) scale(1.07)}}
@@ -4721,10 +4729,11 @@ const __app = createApp({
       return `第 ${idx + 1} 階段` + (idx === evos.length - 1 ? ' (最終形態)' : '');
     },
 
-    // 每個階段一種顏色：蛋＝灰、1＝天藍、2＝綠、3＝紫、4以上＝粉紅、最終形態＝金色
+    // 每個階段一種顏色：蛋＝灰、1＝天藍、2＝綠、3＝紫、4以上＝粉紅、最終形態＝亮晶晶金色、唯一型態＝黃色
     stageClass(student) {
       const n = this.getStageName(student);
-      if (n.includes('最終') || n === '唯一型態') return 'bg-amber-300 text-amber-900 border-amber-500 shadow-sm';
+      if (n.includes('最終')) return 'stage-gold';
+      if (n === '唯一型態') return 'bg-amber-300 text-amber-900 border-amber-500 shadow-sm';
       if (n === '寵物蛋') return 'bg-slate-100 text-slate-600 border-slate-300';
       const k = Number((n.match(/\d+/) || [1])[0]);
       return ['bg-sky-100 text-sky-700 border-sky-300', 'bg-emerald-100 text-emerald-700 border-emerald-300', 'bg-violet-100 text-violet-700 border-violet-300'][k - 1] || 'bg-rose-100 text-rose-700 border-rose-300';
