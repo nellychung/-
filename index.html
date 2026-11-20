@@ -1012,6 +1012,28 @@
           </div>
         </div>
         </div>
+        <div v-if="shownHw.length" class="bg-white/95 rounded-3xl border-2 border-purple-200 p-3 shadow-md">
+          <div class="flex flex-wrap items-center gap-3 text-[11px] font-black text-slate-600 mb-2">
+            <span class="zy-font text-base text-purple-700">📊 全班總覽</span>
+            <span><i class="inline-block w-4 h-4 rounded-md align-[-3px] mr-1 bg-rose-400"></i>未交</span>
+            <span><i class="inline-block w-4 h-4 rounded-md align-[-3px] mr-1 bg-amber-400"></i>需訂正</span>
+            <span><i class="inline-block w-4 h-4 rounded-md align-[-3px] mr-1 bg-green-600"></i>已完成</span>
+          </div>
+          <div class="overflow-x-auto custom-scroll">
+            <table class="hwt">
+              <thead><tr>
+                <th class="hwt-rn text-purple-500">作業 ＼ 座號</th>
+                <th v-for="st in seatStudents" :key="st.id" class="hwt-sn">{{ st.seatNumber }}</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="hw in shownHw" :key="hw.id">
+                  <th class="hwt-rn truncate">{{ hw.title }}</th>
+                  <td v-for="st in seatStudents" :key="st.id" style="height:38px"><i class="hwc block" :class="'hwc-' + hwState(st, hw)"></i></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div v-if="currentTab === 'homework' && teacherMode" class="space-y-3 max-w-[1500px] mx-auto">
