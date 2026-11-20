@@ -2058,6 +2058,20 @@ function photoFile_() {
   const it = DriveApp.getFilesByName(PHOTO_NAME);
   return it.hasNext() ? it.next() : null;
 }
+function readFile_(f) {
+  // 讀雲端存檔：內容是空白（檔案被清空）就當成「還沒有資料」；剛好遇到別台正在寫入時，稍等再讀
+  let last;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const s = f.getBlob().getDataAsString();
+      if (!String(s).trim()) return { blank: true };
+      return { o: JSON.parse(s) };
+    } catch (e) { last = e; Utilities.sleep(400); }
+  }
+  throw last;
+}
+function propRev_() { return Number(PropertiesService.getScriptProperties().getProperty('rev')) || 0; }
+
 function file_() {
   const it = DriveApp.getFilesByName(FILE_NAME);
   return it.hasNext() ? it.next() : null;
@@ -2141,8 +2155,9 @@ function doGet(e) {
     if (action === 'load') {
       const f = file_();
       if (!f) return out_({ state: null, rev: 0 });
-      const o = JSON.parse(f.getBlob().getDataAsString());
-      return out_({ state: o.state, rev: o.rev });
+      const rf = readFile_(f);
+      if (rf.blank) return out_({ state: null, rev: propRev_() });
+      return out_({ state: rf.o.state, rev: rf.o.rev });
     }
     if (action === 'photo') {
       const pf = photoFile_();
@@ -2154,7 +2169,8 @@ function doGet(e) {
       let rev = props.getProperty('rev');
       if (rev === null) {
         const f = file_();
-        rev = f ? String(JSON.parse(f.getBlob().getDataAsString()).rev || 0) : '0';
+        const rf = f ? readFile_(f) : { blank: true };
+        rev = rf.blank ? '0' : String(rf.o.rev || 0);
         props.setProperty('rev', rev);
       }
       return out_({ rev: Number(rev), v: 2 });
@@ -2214,7 +2230,8 @@ function doPost(e) {
       return out_({ ok: true });
     }
     const f = file_();
-    const curRev = f ? (JSON.parse(f.getBlob().getDataAsString()).rev || 0) : 0;
+    let curRev = 0;
+    if (f) { const rf = readFile_(f); curRev = rf.blank ? propRev_() : (rf.o.rev || 0); }
     // 防止兩台同時存檔時互相蓋掉：存檔者必須是「看過最新版」的人，否則請他重新合併再存
     if (body.base !== undefined && body.base !== null && Number(body.base) !== curRev) return out_({ error: 'CONFLICT:' + curRev });
     const rev = curRev + 1;
