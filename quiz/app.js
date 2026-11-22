@@ -99,7 +99,7 @@ function subjectPage(sid) {
     if (!v.units.length || !us.length) return `<div class="card vol"><h3>${esc(v.name)} <span class="note">${esc([v.grade, v.pub].filter(Boolean).join('・'))}</span></h3><div class="empty">這一冊的題庫還在準備中</div></div>`;
     const all = us.every(u => sel.units.includes(uKey(v.id, u.id)));
     let lastG = null;
-    const rows = v.units.map(u => {
+    const rows = '<div class="ulist">' + v.units.map(u => {
       const k = uKey(v.id, u.id), st = stat[k], g = u.group && u.group !== lastG ? `<div class="grp">${esc(u.group)}</div>` : '';
       lastG = u.group || lastG;
       if (!u.count) return g + `<div class="unit off"><input type="checkbox" disabled><span class="nm">${esc(u.name)}</span><span class="meta">準備中</span></div>`;
@@ -107,7 +107,7 @@ function subjectPage(sid) {
       return g + `<label class="unit"><input type="checkbox" data-u="${k}" ${sel.units.includes(k) ? 'checked' : ''}>
         <span class="nm">${esc(u.name)}</span>
         <span class="meta">${u.count} 題${st && st.n ? `・答對率 ${Math.round(st.c / st.n * 100)}%` : ''}<div class="mbar"><i style="width:${done / u.count * 100}%"></i></div></span></label>`;
-    }).join('');
+    }).join('') + '</div>';
     return `<div class="card vol"><h3>${esc(v.name)} <span class="note">${esc([v.grade, v.pub].filter(Boolean).join('・'))}</span>
       <label class="chk" style="margin-left:auto"><input type="checkbox" class="vall" data-v="${v.id}" ${all ? 'checked' : ''}> 全選單元</label></h3>${rows}</div>`;
   }
@@ -186,10 +186,10 @@ function render() {
   $('app').innerHTML = `<div class="prog"><i style="width:${pct}%"></i></div><div class="card">
     <div class="bar">${head}</div>
     <div class="bar"><span class="pill">${esc(uName(q))}</span>${q.k ? `<span class="pill">${esc(q.k.join('、'))}</span>` : ''}${q.d ? `<span>難易度：${esc(q.d)}</span>` : ''}</div>
-    <div class="stem">${qHtml(q)}</div>
-    ${q.img && !q.o ? '<p class="note" style="margin:0">看圖作答，點選答案：</p>' : ''}
-    ${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="answer(${i})"><b>(${L[i]})</b>${q.o ? esc(q.o[i]) : ''}</button>`).join('')}
-    <div id="fb"></div></div>
+    <div class="qgrid"><div class="qleft"><div class="stem">${qHtml(q)}</div>
+    ${q.img && !q.o ? '<p class="note" style="margin:0">看圖作答，點選答案：</p>' : ''}</div>
+    <div class="qright">${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="answer(${i})"><b>(${L[i]})</b>${q.o ? esc(q.o[i]) : ''}</button>`).join('')}
+    <div id="fb"></div></div></div></div>
     <div class="acts"><button class="btn g" onclick="quit()">結束這回，看結果</button></div>`;
   scrollTo(0, 0);
 }

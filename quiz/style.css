@@ -68,3 +68,18 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:14px;border:1px soli
 .big{font-size:34px;font-weight:700}
 .wl{font-size:15px;margin:10px 0;padding:10px 12px;border-left:3px solid var(--bad);background:#f9fafb;white-space:pre-wrap}
 @media (max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:12px}.chips{grid-template-columns:repeat(2,1fr);gap:10px}.mbar{display:none}}
+
+/* 平板橫向 */
+.qgrid{display:block}
+@media (min-width:900px) and (orientation:landscape){
+ .wrap{max-width:1240px}
+ .dock .in{max-width:1240px}
+ .grid{grid-template-columns:repeat(5,1fr)}
+ .chips{grid-template-columns:repeat(5,1fr)}
+ .ulist{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
+ .ulist .grp{grid-column:1/-1}
+ .qgrid{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:start}
+ .qleft{position:sticky;top:70px}
+ .qright .opt:first-child{margin-top:0}
+ .stem img{max-height:62vh;width:auto}
+}
