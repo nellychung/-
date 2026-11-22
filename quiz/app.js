@@ -178,7 +178,7 @@ function qHtml(q) {
 }
 function render() {
   const q = S.cur.q; let head, pct;
-  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › ${S.label}`);
+  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › ${S.phase === 'round' ? S.label : '錯題加強'}`);
   if (S.phase === 'round') { head = `<span>${S.label} ${S.i + 1} / ${S.list.length}</span><span>目前答對 ${S.score}</span>`; pct = S.i / S.list.length * 100; }
   else { const c = S.weak[S.cur.k], all = Object.values(S.weak), done = all.filter(x => x.st !== 'learn').length;
     head = `<span class="pill w">錯題加強</span><span>觀念「${esc(c.tag)}」連續答對 ${c.streak} / ${NEED}</span><span>（完成 ${done} / ${all.length} 個觀念）</span>`; pct = done / all.length * 100; }
