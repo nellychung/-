@@ -415,7 +415,7 @@ async function nextWeak() {
   return null;
 }
 async function next() {
-  S.ans = false;
+  S.ans = false; S.sel = null;
   if (S.phase === 'round') {
     if (S.i >= S.list.length) {
       if (Object.keys(S.weak).length) return weakIntro();
@@ -471,7 +471,8 @@ function render() {
     <div class="bar"><span class="pill">${esc(uName(q))}</span>${q.k ? `<span class="pill">${esc(q.k.join('、'))}</span>` : ''}${q.d ? `<span class="pill d${esc(q.d)}">${esc(q.d)}・${xpFor(q)} XP</span>` : ''}</div>
     <div class="qgrid"><div class="qleft"><div class="stem">${qHtml(q)}</div>
     ${q.img && !q.o ? '<p class="note" style="margin:0">看圖作答，點選答案：</p>' : ''}</div>
-    <div class="qright">${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="answer(${i})"><b>${L[i]}</b><span>${q.o ? R(q, q.o[i]) : ''}</span></button>`).join('')}
+    <div class="qright">${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="choose(${i})"><b>${L[i]}</b><span>${q.o ? R(q, q.o[i]) : ''}</span></button>`).join('')}
+    <div id="sub" class="acts"><button class="btn gold" id="send" onclick="submitAns()" disabled>✔️ 送出答案</button><span class="note" id="subn">先點選一個答案，再按送出</span></div>
     <div id="fb"></div></div></div></div>
     <div class="acts"><button class="btn ghost" onclick="quit()">🏳️ 結束修練，看成果</button></div>`;
   scrollTo(0, 0);
@@ -491,6 +492,13 @@ function record(q, ok) {
   moneyAnswer(ok);
   const p = player(); if (ok) p.right++; p.best = Math.max(p.best, S.combo); savePlayer(p);
 }
+function choose(i) {
+  if (S.ans) return;
+  S.sel = i;
+  document.querySelectorAll('.opt').forEach((b, k) => b.classList.toggle('sel', k === i));
+  $('send').disabled = false; $('subn').textContent = `已選 ${L[i]}，確定就按送出（還可以改）`;
+}
+function submitAns() { if (S.sel == null || S.ans) return; const i = S.sel; $('sub').remove(); document.querySelectorAll('.opt').forEach(b => b.classList.remove('sel')); answer(i); }
 function answer(i) {
   if (S.ans) return; S.ans = true;
   const q = S.cur.q, ok = i === q.a;

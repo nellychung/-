@@ -390,3 +390,9 @@ html{background:#120a26}.sitem:not(.away) .pet i{display:none}
 .gearbox{text-align:left;max-width:30rem}.gearbox .lvtag{display:block;text-align:center}
 .pet.pic.cape{border-color:#fde68a;box-shadow:0 0 1.2rem #fde68a,0 0 2.4rem #f59e0b88}
 .admin{max-height:88vh;overflow:auto}
+
+.opt.sel{border-color:#7c3aed;background:#ede9fe;box-shadow:0 0 0 3px #a78bfa,0 .25rem 0 #6d28d9}
+.opt.sel b{background:#7c3aed}
+#sub{align-items:center;gap:.8rem;margin-top:.6rem}
+#send{font-size:1.15rem;padding:.7rem 1.6rem}
+#subn{color:#6b5a8e}
