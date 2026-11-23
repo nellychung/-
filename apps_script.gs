@@ -64,8 +64,9 @@ function parent_(t) {
   const lateT = String((((st.daily || {}).settings) || {}).lateTime || '07:50');
   const allDays = ((st.daily || {}).days) || {};
   const today = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
-  const keys = Object.keys(allDays);
-  if (keys.indexOf(today) < 0) keys.push(today);
+  // 只列「有上課」的日子：那天至少有一位孩子有到班紀錄（週末、放假沒有人到班，就不會出現）
+  let keys = Object.keys(allDays).filter(k => Object.keys((allDays[k] || {}).arrive || {}).length > 0);
+  if (!keys.length) keys = [today];
   keys.sort().reverse();
   const days = keys.slice(0, 30).map(dk => {
     const dy = allDays[dk] || {};
