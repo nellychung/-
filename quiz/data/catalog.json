@@ -36,91 +36,91 @@
        "id": "l1",
        "name": "第一課 田園之秋選",
        "group": "課文",
-       "count": 220
+       "count": 240
       },
       {
        "id": "l2",
        "name": "第二課 古詩選：迢迢牽牛星、慈烏夜啼",
        "group": "課文",
-       "count": 231
+       "count": 255
       },
       {
        "id": "l3",
        "name": "第三課 下雨天，真好",
        "group": "課文",
-       "count": 211
+       "count": 231
       },
       {
        "id": "yw1",
        "name": "語文常識（一）語法（上）詞類",
        "group": "語文常識",
-       "count": 161
+       "count": 163
       },
       {
        "id": "l4",
        "name": "第四課 愛蓮說",
        "group": "課文",
-       "count": 228
+       "count": 252
       },
       {
        "id": "l5",
        "name": "第五課 生命中的碎珠",
        "group": "課文",
-       "count": 218
+       "count": 239
       },
       {
        "id": "l6",
        "name": "第六課 鳥",
        "group": "課文",
-       "count": 203
+       "count": 228
       },
       {
        "id": "yw2",
        "name": "語文常識（二）語法（下）句子",
        "group": "語文常識",
-       "count": 120
+       "count": 127
       },
       {
        "id": "l7",
        "name": "第七課 張釋之執法",
        "group": "課文",
-       "count": 219
+       "count": 242
       },
       {
        "id": "l8",
        "name": "第八課 找尋失落的水源",
        "group": "課文",
-       "count": 201
+       "count": 225
       },
       {
        "id": "l9",
        "name": "第九課 一棵開花的樹",
        "group": "課文",
-       "count": 258
+       "count": 274
       },
       {
        "id": "l10",
        "name": "第十課 畫的哀傷",
        "group": "課文",
-       "count": 202
+       "count": 220
       },
       {
        "id": "zx1",
        "name": "自學選文 六朝名士畫廊－世說新語選：坦腹東床、王藍田食雞子",
        "group": "自學選文",
-       "count": 199
+       "count": 200
       },
       {
        "id": "zx2",
        "name": "自學選文 一團人生",
        "group": "自學選文",
-       "count": 63
+       "count": 64
       },
       {
        "id": "zx3",
        "name": "自學選文 安藤忠雄：孤獨，也要讓夢想開花",
        "group": "自學選文",
-       "count": 62
+       "count": 63
       }
      ]
     },
