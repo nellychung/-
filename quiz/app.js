@@ -423,7 +423,7 @@ function summary() {
   const unitName = c => { const v = vol(S.s, c.v), u = v && v.units.find(x => x.id === c.u); return (v ? vLabel(S.s, v) + ' ' : '') + (u ? u.name : c.u); };
   const range = [...new Set(S.pairs.map(([v, u]) => vLabel(S.s, v) + ' ' + u.name))].join('、');
   const win = S.mon.dead && !outC.length;
-  const txt = W.length ? `我用刷題網練習${S.s.name}（${range}），${S.label} ${answered} 題答對 ${S.score} 題。
+  const copyText = W.length ? `我用刷題網練習${S.s.name}（${range}），${S.label} ${answered} 題答對 ${S.score} 題。
 答錯過的觀念：
 ${W.map(c => `・${unitName(c)}／${c.tag}（錯 ${c.wrong.length} 次，${c.st === 'ok' ? '題庫類似題已連對 ' + NEED + ' 題' : '題庫類似題已用完，還沒連對 ' + NEED + ' 題'}）`).join('\n')}
 我答錯的題目：
@@ -447,7 +447,7 @@ ${wrongs.map((x, n) => `${n + 1}. ${txt(x.q.s)}${x.q.img || /<img/.test(x.q.s + 
     ${W.length ? `<div class="panel"><table><tr><th>關卡</th><th>觀念怪</th><th>被打中幾次</th><th>狀態</th></tr>
       ${W.map(c => `<tr><td>${esc(unitName(c))}</td><td><i class="mini sm">${miniSVG(c)}</i> ${esc(c.tag)}</td><td>${c.wrong.length}</td><td>${c.st === 'ok' ? '<span class="st-ok">💥 已打倒</span>' : '<span class="st-w">逃走了</span>'}</td></tr>`).join('')}</table></div>
     <div class="panel"><b>🧙 請 Claude 出精熟題</b><p class="note" style="margin:4px 0 8px">按「複製」，貼給 Claude（或傳給爸媽），就能針對錯過的觀念出新題目。</p>
-      <textarea id="tx" readonly>${esc(txt)}</textarea><div class="acts"><button class="btn gold" onclick="cp()">複製</button><span id="cpm" class="note"></span></div></div>
+      <textarea id="tx" readonly>${esc(copyText)}</textarea><div class="acts"><button class="btn gold" onclick="cp()">複製</button><span id="cpm" class="note"></span></div></div>
     <div class="panel"><b>📖 錯題回顧</b>${wrongs.map(x => `<div class="wl">${qHtml(x.q)}
 你選 ${L[x.pick]} ${x.q.o ? R(x.q, x.q.o[x.pick]) : ''}　→　正確 ${L[x.q.a]} ${x.q.o ? R(x.q, x.q.o[x.q.a]) : ''}${x.q.e ? '\n<span class="note">詳解：' + R(x.q, x.q.e) + '</span>' : ''}</div>`).join('')}</div>` : ''}`;
   scrollTo(0, 0);
