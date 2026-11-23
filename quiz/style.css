@@ -381,3 +381,12 @@ html{background:#120a26}.sitem:not(.away) .pet i{display:none}
 .part{width:10rem}
 .shop{grid-template-columns:repeat(3,1fr)}
 .sitem .pet.pic{width:100%!important;height:auto!important;aspect-ratio:261/210}.sitem .pet.pic img{height:100%}
+
+.gears{display:flex;flex-wrap:wrap;gap:.4rem;margin:.3rem 0}
+.gears span{font-size:.8rem;background:#3b2268;border:1px solid #a07d3e;border-radius:99px;padding:.05rem .6rem}
+.menu{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.6rem}
+.menu span{background:#24123f;border:1px solid #6d4fa3;border-radius:.7rem;padding:.3rem .7rem;font-size:.9rem}
+.menu b{color:var(--gold)}.menu small{display:block;color:var(--mut);font-size:.75rem}
+.gearbox{text-align:left;max-width:30rem}.gearbox .lvtag{display:block;text-align:center}
+.pet.pic.cape{border-color:#fde68a;box-shadow:0 0 1.2rem #fde68a,0 0 2.4rem #f59e0b88}
+.admin{max-height:88vh;overflow:auto}

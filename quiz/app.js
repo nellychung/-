@@ -169,11 +169,13 @@ function moneyAdmin() {
     <div class="arow"><span>目前可以提現 <b class="gold">NT$ ${sm.bal}</b></span></div>
     <label class="arow"><span>直接發給孩子（不用申請）</span><input type="number" id="mon_pay" min="1" value="${Math.max(sm.bal, 0)}"></label>
     <button class="btn" id="mpay">💵 記錄已發放</button>
+    <hr>${priceEditor()}
     <hr><label class="arow"><span>改家長密碼</span><input type="password" inputmode="numeric" id="mon_pin" maxlength="8" placeholder="新密碼"></label>
     <p class="note" id="amsg"></p>
     <button class="btn" onclick="this.closest('.modal').remove();moneyPage()">關閉</button></div>`;
   document.body.appendChild(box);
   const msg = t => box.querySelector('#amsg').textContent = t, val = id => box.querySelector('#' + id);
+  bindPriceEditor(box, msg);
   val('msave').onclick = () => {
     const q = money(), pl = parseInt(val('mon_plus').value), mi = parseInt(val('mon_minus').value), c = parseInt(val('mon_cap').value), np = val('mon_pin').value.trim();
     if (!(pl >= 0) || !(mi >= 0) || !(c >= 1)) return msg('請輸入正確的數字');
