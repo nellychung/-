@@ -27,7 +27,7 @@ def check(q, where):
 
 for s in cat['subjects']:
     for v in s['vols']:
-        folder = os.path.join(ROOT, s['id'], v['id'])
+        folder = os.path.join(ROOT, s['id'], v.get('dir', v['id']))
         files = sorted(f[:-5] for f in os.listdir(folder) if f.endswith('.json')) if os.path.isdir(folder) else []
         known = {u['id'] for u in v['units']}
         for f in files:

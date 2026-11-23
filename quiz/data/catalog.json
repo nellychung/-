@@ -7,24 +7,30 @@
    "icon": "📖",
    "vols": [
     {
-     "id": "1",
+     "id": "hanlin-1",
+     "pub": "hanlin",
+     "v": "1",
      "name": "第一冊",
      "grade": "七上",
-     "pub": "翰林",
+     "dir": "hanlin/1",
      "units": []
     },
     {
-     "id": "2",
+     "id": "hanlin-2",
+     "pub": "hanlin",
+     "v": "2",
      "name": "第二冊",
      "grade": "七下",
-     "pub": "翰林",
+     "dir": "hanlin/2",
      "units": []
     },
     {
-     "id": "3",
+     "id": "hanlin-3",
+     "pub": "hanlin",
+     "v": "3",
      "name": "第三冊",
      "grade": "八上",
-     "pub": "翰林",
+     "dir": "hanlin/3",
      "units": [
       {
        "id": "l4",
@@ -53,48 +59,205 @@
      ]
     },
     {
-     "id": "4",
+     "id": "hanlin-4",
+     "pub": "hanlin",
+     "v": "4",
      "name": "第四冊",
      "grade": "八下",
-     "pub": "翰林",
+     "dir": "hanlin/4",
      "units": []
     },
     {
-     "id": "5",
+     "id": "hanlin-5",
+     "pub": "hanlin",
+     "v": "5",
      "name": "第五冊",
      "grade": "九上",
-     "pub": "翰林",
+     "dir": "hanlin/5",
      "units": []
     },
     {
-     "id": "6",
+     "id": "hanlin-6",
+     "pub": "hanlin",
+     "v": "6",
      "name": "第六冊",
      "grade": "九下",
-     "pub": "翰林",
+     "dir": "hanlin/6",
      "units": []
     },
     {
-     "id": "6x",
+     "id": "hanlin-6x",
+     "pub": "hanlin",
+     "v": "6x",
      "name": "第六冊（超進度）",
      "grade": "",
-     "pub": "翰林",
+     "dir": "hanlin/6x",
      "units": []
     },
     {
-     "id": "bc",
+     "id": "kangxuan-1",
+     "pub": "kangxuan",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "kangxuan/1",
+     "units": []
+    },
+    {
+     "id": "kangxuan-2",
+     "pub": "kangxuan",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "kangxuan/2",
+     "units": []
+    },
+    {
+     "id": "kangxuan-3",
+     "pub": "kangxuan",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "kangxuan/3",
+     "units": []
+    },
+    {
+     "id": "kangxuan-4",
+     "pub": "kangxuan",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "kangxuan/4",
+     "units": []
+    },
+    {
+     "id": "kangxuan-5",
+     "pub": "kangxuan",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "kangxuan/5",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6",
+     "pub": "kangxuan",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "kangxuan/6",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6x",
+     "pub": "kangxuan",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "kangxuan/6x",
+     "units": []
+    },
+    {
+     "id": "nani-1",
+     "pub": "nani",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "nani/1",
+     "units": []
+    },
+    {
+     "id": "nani-2",
+     "pub": "nani",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "nani/2",
+     "units": []
+    },
+    {
+     "id": "nani-3",
+     "pub": "nani",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "nani/3",
+     "units": []
+    },
+    {
+     "id": "nani-4",
+     "pub": "nani",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "nani/4",
+     "units": []
+    },
+    {
+     "id": "nani-5",
+     "pub": "nani",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "nani/5",
+     "units": []
+    },
+    {
+     "id": "nani-6",
+     "pub": "nani",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "nani/6",
+     "units": []
+    },
+    {
+     "id": "nani-6x",
+     "pub": "nani",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "nani/6x",
+     "units": []
+    },
+    {
+     "id": "exam-bc",
+     "pub": "exam",
+     "v": "bc",
      "name": "基測（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/bc",
      "units": []
     },
     {
-     "id": "cap",
+     "id": "exam-cap",
+     "pub": "exam",
+     "v": "cap",
      "name": "會考（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/cap",
      "units": []
     }
-   ]
+   ],
+   "pubs": [
+    {
+     "id": "hanlin",
+     "name": "翰林"
+    },
+    {
+     "id": "kangxuan",
+     "name": "康軒"
+    },
+    {
+     "id": "nani",
+     "name": "南一"
+    },
+    {
+     "id": "exam",
+     "name": "會考・基測"
+    }
+   ],
+   "defaultPub": "hanlin"
   },
   {
    "id": "english",
@@ -102,24 +265,30 @@
    "icon": "🔤",
    "vols": [
     {
-     "id": "1",
+     "id": "hanlin-1",
+     "pub": "hanlin",
+     "v": "1",
      "name": "第一冊",
      "grade": "七上",
-     "pub": "翰林",
+     "dir": "hanlin/1",
      "units": []
     },
     {
-     "id": "2",
+     "id": "hanlin-2",
+     "pub": "hanlin",
+     "v": "2",
      "name": "第二冊",
      "grade": "七下",
-     "pub": "翰林",
+     "dir": "hanlin/2",
      "units": []
     },
     {
-     "id": "3",
+     "id": "hanlin-3",
+     "pub": "hanlin",
+     "v": "3",
      "name": "第三冊",
      "grade": "八上",
-     "pub": "翰林",
+     "dir": "hanlin/3",
      "units": [
       {
        "id": "u3",
@@ -134,48 +303,205 @@
      ]
     },
     {
-     "id": "4",
+     "id": "hanlin-4",
+     "pub": "hanlin",
+     "v": "4",
      "name": "第四冊",
      "grade": "八下",
-     "pub": "翰林",
+     "dir": "hanlin/4",
      "units": []
     },
     {
-     "id": "5",
+     "id": "hanlin-5",
+     "pub": "hanlin",
+     "v": "5",
      "name": "第五冊",
      "grade": "九上",
-     "pub": "翰林",
+     "dir": "hanlin/5",
      "units": []
     },
     {
-     "id": "6",
+     "id": "hanlin-6",
+     "pub": "hanlin",
+     "v": "6",
      "name": "第六冊",
      "grade": "九下",
-     "pub": "翰林",
+     "dir": "hanlin/6",
      "units": []
     },
     {
-     "id": "6x",
+     "id": "hanlin-6x",
+     "pub": "hanlin",
+     "v": "6x",
      "name": "第六冊（超進度）",
      "grade": "",
-     "pub": "翰林",
+     "dir": "hanlin/6x",
      "units": []
     },
     {
-     "id": "bc",
+     "id": "kangxuan-1",
+     "pub": "kangxuan",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "kangxuan/1",
+     "units": []
+    },
+    {
+     "id": "kangxuan-2",
+     "pub": "kangxuan",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "kangxuan/2",
+     "units": []
+    },
+    {
+     "id": "kangxuan-3",
+     "pub": "kangxuan",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "kangxuan/3",
+     "units": []
+    },
+    {
+     "id": "kangxuan-4",
+     "pub": "kangxuan",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "kangxuan/4",
+     "units": []
+    },
+    {
+     "id": "kangxuan-5",
+     "pub": "kangxuan",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "kangxuan/5",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6",
+     "pub": "kangxuan",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "kangxuan/6",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6x",
+     "pub": "kangxuan",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "kangxuan/6x",
+     "units": []
+    },
+    {
+     "id": "nani-1",
+     "pub": "nani",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "nani/1",
+     "units": []
+    },
+    {
+     "id": "nani-2",
+     "pub": "nani",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "nani/2",
+     "units": []
+    },
+    {
+     "id": "nani-3",
+     "pub": "nani",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "nani/3",
+     "units": []
+    },
+    {
+     "id": "nani-4",
+     "pub": "nani",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "nani/4",
+     "units": []
+    },
+    {
+     "id": "nani-5",
+     "pub": "nani",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "nani/5",
+     "units": []
+    },
+    {
+     "id": "nani-6",
+     "pub": "nani",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "nani/6",
+     "units": []
+    },
+    {
+     "id": "nani-6x",
+     "pub": "nani",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "nani/6x",
+     "units": []
+    },
+    {
+     "id": "exam-bc",
+     "pub": "exam",
+     "v": "bc",
      "name": "基測（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/bc",
      "units": []
     },
     {
-     "id": "cap",
+     "id": "exam-cap",
+     "pub": "exam",
+     "v": "cap",
      "name": "會考（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/cap",
      "units": []
     }
-   ]
+   ],
+   "pubs": [
+    {
+     "id": "hanlin",
+     "name": "翰林"
+    },
+    {
+     "id": "kangxuan",
+     "name": "康軒"
+    },
+    {
+     "id": "nani",
+     "name": "南一"
+    },
+    {
+     "id": "exam",
+     "name": "會考・基測"
+    }
+   ],
+   "defaultPub": "hanlin"
   },
   {
    "id": "math",
@@ -183,24 +509,30 @@
    "icon": "📐",
    "vols": [
     {
-     "id": "1",
+     "id": "hanlin-1",
+     "pub": "hanlin",
+     "v": "1",
      "name": "第一冊",
      "grade": "七上",
-     "pub": "翰林",
+     "dir": "hanlin/1",
      "units": []
     },
     {
-     "id": "2",
+     "id": "hanlin-2",
+     "pub": "hanlin",
+     "v": "2",
      "name": "第二冊",
      "grade": "七下",
-     "pub": "翰林",
+     "dir": "hanlin/2",
      "units": []
     },
     {
-     "id": "3",
+     "id": "hanlin-3",
+     "pub": "hanlin",
+     "v": "3",
      "name": "第三冊",
      "grade": "八上",
-     "pub": "翰林",
+     "dir": "hanlin/3",
      "units": [
       {
        "id": "1-1",
@@ -295,48 +627,205 @@
      ]
     },
     {
-     "id": "4",
+     "id": "hanlin-4",
+     "pub": "hanlin",
+     "v": "4",
      "name": "第四冊",
      "grade": "八下",
-     "pub": "翰林",
+     "dir": "hanlin/4",
      "units": []
     },
     {
-     "id": "5",
+     "id": "hanlin-5",
+     "pub": "hanlin",
+     "v": "5",
      "name": "第五冊",
      "grade": "九上",
-     "pub": "翰林",
+     "dir": "hanlin/5",
      "units": []
     },
     {
-     "id": "6",
+     "id": "hanlin-6",
+     "pub": "hanlin",
+     "v": "6",
      "name": "第六冊",
      "grade": "九下",
-     "pub": "翰林",
+     "dir": "hanlin/6",
      "units": []
     },
     {
-     "id": "6x",
+     "id": "hanlin-6x",
+     "pub": "hanlin",
+     "v": "6x",
      "name": "第六冊（超進度）",
      "grade": "",
-     "pub": "翰林",
+     "dir": "hanlin/6x",
      "units": []
     },
     {
-     "id": "bc",
+     "id": "kangxuan-1",
+     "pub": "kangxuan",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "kangxuan/1",
+     "units": []
+    },
+    {
+     "id": "kangxuan-2",
+     "pub": "kangxuan",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "kangxuan/2",
+     "units": []
+    },
+    {
+     "id": "kangxuan-3",
+     "pub": "kangxuan",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "kangxuan/3",
+     "units": []
+    },
+    {
+     "id": "kangxuan-4",
+     "pub": "kangxuan",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "kangxuan/4",
+     "units": []
+    },
+    {
+     "id": "kangxuan-5",
+     "pub": "kangxuan",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "kangxuan/5",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6",
+     "pub": "kangxuan",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "kangxuan/6",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6x",
+     "pub": "kangxuan",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "kangxuan/6x",
+     "units": []
+    },
+    {
+     "id": "nani-1",
+     "pub": "nani",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "nani/1",
+     "units": []
+    },
+    {
+     "id": "nani-2",
+     "pub": "nani",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "nani/2",
+     "units": []
+    },
+    {
+     "id": "nani-3",
+     "pub": "nani",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "nani/3",
+     "units": []
+    },
+    {
+     "id": "nani-4",
+     "pub": "nani",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "nani/4",
+     "units": []
+    },
+    {
+     "id": "nani-5",
+     "pub": "nani",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "nani/5",
+     "units": []
+    },
+    {
+     "id": "nani-6",
+     "pub": "nani",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "nani/6",
+     "units": []
+    },
+    {
+     "id": "nani-6x",
+     "pub": "nani",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "nani/6x",
+     "units": []
+    },
+    {
+     "id": "exam-bc",
+     "pub": "exam",
+     "v": "bc",
      "name": "基測（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/bc",
      "units": []
     },
     {
-     "id": "cap",
+     "id": "exam-cap",
+     "pub": "exam",
+     "v": "cap",
      "name": "會考（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/cap",
      "units": []
     }
-   ]
+   ],
+   "pubs": [
+    {
+     "id": "hanlin",
+     "name": "翰林"
+    },
+    {
+     "id": "kangxuan",
+     "name": "康軒"
+    },
+    {
+     "id": "nani",
+     "name": "南一"
+    },
+    {
+     "id": "exam",
+     "name": "會考・基測"
+    }
+   ],
+   "defaultPub": "hanlin"
   },
   {
    "id": "nature",
@@ -344,24 +833,93 @@
    "icon": "🔬",
    "vols": [
     {
-     "id": "1",
+     "id": "hanlin-1",
+     "pub": "hanlin",
+     "v": "1",
      "name": "第一冊",
-     "grade": "七上",
-     "pub": "康軒",
+     "grade": "七上・生物",
+     "dir": "hanlin/1",
      "units": []
     },
     {
-     "id": "2",
+     "id": "hanlin-2",
+     "pub": "hanlin",
+     "v": "2",
      "name": "第二冊",
-     "grade": "七下",
-     "pub": "康軒",
+     "grade": "七下・生物",
+     "dir": "hanlin/2",
      "units": []
     },
     {
-     "id": "3",
+     "id": "hanlin-3",
+     "pub": "hanlin",
+     "v": "3",
      "name": "第三冊",
-     "grade": "八上",
-     "pub": "康軒",
+     "grade": "八上・理化",
+     "dir": "hanlin/3",
+     "units": []
+    },
+    {
+     "id": "hanlin-4",
+     "pub": "hanlin",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下・理化",
+     "dir": "hanlin/4",
+     "units": []
+    },
+    {
+     "id": "hanlin-5",
+     "pub": "hanlin",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "hanlin/5",
+     "units": []
+    },
+    {
+     "id": "hanlin-6",
+     "pub": "hanlin",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "hanlin/6",
+     "units": []
+    },
+    {
+     "id": "hanlin-6x",
+     "pub": "hanlin",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "hanlin/6x",
+     "units": []
+    },
+    {
+     "id": "kangxuan-1",
+     "pub": "kangxuan",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上・生物",
+     "dir": "kangxuan/1",
+     "units": []
+    },
+    {
+     "id": "kangxuan-2",
+     "pub": "kangxuan",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下・生物",
+     "dir": "kangxuan/2",
+     "units": []
+    },
+    {
+     "id": "kangxuan-3",
+     "pub": "kangxuan",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上・理化",
+     "dir": "kangxuan/3",
      "units": [
       {
        "id": "2-3",
@@ -414,48 +972,142 @@
      ]
     },
     {
-     "id": "4",
+     "id": "kangxuan-4",
+     "pub": "kangxuan",
+     "v": "4",
      "name": "第四冊",
-     "grade": "八下",
-     "pub": "康軒",
+     "grade": "八下・理化",
+     "dir": "kangxuan/4",
      "units": []
     },
     {
-     "id": "5",
+     "id": "kangxuan-5",
+     "pub": "kangxuan",
+     "v": "5",
      "name": "第五冊",
      "grade": "九上",
-     "pub": "康軒",
+     "dir": "kangxuan/5",
      "units": []
     },
     {
-     "id": "6",
+     "id": "kangxuan-6",
+     "pub": "kangxuan",
+     "v": "6",
      "name": "第六冊",
      "grade": "九下",
-     "pub": "康軒",
+     "dir": "kangxuan/6",
      "units": []
     },
     {
-     "id": "6x",
+     "id": "kangxuan-6x",
+     "pub": "kangxuan",
+     "v": "6x",
      "name": "第六冊（超進度）",
      "grade": "",
-     "pub": "康軒",
+     "dir": "kangxuan/6x",
      "units": []
     },
     {
-     "id": "bc",
+     "id": "nani-1",
+     "pub": "nani",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上・生物",
+     "dir": "nani/1",
+     "units": []
+    },
+    {
+     "id": "nani-2",
+     "pub": "nani",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下・生物",
+     "dir": "nani/2",
+     "units": []
+    },
+    {
+     "id": "nani-3",
+     "pub": "nani",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上・理化",
+     "dir": "nani/3",
+     "units": []
+    },
+    {
+     "id": "nani-4",
+     "pub": "nani",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下・理化",
+     "dir": "nani/4",
+     "units": []
+    },
+    {
+     "id": "nani-5",
+     "pub": "nani",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "nani/5",
+     "units": []
+    },
+    {
+     "id": "nani-6",
+     "pub": "nani",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "nani/6",
+     "units": []
+    },
+    {
+     "id": "nani-6x",
+     "pub": "nani",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "nani/6x",
+     "units": []
+    },
+    {
+     "id": "exam-bc",
+     "pub": "exam",
+     "v": "bc",
      "name": "基測（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/bc",
      "units": []
     },
     {
-     "id": "cap",
+     "id": "exam-cap",
+     "pub": "exam",
+     "v": "cap",
      "name": "會考（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/cap",
      "units": []
     }
-   ]
+   ],
+   "pubs": [
+    {
+     "id": "hanlin",
+     "name": "翰林"
+    },
+    {
+     "id": "kangxuan",
+     "name": "康軒"
+    },
+    {
+     "id": "nani",
+     "name": "南一"
+    },
+    {
+     "id": "exam",
+     "name": "會考・基測"
+    }
+   ],
+   "defaultPub": "kangxuan"
   },
   {
    "id": "social",
@@ -463,24 +1115,30 @@
    "icon": "🌏",
    "vols": [
     {
-     "id": "1",
+     "id": "hanlin-1",
+     "pub": "hanlin",
+     "v": "1",
      "name": "第一冊",
      "grade": "七上",
-     "pub": "翰林",
+     "dir": "hanlin/1",
      "units": []
     },
     {
-     "id": "2",
+     "id": "hanlin-2",
+     "pub": "hanlin",
+     "v": "2",
      "name": "第二冊",
      "grade": "七下",
-     "pub": "翰林",
+     "dir": "hanlin/2",
      "units": []
     },
     {
-     "id": "3",
+     "id": "hanlin-3",
+     "pub": "hanlin",
+     "v": "3",
      "name": "第三冊",
      "grade": "八上",
-     "pub": "翰林",
+     "dir": "hanlin/3",
      "units": [
       {
        "id": "p1-1-1",
@@ -731,48 +1389,205 @@
      ]
     },
     {
-     "id": "4",
+     "id": "hanlin-4",
+     "pub": "hanlin",
+     "v": "4",
      "name": "第四冊",
      "grade": "八下",
-     "pub": "翰林",
+     "dir": "hanlin/4",
      "units": []
     },
     {
-     "id": "5",
+     "id": "hanlin-5",
+     "pub": "hanlin",
+     "v": "5",
      "name": "第五冊",
      "grade": "九上",
-     "pub": "翰林",
+     "dir": "hanlin/5",
      "units": []
     },
     {
-     "id": "6",
+     "id": "hanlin-6",
+     "pub": "hanlin",
+     "v": "6",
      "name": "第六冊",
      "grade": "九下",
-     "pub": "翰林",
+     "dir": "hanlin/6",
      "units": []
     },
     {
-     "id": "6x",
+     "id": "hanlin-6x",
+     "pub": "hanlin",
+     "v": "6x",
      "name": "第六冊（超進度）",
      "grade": "",
-     "pub": "翰林",
+     "dir": "hanlin/6x",
      "units": []
     },
     {
-     "id": "bc",
+     "id": "kangxuan-1",
+     "pub": "kangxuan",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "kangxuan/1",
+     "units": []
+    },
+    {
+     "id": "kangxuan-2",
+     "pub": "kangxuan",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "kangxuan/2",
+     "units": []
+    },
+    {
+     "id": "kangxuan-3",
+     "pub": "kangxuan",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "kangxuan/3",
+     "units": []
+    },
+    {
+     "id": "kangxuan-4",
+     "pub": "kangxuan",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "kangxuan/4",
+     "units": []
+    },
+    {
+     "id": "kangxuan-5",
+     "pub": "kangxuan",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "kangxuan/5",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6",
+     "pub": "kangxuan",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "kangxuan/6",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6x",
+     "pub": "kangxuan",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "kangxuan/6x",
+     "units": []
+    },
+    {
+     "id": "nani-1",
+     "pub": "nani",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "nani/1",
+     "units": []
+    },
+    {
+     "id": "nani-2",
+     "pub": "nani",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "nani/2",
+     "units": []
+    },
+    {
+     "id": "nani-3",
+     "pub": "nani",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "nani/3",
+     "units": []
+    },
+    {
+     "id": "nani-4",
+     "pub": "nani",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "nani/4",
+     "units": []
+    },
+    {
+     "id": "nani-5",
+     "pub": "nani",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "nani/5",
+     "units": []
+    },
+    {
+     "id": "nani-6",
+     "pub": "nani",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "nani/6",
+     "units": []
+    },
+    {
+     "id": "nani-6x",
+     "pub": "nani",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "nani/6x",
+     "units": []
+    },
+    {
+     "id": "exam-bc",
+     "pub": "exam",
+     "v": "bc",
      "name": "基測（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/bc",
      "units": []
     },
     {
-     "id": "cap",
+     "id": "exam-cap",
+     "pub": "exam",
+     "v": "cap",
      "name": "會考（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/cap",
      "units": []
     }
-   ]
+   ],
+   "pubs": [
+    {
+     "id": "hanlin",
+     "name": "翰林"
+    },
+    {
+     "id": "kangxuan",
+     "name": "康軒"
+    },
+    {
+     "id": "nani",
+     "name": "南一"
+    },
+    {
+     "id": "exam",
+     "name": "會考・基測"
+    }
+   ],
+   "defaultPub": "hanlin"
   },
   {
    "id": "health",
@@ -780,69 +1595,232 @@
    "icon": "⚽",
    "vols": [
     {
-     "id": "1",
+     "id": "hanlin-1",
+     "pub": "hanlin",
+     "v": "1",
      "name": "第一冊",
      "grade": "七上",
-     "pub": "",
+     "dir": "hanlin/1",
      "units": []
     },
     {
-     "id": "2",
+     "id": "hanlin-2",
+     "pub": "hanlin",
+     "v": "2",
      "name": "第二冊",
      "grade": "七下",
-     "pub": "",
+     "dir": "hanlin/2",
      "units": []
     },
     {
-     "id": "3",
+     "id": "hanlin-3",
+     "pub": "hanlin",
+     "v": "3",
      "name": "第三冊",
      "grade": "八上",
-     "pub": "",
+     "dir": "hanlin/3",
      "units": []
     },
     {
-     "id": "4",
+     "id": "hanlin-4",
+     "pub": "hanlin",
+     "v": "4",
      "name": "第四冊",
      "grade": "八下",
-     "pub": "",
+     "dir": "hanlin/4",
      "units": []
     },
     {
-     "id": "5",
+     "id": "hanlin-5",
+     "pub": "hanlin",
+     "v": "5",
      "name": "第五冊",
      "grade": "九上",
-     "pub": "",
+     "dir": "hanlin/5",
      "units": []
     },
     {
-     "id": "6",
+     "id": "hanlin-6",
+     "pub": "hanlin",
+     "v": "6",
      "name": "第六冊",
      "grade": "九下",
-     "pub": "",
+     "dir": "hanlin/6",
      "units": []
     },
     {
-     "id": "6x",
+     "id": "hanlin-6x",
+     "pub": "hanlin",
+     "v": "6x",
      "name": "第六冊（超進度）",
      "grade": "",
-     "pub": "",
+     "dir": "hanlin/6x",
      "units": []
     },
     {
-     "id": "bc",
+     "id": "kangxuan-1",
+     "pub": "kangxuan",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "kangxuan/1",
+     "units": []
+    },
+    {
+     "id": "kangxuan-2",
+     "pub": "kangxuan",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "kangxuan/2",
+     "units": []
+    },
+    {
+     "id": "kangxuan-3",
+     "pub": "kangxuan",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "kangxuan/3",
+     "units": []
+    },
+    {
+     "id": "kangxuan-4",
+     "pub": "kangxuan",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "kangxuan/4",
+     "units": []
+    },
+    {
+     "id": "kangxuan-5",
+     "pub": "kangxuan",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "kangxuan/5",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6",
+     "pub": "kangxuan",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "kangxuan/6",
+     "units": []
+    },
+    {
+     "id": "kangxuan-6x",
+     "pub": "kangxuan",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "kangxuan/6x",
+     "units": []
+    },
+    {
+     "id": "nani-1",
+     "pub": "nani",
+     "v": "1",
+     "name": "第一冊",
+     "grade": "七上",
+     "dir": "nani/1",
+     "units": []
+    },
+    {
+     "id": "nani-2",
+     "pub": "nani",
+     "v": "2",
+     "name": "第二冊",
+     "grade": "七下",
+     "dir": "nani/2",
+     "units": []
+    },
+    {
+     "id": "nani-3",
+     "pub": "nani",
+     "v": "3",
+     "name": "第三冊",
+     "grade": "八上",
+     "dir": "nani/3",
+     "units": []
+    },
+    {
+     "id": "nani-4",
+     "pub": "nani",
+     "v": "4",
+     "name": "第四冊",
+     "grade": "八下",
+     "dir": "nani/4",
+     "units": []
+    },
+    {
+     "id": "nani-5",
+     "pub": "nani",
+     "v": "5",
+     "name": "第五冊",
+     "grade": "九上",
+     "dir": "nani/5",
+     "units": []
+    },
+    {
+     "id": "nani-6",
+     "pub": "nani",
+     "v": "6",
+     "name": "第六冊",
+     "grade": "九下",
+     "dir": "nani/6",
+     "units": []
+    },
+    {
+     "id": "nani-6x",
+     "pub": "nani",
+     "v": "6x",
+     "name": "第六冊（超進度）",
+     "grade": "",
+     "dir": "nani/6x",
+     "units": []
+    },
+    {
+     "id": "exam-bc",
+     "pub": "exam",
+     "v": "bc",
      "name": "基測（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/bc",
      "units": []
     },
     {
-     "id": "cap",
+     "id": "exam-cap",
+     "pub": "exam",
+     "v": "cap",
      "name": "會考（分年度）",
      "grade": "",
-     "pub": "",
+     "dir": "exam/cap",
      "units": []
     }
-   ]
+   ],
+   "pubs": [
+    {
+     "id": "hanlin",
+     "name": "翰林"
+    },
+    {
+     "id": "kangxuan",
+     "name": "康軒"
+    },
+    {
+     "id": "nani",
+     "name": "南一"
+    },
+    {
+     "id": "exam",
+     "name": "會考・基測"
+    }
+   ],
+   "defaultPub": "hanlin"
   }
  ]
 }

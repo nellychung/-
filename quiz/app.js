@@ -91,9 +91,10 @@ function hud() {
 function toggleSound() { const p = player(); p.sound = !p.sound; savePlayer(p); hud(); }
 
 async function loadUnit(sid, vid, uid) {
-  const k = sid + '/' + vid + '/' + uid;
+  const V = vol(subj(sid), vid), dir = sid + '/' + (V ? V.dir : vid);
+  const k = dir + '/' + uid;
   if (!CACHE[k]) CACHE[k] = fetch('data/' + k + '.json', {cache: 'no-cache'}).then(r => { if (!r.ok) throw 0; return r.json(); })
-    .then(a => a.map(q => Object.assign(q, {_s: sid, _v: vid, _u: uid, _img: q.img ? 'data/' + sid + '/' + vid + '/' + q.img : ''})))
+    .then(a => a.map(q => Object.assign(q, {_s: sid, _v: vid, _u: uid, _d: dir, _img: q.img ? 'data/' + dir + '/' + q.img : ''})))
     .catch(() => { delete CACHE[k]; return []; });
   return CACHE[k];
 }
@@ -151,28 +152,47 @@ function stars(st, count) {
   const n = (r >= .6 ? 1 : 0) + (r >= .8 ? 1 : 0) + (r >= .9 && cov >= .5 ? 1 : 0);
   return `<span class="stars">${'★'.repeat(n)}<span class="dim">${'☆'.repeat(3 - n)}</span></span>`;
 }
+/* 舊版紀錄（沒有版本）搬到預設版本 */
+function migrate(s) {
+  if (store.get(s.id + ':v2', 0)) return;
+  const d = s.defaultPub || 'hanlin', fix = k => /^[^/]+-[^/]+\//.test(k) ? k : d + '-' + k;
+  const seen = store.get(s.id + ':seen', null); if (seen) store.set(s.id + ':seen', seen.map(fix));
+  for (const key of ['stat', 'wrong']) { const o = store.get(s.id + ':' + key, null); if (o) { const n = {}; for (const k in o) n[fix(k)] = o[k]; store.set(s.id + ':' + key, n); } }
+  const sel = store.get(s.id + ':sel', null);
+  if (sel) { sel.units = (sel.units || []).map(fix); sel.pubs = [d]; sel.vols = (sel.vols || []).map(v => v.includes('-') ? v.split('-')[1] : v); store.set(s.id + ':sel', sel); }
+  store.set(s.id + ':v2', 1);
+}
+const VORDER = ['1', '2', '3', '4', '5', '6', '6x', 'bc', 'cap'];
 function subjectPage(sid) {
   const s = subj(sid), m = MAPS[sid] || ['📘', s.name];
+  migrate(s);
   crumb(`› ${m[0]} ${esc(s.name)}`);
-  const sel = store.get(sid + ':sel', null) || {vols: [], units: [], n: 10};
-  const avail = s.vols.filter(v => v.units.some(u => u.count));
-  if (!sel.vols.length && avail.length) sel.vols = [avail[0].id];
+  const sel = store.get(sid + ':sel', null) || {pubs: [], vols: [], units: [], n: 10};
+  sel.pubs = sel.pubs || [];
+  const cnt = v => v.units.reduce((n, u) => n + (u.count || 0), 0);
+  if (!sel.pubs.length) sel.pubs = [s.defaultPub || 'hanlin'];
+  if (!sel.vols.length) { const a = s.vols.find(v => sel.pubs.includes(v.pub) && cnt(v)); if (a) sel.vols = [a.v]; }
   const stat = store.get(sid + ':stat', {});
   const wrong = Object.keys(store.get(sid + ':wrong', {}));
   const save = () => store.set(sid + ':sel', sel);
 
   function draw() {
-    const vols = s.vols.filter(v => sel.vols.includes(v.id));
-    const allOn = sel.vols.length === s.vols.length;
+    const vols = s.vols.filter(v => sel.pubs.includes(v.pub) && sel.vols.includes(v.v));
+    const vkeys = VORDER.filter(k => s.vols.some(v => v.v === k && sel.pubs.includes(v.pub)));
+    const allOn = vkeys.length && vkeys.every(k => sel.vols.includes(k));
     const picked = vols.flatMap(v => v.units.filter(u => u.count && sel.units.includes(uKey(v.id, u.id))));
     const nq = picked.reduce((n, u) => n + u.count, 0);
+    const pubN = p => s.vols.filter(v => v.pub === p).reduce((n, v) => n + cnt(v), 0);
     $('app').innerHTML = `
     <div class="panel">
-      <div class="lbl" style="margin-top:0">📚 冊次 <label class="chk"><input type="checkbox" id="va" ${allOn ? 'checked' : ''}> 全選</label></div>
-      <div class="chips">${s.vols.map(v => { const n = v.units.reduce((m, u) => m + (u.count || 0), 0);
-        return `<button class="chip ${sel.vols.includes(v.id) ? 'on' : ''} ${n ? '' : 'lock'}" data-v="${v.id}">${esc(v.name)}<small>${[v.grade, n ? n + ' 題' : '🔒 準備中'].filter(Boolean).join('・')}</small></button>`; }).join('')}</div>
+      <div class="lbl" style="margin-top:0">🏷️ 版本 <span class="note">可複選；準備會考可以把不同版本一起選來練</span></div>
+      <div class="chips pubs">${(s.pubs || []).map(p => { const n = pubN(p.id);
+        return `<button class="chip pub ${sel.pubs.includes(p.id) ? 'on' : ''} ${n ? '' : 'lock'}" data-p="${p.id}">${esc(p.name)}<small>${n ? n + ' 題' : '🔒 準備中'}</small></button>`; }).join('')}</div>
+      <div class="lbl">📚 冊次 <label class="chk"><input type="checkbox" id="va" ${allOn ? 'checked' : ''}> 全選</label></div>
+      <div class="chips">${vkeys.map(k => { const vs = s.vols.filter(v => v.v === k && sel.pubs.includes(v.pub)), n = vs.reduce((a, v) => a + cnt(v), 0), v0 = vs[0];
+        return `<button class="chip vchip ${sel.vols.includes(k) ? 'on' : ''} ${n ? '' : 'lock'}" data-v="${k}">${esc(v0.name)}<small>${[v0.grade, n ? n + ' 題' : '🔒 準備中'].filter(Boolean).join('・')}</small></button>`; }).join('') || '<span class="note">請先選擇版本</span>'}</div>
     </div>
-    ${vols.length ? vols.map(v => volCard(v)).join('') : '<div class="panel empty">請先選擇冊次</div>'}
+    ${vols.length ? vols.map(v => volCard(v)).join('') : '<div class="panel empty">請先選擇版本和冊次</div>'}
     <div class="dock"><div class="in">
       <span class="note">已選 ${picked.length} 關・${nq} 題</span><span class="sp"></span>
       <span class="seg">${[10, 20, 30].map(n => `<button data-n="${n}" class="${sel.n === n ? 'on' : ''}">${n} 題</button>`).join('')}</span>
@@ -180,8 +200,12 @@ function subjectPage(sid) {
       <button class="btn gold" id="go" ${picked.length ? '' : 'disabled'}>⚔️ 出發打怪</button>
     </div></div>`;
 
-    $('va').onchange = e => { sel.vols = e.target.checked ? s.vols.map(v => v.id) : []; save(); draw(); };
-    document.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.chip.pub').forEach(b => b.onclick = () => {
+      const id = b.dataset.p; sel.pubs = sel.pubs.includes(id) ? sel.pubs.filter(x => x !== id) : sel.pubs.concat(id);
+      if (id === 'exam' && sel.pubs.includes('exam')) sel.vols = [...new Set(sel.vols.concat(['bc', 'cap']))];
+      save(); draw(); });
+    $('va').onchange = e => { sel.vols = e.target.checked ? vkeys.slice() : []; save(); draw(); };
+    document.querySelectorAll('.vchip').forEach(b => b.onclick = () => {
       const id = b.dataset.v; sel.vols = sel.vols.includes(id) ? sel.vols.filter(x => x !== id) : sel.vols.concat(id); save(); draw(); });
     document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sel.n = +b.dataset.n; save(); draw(); });
     document.querySelectorAll('.unit input').forEach(c => c.onchange = () => {
@@ -197,8 +221,8 @@ function subjectPage(sid) {
 
   function volCard(v) {
     const us = v.units.filter(u => u.count);
-    const meta = esc([v.grade, v.pub].filter(Boolean).join('・'));
-    if (!us.length) return `<div class="panel vol"><h3>${esc(v.name)} <span class="note">${meta}</span></h3><div class="empty">🔒 這一冊的關卡還在準備中</div></div>`;
+    const meta = esc(v.grade || '');
+    if (!us.length) return `<div class="panel vol"><h3>${esc(vLabel(s, v))} <span class="note">${meta}</span></h3><div class="empty">🔒 這一冊的關卡還在準備中</div></div>`;
     const all = us.every(u => sel.units.includes(uKey(v.id, u.id)));
     let lastG = null;
     const rows = '<div class="ulist">' + v.units.map(u => {
@@ -210,7 +234,7 @@ function subjectPage(sid) {
         <span class="nm">${esc(u.name)}</span>
         <span class="meta">${stars(st, u.count)}<br>${u.count} 題${st && st.n ? `・答對 ${Math.round(st.c / st.n * 100)}%` : ''}<div class="mbar"><i style="width:${done / u.count * 100}%"></i></div></span></label>`;
     }).join('') + '</div>';
-    return `<div class="panel vol"><h3>${esc(v.name)} <span class="note">${meta}</span>
+    return `<div class="panel vol"><h3>${esc(vLabel(s, v))} <span class="note">${meta}</span>
       <label class="chk" style="margin-left:auto"><input type="checkbox" class="vall" data-v="${v.id}" ${all ? 'checked' : ''}> 全選關卡</label></h3>${rows}</div>`;
   }
   draw(); scrollTo(0, 0);
@@ -250,7 +274,8 @@ function begin(s, list, pairs, label) {
   if (location.hash === S.hash) history.replaceState(null, '', S.hash); else history.pushState(null, '', S.hash);
   next();
 }
-const uName = q => { const v = vol(S.s, q._v), u = v && v.units.find(x => x.id === q._u); return (v ? v.name + ' ' : '') + (u ? u.name : q._u); };
+const vLabel = (s, v) => { const p = (s.pubs || []).find(p => p.id === v.pub); return (p && v.pub !== 'exam' ? p.name : '') + v.name; };
+const uName = q => { const v = vol(S.s, q._v), u = v && v.units.find(x => x.id === q._u); return (v ? vLabel(S.s, v) + ' ' : '') + (u ? u.name : q._u); };
 const tag = q => (q.k && q.k[0]) || '本單元觀念';
 async function similar(c) {
   const bank = await loadUnit(S.s.id, c.v, c.u);
@@ -289,7 +314,7 @@ function bossIntro() {
   SFX.miss(); scrollTo(0, 0);
 }
 /* 題目內容：有 html 旗標的題庫（Word 轉來）保留附圖與表格 */
-const fixH = (q, h) => String(h || '').replace(/src="img\//g, `loading="lazy" src="data/${q._s}/${q._v}/img/`).replace(/ width="(\d+)"/g, (m, w) => ` style="width:${Math.round(w * 1.15)}px"`);
+const fixH = (q, h) => String(h || '').replace(/src="img\//g, `loading="lazy" src="data/${q._d}/img/`).replace(/ width="(\d+)"/g, (m, w) => ` style="width:${Math.round(w * 1.15)}px"`);
 const R = (q, t) => q.html ? fixH(q, t) : esc(t);
 const txt = h => { const d = document.createElement('div'); d.innerHTML = String(h || '').replace(/<br>/g, ' '); return d.textContent; };
 function qHtml(q) {
@@ -395,8 +420,8 @@ function summary() {
   if (W.length && !outC.length) { const p = player(); p.bosses++; savePlayer(p); }
   const wrongs = S.log.filter(x => !x.ok);
   const answered = S.log.filter(x => x.phase === 'round').length;
-  const unitName = c => { const v = vol(S.s, c.v), u = v && v.units.find(x => x.id === c.u); return (v ? v.name + ' ' : '') + (u ? u.name : c.u); };
-  const range = [...new Set(S.pairs.map(([v, u]) => v.name + ' ' + u.name))].join('、');
+  const unitName = c => { const v = vol(S.s, c.v), u = v && v.units.find(x => x.id === c.u); return (v ? vLabel(S.s, v) + ' ' : '') + (u ? u.name : c.u); };
+  const range = [...new Set(S.pairs.map(([v, u]) => vLabel(S.s, v) + ' ' + u.name))].join('、');
   const win = S.mon.dead && !outC.length;
   const txt = W.length ? `我用刷題網練習${S.s.name}（${range}），${S.label} ${answered} 題答對 ${S.score} 題。
 答錯過的觀念：
