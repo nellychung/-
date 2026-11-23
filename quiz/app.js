@@ -19,11 +19,11 @@ const qKey = q => q._v + '/' + q._u + '#' + q.id;
 const uKey = (v, u) => v + '/' + u;
 
 /* ---------- 遊戲設定 ---------- */
-const MAPS = {chinese: ['📜', '文字神殿'], english: ['🗽', '英語王國'], math: ['🔢', '數字迷宮'], nature: ['🌋', '自然秘境'], social: ['🏰', '時空大陸'], health: ['🏟️', '體能競技場']};
-const miniSVG = c => monSVG(c.mid, {c1: c.tint[0], c2: c.tint[1]});
-const TITLES = [[1, '見習冒險者'], [3, '新手劍士'], [5, '銅牌勇者'], [8, '白銀騎士'], [12, '黃金戰士'], [16, '鑽石劍聖'], [20, '傳說英雄'], [30, '學霸大魔導師']];
-const P0 = {xp: 0, avatar: 'reaper', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
-const player = () => { const p = Object.assign({}, P0, store.get('player', {})); if (!CHARS[p.avatar]) p.avatar = 'reaper'; return p; };
+const MAPS = {chinese: ['📜', '藏經閣'], english: ['🐫', '西域商道'], math: ['🧮', '機關迷陣'], nature: ['🌿', '百草谷'], social: ['🏯', '江湖九州'], health: ['🥋', '少林演武場']};
+const miniSVG = c => `<span style="display:block;width:100%;height:100%;filter:hue-rotate(${c.tint}deg)">${monSVG(c.mid)}</span>`;
+const TITLES = [[1, '江湖新手'], [3, '初出茅廬'], [5, '少年俠客'], [8, '名門弟子'], [12, '一派高手'], [16, '武林名宿'], [20, '一代宗師'], [30, '武林盟主']];
+const P0 = {xp: 0, avatar: 'qingyi', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
+const player = () => { const p = Object.assign({}, P0, store.get('player', {})); if (!CHARS[p.avatar]) p.avatar = 'qingyi'; return p; };
 const avatar = (p, opt = {}) => charSVG(p.avatar, Object.assign({aura: tierAura(lvInfo(p.xp).lv)}, opt));
 const savePlayer = p => store.set('player', p);
 function lvInfo(xp) { let lv = 1, need = 100; while (xp >= need) { xp -= need; lv++; need = 100 + 50 * (lv - 1); } return {lv, cur: xp, need}; }
@@ -121,13 +121,13 @@ function home() {
   <div class="panel hero">
     <button class="ava" onclick="pickAvatar()" title="換角色">${avatar(p)}<small>${CHARS[p.avatar].name}・換角色</small></button>
     <div class="hinfo">
-      <input class="pname" id="pname" maxlength="10" placeholder="輸入冒險者名字" value="${esc(p.name)}">
+      <input class="pname" id="pname" maxlength="10" placeholder="輸入俠客名號" value="${esc(p.name)}">
       <div class="ptitle">Lv ${i.lv}・${title(i.lv)}</div>
       <div class="xpbar big"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP　距離升級還差 ${i.need - i.cur}</em></div>
       <div class="stats"><span>⚔️ 擊敗怪物 <b>${p.kills}</b></span><span>🐲 打倒 BOSS <b>${p.bosses}</b></span><span>🔥 最高連擊 <b>${p.best}</b></span><span>✅ 累積答對 <b>${p.right}</b></span></div>
     </div>
   </div>
-  <div class="lbl">🗺️ 選擇冒險地圖</div>
+  <div class="lbl">🗺️ 選擇闖蕩之地</div>
   <div class="grid">
     ${CAT.subjects.map(s => { const n = tot(s), m = MAPS[s.id] || ['📘', s.name]; return `<a class="map ${n ? 'has' : 'lock'}" href="#/s/${s.id}">
       <span class="mi">${m[0]}</span><b>${esc(s.name)}</b><small>${m[1]}・${n ? n + ' 隻怪物' : '🔒 尚未開放'}</small></a>`; }).join('')}
@@ -138,7 +138,7 @@ function home() {
 }
 function pickAvatar() {
   const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div class="mbox"><div class="lvtag">選擇你的角色</div><div class="avs">${CHAR_IDS.map(a => `<button onclick="setAvatar('${a}',this)" class="${player().avatar === a ? 'on' : ''}">${charSVG(a, {aura: tierAura(lvInfo(player().xp).lv)})}<b>${CHARS[a].name}</b><small>${CHARS[a].cls}</small></button>`).join('')}</div></div>`;
+  m.innerHTML = `<div class="mbox"><div class="lvtag">選擇你的俠客</div><div class="avs">${CHAR_IDS.map(a => `<button onclick="setAvatar('${a}',this)" class="${player().avatar === a ? 'on' : ''}">${charSVG(a, {aura: tierAura(lvInfo(player().xp).lv)})}<b>${CHARS[a].name}</b><small>${CHARS[a].cls}</small></button>`).join('')}</div></div>`;
   m.onclick = e => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
 }
@@ -280,7 +280,7 @@ function bossIntro() {
   S.phase = 'weak';
   crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › BOSS 戰`);
   const W = Object.values(S.weak);
-  $('app').innerHTML = `<div class="panel bossin"><div class="bossbig">${monSVG(pick(['dragon', 'demon']))}</div><div class="lvtag red">BOSS 戰！</div>
+  $('app').innerHTML = `<div class="panel bossin"><div class="bossbig">${monSVG(pick(['bossSnake', 'bossMaster']))}</div><div class="lvtag red">BOSS 戰！</div>
     <p>剛剛答錯的 <b>${W.length}</b> 個觀念變成了「觀念怪」！<br>每隻有 <b>${NEED}</b> 顆心，連續答對 ${NEED} 題同觀念的類似題才能打倒；答錯牠會回血。</p>
     <div class="minis">${W.map(c => `<span><i class="mini">${miniSVG(c)}</i><small>${esc(c.tag)}</small></span>`).join('')}</div>
     <button class="btn red" onclick="next()">⚔️ 開戰</button></div>`;
@@ -360,7 +360,7 @@ function answer(i) {
           gainXP(50); setTimeout(() => { SFX.kill(); confetti(); floatText(`擊敗 ${m.name}！+50 XP`, 'xp big'); }, 350);
           msg = `<br>💥 你打倒了 ${esc(m.name)}！剩下的題目是「追擊」，繼續賺經驗值！`; } }
     } else { const k = q._v + '/' + q._u + '|' + tag(q);
-      if (!S.weak[k]) S.weak[k] = {v: q._v, u: q._u, tag: tag(q), streak: 0, st: 'learn', last: 0, wrong: [], mid: MINI_IDS[Object.keys(S.weak).length % MINI_IDS.length], tint: MINI_TINT[Object.keys(S.weak).length % MINI_TINT.length]};
+      if (!S.weak[k]) S.weak[k] = {v: q._v, u: q._u, tag: tag(q), streak: 0, st: 'learn', last: 0, wrong: [], mid: MINI_IDS[Object.keys(S.weak).length % MINI_IDS.length], tint: MINI_TINT[Math.floor(Object.keys(S.weak).length / MINI_IDS.length) % MINI_TINT.length]};
       S.weak[k].wrong.push(q); msg = `<br>👹 這個觀念變成「觀念怪」了，等一下 BOSS 戰再打倒牠！`; }
     S.i++;
   } else {
