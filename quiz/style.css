@@ -74,7 +74,8 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:14px;border:1px soli
 @media (min-width:900px) and (orientation:landscape){
  .wrap{max-width:1240px}
  .dock .in{max-width:1240px}
- .grid{grid-template-columns:repeat(5,1fr)}
+ .grid{grid-template-columns:repeat(3,1fr)}
+ .subj{min-height:100px;font-size:22px}
  .chips{grid-template-columns:repeat(5,1fr)}
  .ulist{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
  .ulist .grp{grid-column:1/-1}
