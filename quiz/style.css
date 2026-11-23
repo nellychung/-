@@ -329,3 +329,42 @@ body::after{display:none}
 
 .float.coin.neg{color:#fca5a5}
 .rgrid b.neg,b.neg{color:#fca5a5}
+
+/* ===== 寵物 ===== */
+.buddy{display:flex;align-items:center;gap:.8rem;justify-content:flex-end;text-decoration:none;color:var(--ink)}
+.pet.emo{position:relative;display:inline-flex;align-items:center;justify-content:center;line-height:1;filter:drop-shadow(0 0 .6rem #e9d5ff88) drop-shadow(0 .3rem 0 #0006);animation:bob 1.8s ease-in-out infinite}
+.pet.emo i{position:absolute;right:-.3rem;top:-.2rem;font-size:.35em;font-style:normal}
+.pet.st1{font-size:3rem}.pet.st2{font-size:4rem}.pet.st3{font-size:5rem;filter:drop-shadow(0 0 1rem #fde68a) drop-shadow(0 .3rem 0 #0006)}
+.pet.mini2{font-size:3.4rem}
+img.pet{width:5.5rem;height:5.5rem;object-fit:contain;animation:bob 1.8s ease-in-out infinite}
+.pet.sad{filter:grayscale(.5) brightness(.85);animation-duration:3.5s}
+#mon.hop,.pet.hop{animation:hop .45s}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-1.2rem) scale(1.1)}}
+#mon.hurt{animation:hurt .4s}
+.pcard{display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap;padding:1rem 1.2rem;margin-bottom:.8rem;border-radius:1rem;border:1.5px solid #6d4fa3;background:linear-gradient(180deg,rgba(60,34,108,.8),rgba(34,19,66,.85))}
+.pcard.on{border-color:#f2d38a;box-shadow:0 0 1.2rem #f2d38a44}
+.part{width:7rem;display:flex;justify-content:center}
+.pinfo{flex:1;min-width:16rem}
+.pname2 b{font-size:1.3rem}.pname2 small{color:var(--gold);margin-left:.4rem}
+.bar2{display:flex;align-items:center;gap:.6rem;margin:.3rem 0;font-size:.85rem}
+.bar2 .meter{flex:1;height:.8rem;border-radius:99px;background:#1a0e33;border:1px solid #6d4fa3;overflow:hidden}
+.bar2 .meter i{display:block;height:100%;background:linear-gradient(90deg,#86efac,#22c55e)}
+.bar2 .meter i.low{background:linear-gradient(90deg,#fca5a5,#ef4444)}
+.bar2 .meter.g i{background:linear-gradient(90deg,#c4b5fd,#f0abfc)}
+.bar2 em{font-style:normal;min-width:4rem;text-align:right;color:var(--mut)}
+.pacts{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.5rem}
+.btn.sm{font-size:.9rem;padding:.35rem .8rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.tagon{color:var(--gold);font-weight:700;font-size:.9rem}
+.shop{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:1rem}
+.sitem{display:flex;flex-direction:column;align-items:center;gap:.2rem;padding:1rem .6rem;border-radius:1rem;border:1.5px solid #6d4fa3;background:linear-gradient(180deg,rgba(60,34,108,.8),rgba(34,19,66,.85))}
+.sitem small{color:var(--gold)}
+.sitem.away .pet{opacity:.5}
+.wallet{margin-top:.6rem;font-size:1.05rem}.wallet b{color:var(--gold)}.wallet a{margin-left:.8rem;font-size:.9rem}
+.pmsg{display:block;text-decoration:none;color:var(--ink);font-weight:700;border-color:#d9b46a}
+.pmsg.warn{border-color:#f87171;background:linear-gradient(180deg,rgba(127,29,29,.55),rgba(69,10,10,.6))}
+.hbtns{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.7rem}
+.wtags{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:1rem 0}
+.wtags span{background:#3b2268;border:1px solid #a07d3e;border-radius:99px;padding:.2rem .8rem;font-size:.9rem}
+@media (max-width:700px){.shop{grid-template-columns:repeat(2,1fr)}.buddy .finfo{display:none}}
+html{background:#120a26}.sitem:not(.away) .pet i{display:none}

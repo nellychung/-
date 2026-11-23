@@ -1,4 +1,4 @@
-/* 國中全科刷題網（打怪升級版）：科目 → 冊次 → 單元 */
+/* 國中全科刷題網（修練＋養寵物版）：科目 → 冊次 → 單元 */
 const NEED = 2;               // 錯題觀念要連續答對幾題才算過關（BOSS 有幾顆心）
 const L = 'ABCDEF';
 let CAT = null, S = null;     // S = 目前這一場戰鬥
@@ -20,7 +20,6 @@ const uKey = (v, u) => v + '/' + u;
 
 /* ---------- 遊戲設定 ---------- */
 const MAPS = {chinese: ['📜', '藏經閣'], english: ['🐫', '西域商道'], math: ['🧮', '機關迷陣'], nature: ['🌿', '百草谷'], social: ['🏯', '江湖九州'], health: ['🥋', '林濤武場']};
-const miniSVG = c => `<span style="display:block;width:100%;height:100%;filter:hue-rotate(${c.tint}deg)">${monSVG(c.mid)}</span>`;
 const TITLES = [[1, '江湖新手'], [3, '初出茅廬'], [5, '少年俠客'], [8, '名門弟子'], [12, '一派高手'], [16, '武林名宿'], [20, '一代宗師'], [30, '武林盟主']];
 const P0 = {xp: 0, avatar: 'qingyi', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
 const player = () => { const p = Object.assign({}, P0, store.get('player', {})); if (!CHARS[p.avatar]) p.avatar = 'qingyi'; return p; };
@@ -88,7 +87,8 @@ const saveMoney = m => store.set('money', m);
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 function moneySum(m) {
   const earned = Object.values(m.days).reduce((a, d) => a + (d.nt || 0), 0), paid = m.paid.reduce((a, x) => a + x.amt, 0);
-  return {earned, paid, bal: earned - paid};
+  const spent = (m.spent || []).reduce((a, x) => a + x.amt, 0), pend = (m.req || []).reduce((a, x) => a + x.amt, 0);
+  return {earned, paid, spent, pend, bal: earned - paid - spent - pend};
 }
 function moneyAnswer(ok) {
   const m = money(); if (!m.on) return;
@@ -112,20 +112,31 @@ function moneyPage() {
     <div class="lvtag">💰 零用錢存摺</div>
     ${m.on ? '' : '<p class="note">家長目前把「經驗值換零用錢」關掉了。</p>'}
     <div class="rgrid">
-      <div><span>可以領</span><b class="gold">NT$ ${sm.bal}</b></div>
+      <div><span>可以用 / 可以提現</span><b class="gold">NT$ ${sm.bal}</b></div>
       <div><span>累積賺到</span><b>NT$ ${sm.earned}</b></div>
-      <div><span>已經領過</span><b>NT$ ${sm.paid}</b></div>
+      <div><span>已經提現</span><b>NT$ ${sm.paid}</b></div>
+      <div><span>花在寵物</span><b>NT$ ${sm.spent}</b></div>
+      ${sm.pend ? `<div><span>提現審核中</span><b>NT$ ${sm.pend}</b></div>` : ''}
       <div><span>今天賺到</span><b class="${t.nt < 0 ? 'neg' : ''}">NT$ ${t.nt} / ${m.cap}</b></div>
     </div>
     <div class="xpbar big"><i style="width:${Math.max(0, Math.min(100, t.nt / m.cap * 100))}%"></i><em>${full ? '今天已經賺到上限，明天再來！' : `今天答對 ${t.r} 題、答錯 ${t.w} 題，離上限還差 ${m.cap - t.nt} 元`}</em></div>
     <p class="note">規則：答對 1 題 +${m.plus} 元，答錯 1 題 −${m.minus} 元，每天最多賺 ${m.cap} 元。</p>
   </div>
   <div class="panel"><div class="lbl" style="margin-top:0">📅 最近的紀錄</div>
-    ${days.length ? `<table class="ledger"><tr><th>日期</th><th>答對</th><th>答錯</th><th>零用錢</th></tr>${days.map(k => `<tr><td>${k.slice(5).replace('-', '/')}</td><td>${m.days[k].r || 0}</td><td>${m.days[k].w || 0}</td><td>NT$ ${m.days[k].nt}</td></tr>`).join('')}</table>` : '<div class="empty">還沒有紀錄，去打怪賺零用錢吧！</div>'}
-    ${m.paid.length ? `<div class="lbl">🧧 領取紀錄</div><table class="ledger"><tr><th>日期</th><th>金額</th></tr>${m.paid.slice().reverse().slice(0, 10).map(x => `<tr><td>${x.d.slice(5).replace('-', '/')}</td><td>NT$ ${x.amt}</td></tr>`).join('')}</table>` : ''}
+    ${days.length ? `<table class="ledger"><tr><th>日期</th><th>答對</th><th>答錯</th><th>零用錢</th></tr>${days.map(k => `<tr><td>${k.slice(5).replace('-', '/')}</td><td>${m.days[k].r || 0}</td><td>${m.days[k].w || 0}</td><td>NT$ ${m.days[k].nt}</td></tr>`).join('')}</table>` : '<div class="empty">還沒有紀錄，去修練賺零用錢吧！</div>'}
+    ${(m.spent || []).length ? `<div class="lbl">🐾 花費紀錄</div><table class="ledger"><tr><th>日期</th><th>用途</th><th>金額</th></tr>${m.spent.slice().reverse().slice(0, 10).map(x => `<tr><td>${x.d.slice(5).replace('-', '/')}</td><td>${esc(x.what)}</td><td>NT$ ${x.amt}</td></tr>`).join('')}</table>` : ''}
+    ${(m.req || []).length ? `<div class="lbl">⏳ 等家長確認的提現</div><table class="ledger"><tr><th>申請日期</th><th>金額</th></tr>${m.req.map(x => `<tr><td>${x.d.slice(5).replace('-', '/')}</td><td>NT$ ${x.amt}</td></tr>`).join('')}</table>` : ''}
+    ${m.paid.length ? `<div class="lbl">🧧 提現紀錄</div><table class="ledger"><tr><th>日期</th><th>金額</th></tr>${m.paid.slice().reverse().slice(0, 10).map(x => `<tr><td>${x.d.slice(5).replace('-', '/')}</td><td>NT$ ${x.amt}</td></tr>`).join('')}</table>` : ''}
   </div>
-  <div style="display:flex;gap:.8rem;flex-wrap:wrap"><a class="btn" href="#/">⬅ 回首頁</a><button class="btn gold" onclick="parentGate()">👨‍👩‍👧 家長專區</button></div>`;
+  <div style="display:flex;gap:.8rem;flex-wrap:wrap"><a class="btn" href="#/">⬅ 回首頁</a><button class="btn gold" onclick="askCash()" ${sm.bal > 0 ? '' : 'disabled'}>💵 申請提現</button><a class="btn" href="#/pets">🐾 寵物園</a><button class="btn ghost" onclick="parentGate()">👨‍👩‍👧 家長專區</button></div>`;
   scrollTo(0, 0);
+}
+function askCash() {
+  const m = money(), bal = moneySum(m).bal;
+  const a = parseInt(prompt(`要提現多少元？（最多 ${bal} 元，家長確認後才會給你）`, bal));
+  if (!(a > 0)) return;
+  if (a > bal) { alert('超過可以提現的金額了'); return; }
+  m.req = m.req || []; m.req.push({id: Date.now().toString(36), d: today(), amt: a}); saveMoney(m); hud(); moneyPage();
 }
 function parentGate() {
   const m = money(), first = !m.pin;
@@ -154,8 +165,9 @@ function moneyAdmin() {
     <label class="arow"><span>答錯 1 題扣幾元</span><input type="number" id="mon_minus" min="0" value="${m.minus}"></label>
     <label class="arow"><span>每天最多幾元</span><input type="number" id="mon_cap" min="1" value="${m.cap}"></label>
     <button class="btn gold" id="msave">儲存設定</button>
-    <hr><div class="arow"><span>目前可以領 <b class="gold">NT$ ${sm.bal}</b></span></div>
-    <label class="arow"><span>這次發給孩子</span><input type="number" id="mon_pay" min="1" value="${Math.max(sm.bal, 0)}"></label>
+    <hr>${(m.req || []).length ? `<div class="lbl" style="margin-top:0">⏳ 孩子的提現申請</div>${m.req.map(r => `<div class="arow"><span>${r.d.slice(5).replace('-', '/')}　NT$ <b class="gold">${r.amt}</b></span><span><button class="btn sm gold" data-ok="${r.id}">核准發放</button> <button class="btn sm ghost" data-no="${r.id}">退回</button></span></div>`).join('')}<hr>` : ''}
+    <div class="arow"><span>目前可以提現 <b class="gold">NT$ ${sm.bal}</b></span></div>
+    <label class="arow"><span>直接發給孩子（不用申請）</span><input type="number" id="mon_pay" min="1" value="${Math.max(sm.bal, 0)}"></label>
     <button class="btn" id="mpay">💵 記錄已發放</button>
     <hr><label class="arow"><span>改家長密碼</span><input type="password" inputmode="numeric" id="mon_pin" maxlength="8" placeholder="新密碼"></label>
     <p class="note" id="amsg"></p>
@@ -168,6 +180,11 @@ function moneyAdmin() {
     if (np && !/^\d{4,8}$/.test(np)) return msg('新密碼請用 4～8 位數字');
     q.on = val('mon_on').checked; q.plus = pl; q.minus = mi; q.cap = c; if (np) q.pin = np; saveMoney(q); hud(); msg('✅ 已儲存');
   };
+  box.querySelectorAll('[data-ok],[data-no]').forEach(b => b.onclick = () => {
+    const q = money(), id = b.dataset.ok || b.dataset.no, r = (q.req || []).find(x => x.id === id); if (!r) return;
+    q.req = q.req.filter(x => x.id !== id); if (b.dataset.ok) q.paid.push({d: today(), amt: r.amt});
+    saveMoney(q); hud(); box.remove(); moneyAdmin();
+  });
   val('mpay').onclick = () => {
     const q = money(), a = parseInt(val('mon_pay').value);
     if (!(a > 0)) return msg('請輸入發放金額');
@@ -198,20 +215,21 @@ async function loadUnit(sid, vid, uid) {
 fetch('data/catalog.json', {cache: 'no-cache'}).then(r => r.json()).then(c => { CAT = c; hud(); route(); })
   .catch(() => $('app').innerHTML = '<div class="panel">題庫目錄載入失敗，請檢查網路後重新整理。</div>');
 window.addEventListener('hashchange', () => {
-  if (S && S.active && !confirm('要逃離這場戰鬥嗎？（已作答的紀錄和經驗值會保留）')) { history.pushState(null, '', S.hash); return; }
+  if (S && S.active && !confirm('要結束這次修練嗎？（已作答的紀錄和經驗值會保留）')) { history.pushState(null, '', S.hash); return; }
   S = null; route();
 });
 function route() {
   const p = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   if (p[0] === 's' && subj(p[1])) return subjectPage(p[1]);
   if (p[0] === 'money') return moneyPage();
+  if (p[0] === 'pets') return petPage();
   home();
 }
 function crumb(h) { $('crumb').innerHTML = h || ''; }
 
 /* ---------- 首頁：角色卡＋選地圖 ---------- */
 function home() {
-  crumb('');
+  crumb(''); checkPets();
   const p = player(), i = lvInfo(p.xp);
   const tot = s => s.vols.reduce((n, v) => n + v.units.reduce((m, u) => m + (u.count || 0), 0), 0);
   $('app').innerHTML = `
@@ -221,17 +239,27 @@ function home() {
       <input class="pname" id="pname" maxlength="10" placeholder="輸入俠客名號" value="${esc(p.name)}">
       <div class="ptitle">Lv ${i.lv}・${title(i.lv)}</div>
       <div class="xpbar big"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP　距離升級還差 ${i.need - i.cur}</em></div>
-      <div class="stats"><span>⚔️ 擊敗怪物 <b>${p.kills}</b></span><span>🐲 打倒 BOSS <b>${p.bosses}</b></span><span>🔥 最高連擊 <b>${p.best}</b></span><span>✅ 累積答對 <b>${p.right}</b></span>${money().on ? `<a class="coinbtn" href="#/money">💰 零用錢 <b>NT$ ${moneySum(money()).bal}</b></a>` : ''}</div>
+      <div class="stats"><span>✅ 累積答對 <b>${p.right}</b></span><span>🔥 最高連擊 <b>${p.best}</b></span><span>🧠 精熟觀念 <b>${p.bosses}</b></span></div>
+      <div class="hbtns"><a class="coinbtn" href="#/pets">🐾 寵物園 <b>${pets().list.filter(x => !x.away).length} 隻</b></a>${money().on ? `<a class="coinbtn" href="#/money">💰 零用錢 <b>NT$ ${moneySum(money()).bal}</b></a>` : ''}</div>
     </div>
   </div>
-  <div class="lbl">🗺️ 選擇闖蕩之地</div>
+  ${petAlert()}
+  <div class="lbl">🗺️ 選擇修練之地</div>
   <div class="grid">
     ${CAT.subjects.map(s => { const n = tot(s), m = MAPS[s.id] || ['📘', s.name]; return `<a class="map ${n ? 'has' : 'lock'}" href="#/s/${s.id}">
-      <span class="mi">${m[0]}</span><b>${esc(s.name)}</b><small>${m[1]}・${n ? n + ' 隻怪物' : '🔒 尚未開放'}</small></a>`; }).join('')}
+      <span class="mi">${m[0]}</span><b>${esc(s.name)}</b><small>${m[1]}・${n ? n + ' 題' : '🔒 尚未開放'}</small></a>`; }).join('')}
   </div>
   <p class="note">冒險紀錄存在這台平板的瀏覽器裡；換平板或清除瀏覽資料會重新開始。</p>`;
   $('pname').onchange = e => { const q = player(); q.name = e.target.value.trim(); savePlayer(q); };
   scrollTo(0, 0);
+}
+function petAlert() {
+  const d = pets(), gone = d.list.filter(x => x.away);
+  const hungry = d.list.filter(x => !x.away && fullNow(x) < 25);
+  if (gone.length) return `<a class="panel pmsg warn" href="#/pets">💨 ${gone.map(x => esc(x.name)).join('、')} 太久沒吃東西，離家出走了…快去寵物園把牠找回來！</a>`;
+  if (hungry.length) return `<a class="panel pmsg warn" href="#/pets">😟 ${hungry.map(x => esc(x.name)).join('、')} 肚子餓了，記得去寵物園餵牠！</a>`;
+  if (!d.list.length) return `<a class="panel pmsg" href="#/pets">🥚 用零用錢去寵物園買一隻寵物，帶牠一起修練吧！</a>`;
+  return '';
 }
 function pickAvatar() {
   const m = document.createElement('div'); m.className = 'modal';
@@ -292,8 +320,8 @@ function subjectPage(sid) {
     <div class="dock"><div class="in">
       <span class="note">已選 ${picked.length} 關・${nq} 題</span><span class="sp"></span>
       <span class="seg">${[10, 20, 30].map(n => `<button data-n="${n}" class="${sel.n === n ? 'on' : ''}">${n} 題</button>`).join('')}</span>
-      <button class="btn red" id="wb" ${wrong.length ? '' : 'disabled'}>🐲 錯題魔窟 ${wrong.length}</button>
-      <button class="btn gold" id="go" ${picked.length ? '' : 'disabled'}>⚔️ 出發打怪</button>
+      <button class="btn red" id="wb" ${wrong.length ? '' : 'disabled'}>📕 錯題特訓 ${wrong.length}</button>
+      <button class="btn gold" id="go" ${picked.length ? '' : 'disabled'}>⚔️ 開始修練</button>
     </div></div>`;
 
     document.querySelectorAll('.chip.pub').forEach(b => b.onclick = () => {
@@ -338,7 +366,7 @@ function subjectPage(sid) {
 
 /* ---------- 出題 ---------- */
 async function startRound(s, pairs, n) {
-  $('app').innerHTML = '<div class="panel">怪物出現中…</div>';
+  $('app').innerHTML = '<div class="panel">準備題目中…</div>';
   const seen = new Set(store.get(s.id + ':seen', []));
   const banks = await Promise.all(pairs.map(([v, u]) => loadUnit(s.id, v.id, u.id)));
   const pools = banks.filter(b => b.length).map(b => shuf(b.filter(q => !seen.has(qKey(q)))).concat(shuf(b.filter(q => seen.has(qKey(q))))));
@@ -349,10 +377,10 @@ async function startRound(s, pairs, n) {
     const q = pools[order.pop()].shift();
     if (q && !used.has(qKey(q))) { used.add(qKey(q)); list.push(q); }
   }
-  begin(s, shuf(list), pairs, '打怪');
+  begin(s, shuf(list), pairs, '修練');
 }
 async function startWrong(s, n) {
-  $('app').innerHTML = '<div class="panel">魔窟開啟中…</div>';
+  $('app').innerHTML = '<div class="panel">準備錯題中…</div>';
   const keys = Object.keys(store.get(s.id + ':wrong', {}));
   const units = [...new Set(keys.map(k => k.split('#')[0]))];
   const banks = await Promise.all(units.map(k => { const [v, u] = k.split('/'); return loadUnit(s.id, v, u); }));
@@ -360,13 +388,12 @@ async function startWrong(s, n) {
   const list = shuf(banks.flat().filter(q => ks.has(qKey(q)))).slice(0, n);
   if (!list.length) { subjectPage(s.id); return; }
   const pairs = units.map(k => { const [v, u] = k.split('/'); const V = vol(s, v); return [V, V && V.units.find(x => x.id === u)]; }).filter(p => p[0] && p[1]);
-  begin(s, list, pairs, '錯題魔窟');
+  begin(s, list, pairs, '錯題特訓');
 }
 function begin(s, list, pairs, label) {
-  const mid = pick(MON_IDS), hp = 10 * Math.max(1, Math.ceil(list.length * .7));
   S = {s, list, pairs, label, i: 0, score: 0, used: new Set(list.map(qKey)), seen: new Set(store.get(s.id + ':seen', [])),
        weak: {}, log: [], cur: null, ans: false, phase: 'round', active: true, hash: '#/s/' + s.id + '/play',
-       mon: {id: mid, name: MON[mid].name, hp, max: hp, dead: false}, combo: 0, best: 0, xp: 0, kills: 0};
+       combo: 0, best: 0, xp: 0, grow: 0};
   if (location.hash === S.hash) history.replaceState(null, '', S.hash); else history.pushState(null, '', S.hash);
   next();
 }
@@ -389,7 +416,7 @@ async function next() {
   S.ans = false;
   if (S.phase === 'round') {
     if (S.i >= S.list.length) {
-      if (Object.keys(S.weak).length) return bossIntro();
+      if (Object.keys(S.weak).length) return weakIntro();
       return summary();
     }
     S.cur = {q: S.list[S.i], k: null};
@@ -399,15 +426,15 @@ async function next() {
   }
   render();
 }
-function bossIntro() {
+function weakIntro() {
   S.phase = 'weak';
-  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › BOSS 戰`);
+  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › 弱點特訓`);
   const W = Object.values(S.weak);
-  $('app').innerHTML = `<div class="panel bossin"><div class="bossbig">${monSVG(pick(['bossSnake', 'bossMaster']))}</div><div class="lvtag red">BOSS 戰！</div>
-    <p>剛剛答錯的 <b>${W.length}</b> 個觀念變成了「觀念怪」！<br>每隻有 <b>${NEED}</b> 顆心，連續答對 ${NEED} 題同觀念的類似題才能打倒；答錯牠會回血。</p>
-    <div class="minis">${W.map(c => `<span><i class="mini">${miniSVG(c)}</i><small>${esc(c.tag)}</small></span>`).join('')}</div>
-    <button class="btn red" onclick="next()">⚔️ 開戰</button></div>`;
-  SFX.miss(); scrollTo(0, 0);
+  $('app').innerHTML = `<div class="panel bossin"><div class="lvtag">🧠 弱點特訓</div>
+    <p>剛剛答錯的 <b>${W.length}</b> 個觀念要再練一下！<br>每個觀念<b>連續答對 ${NEED} 題</b>類似題就算精熟；答錯會重新計算。</p>
+    <div class="wtags">${W.map(c => `<span>${esc(c.tag)}</span>`).join('')}</div>
+    <button class="btn gold" onclick="next()">💪 開始特訓</button></div>`;
+  scrollTo(0, 0);
 }
 /* 題目內容：有 html 旗標的題庫（Word 轉來）保留附圖與表格 */
 const fixH = (q, h) => String(h || '').replace(/src="img\//g, `loading="lazy" src="data/${q._d}/img/`).replace(/ width="(\d+)"/g, (m, w) => ` style="width:${Math.round(w * 1.15)}px"`);
@@ -422,27 +449,21 @@ function qHtml(q) {
 function stopAu() { const a = $('au'); if (a) a.pause(); }
 function playAu() { const a = $('au'); if (!a) return; a.currentTime = 0; a.play().catch(() => {}); }
 function arena() {
-  const p = player();
-  if (S.phase === 'round') {
-    const m = S.mon, pct = m.hp / m.max * 100;
-    return `<div class="arena">
+  const p = player(), pt = activePet();
+  const right = pt ? `<div class="buddy"><div class="finfo"><b>${esc(pt.name)}</b><div class="note">${mood(pt)[0]} 陪你修練・${stageName(pt)}</div></div><span id="mon">${petArt(pt, 'mini2')}</span></div>`
+    : `<a class="buddy none" href="#/pets"><div class="finfo"><b>還沒有寵物</b><div class="note">去寵物園買一隻陪你 →</div></div><span id="mon" class="pet emo">🥚</span></a>`;
+  if (S.phase === 'round') return `<div class="arena">
       <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>${esc(p.name || CHARS[p.avatar].name)}</b><div class="note">${S.label} ${Math.min(S.i + 1, S.list.length)} / ${S.list.length}</div></div></div>
-      <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連擊` : ''}</div>
-      <div class="foe"><div class="finfo"><b>${m.dead ? '已擊敗！' : esc(m.name)}</b><div class="hp"><i style="width:${pct}%" class="${pct < 30 ? 'low' : ''}"></i><em>HP ${m.hp} / ${m.max}</em></div></div>
-        <span class="mon ${m.dead ? 'dead' : ''}" id="mon">${m.dead ? boomSVG() : monSVG(m.id)}</span></div></div>`;
-  }
+      <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連對` : ''}</div>${right}</div>`;
   const W = Object.values(S.weak), c = S.weak[S.cur.k];
-  return `<div class="arena boss">
-    <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>BOSS 戰</b><div class="note">打倒 ${W.filter(x => x.st === 'ok').length} / ${W.length} 隻觀念怪</div></div></div>
-    <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連擊` : ''}</div>
-    <div class="foe"><div class="finfo"><b>觀念怪：${esc(c.tag)}</b><div class="hearts">${'❤️'.repeat(NEED - c.streak)}${'🖤'.repeat(c.streak)}</div></div>
-      <span class="mon big" id="mon">${miniSVG(c)}</span></div></div>
-    <div class="minis row">${W.map(x => `<span class="${x === c ? 'cur' : ''} ${x.st === 'ok' ? 'ko' : ''}">${x.st === 'ok' ? boomSVG() : miniSVG(x)}</span>`).join('')}</div>`;
+  return `<div class="arena">
+    <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>弱點特訓：${esc(c.tag)}</b><div class="note">${'⭐'.repeat(c.streak)}${'☆'.repeat(NEED - c.streak)}　精熟 ${W.filter(x => x.st === 'ok').length} / ${W.length}</div></div></div>
+    <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連對` : ''}</div>${right}</div>`;
 }
 function render() {
   stopAu();
   const q = S.cur.q;
-  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › ${S.phase === 'round' ? S.label : 'BOSS 戰'}`);
+  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › ${S.phase === 'round' ? S.label : '弱點特訓'}`);
   const nOpt = q.o ? q.o.length : (q.n || 4);
   $('app').innerHTML = `${arena()}<div class="qcard">
     <div class="bar"><span class="pill">${esc(uName(q))}</span>${q.k ? `<span class="pill">${esc(q.k.join('、'))}</span>` : ''}${q.d ? `<span class="pill d${esc(q.d)}">${esc(q.d)}・${xpFor(q)} XP</span>` : ''}</div>
@@ -450,7 +471,7 @@ function render() {
     ${q.img && !q.o ? '<p class="note" style="margin:0">看圖作答，點選答案：</p>' : ''}</div>
     <div class="qright">${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="answer(${i})"><b>${L[i]}</b><span>${q.o ? R(q, q.o[i]) : ''}</span></button>`).join('')}
     <div id="fb"></div></div></div></div>
-    <div class="acts"><button class="btn ghost" onclick="quit()">🏳️ 結束戰鬥，看戰果</button></div>`;
+    <div class="acts"><button class="btn ghost" onclick="quit()">🏳️ 結束修練，看成果</button></div>`;
   scrollTo(0, 0);
   if (q.au) setTimeout(playAu, 400);
 }
@@ -480,37 +501,31 @@ function answer(i) {
   const crit = ok && S.combo >= 3;
   if (ok) {
     got = gainXP(xpFor(q) + Math.min(S.combo, 5) * 2);
-    (crit ? SFX.crit : SFX.hit)(); shake('mon', 'hit'); shake('meav', 'atk');
-    floatText(crit ? `暴擊！-${15}` : '-10', crit ? 'crit' : 'dmg');
-    setTimeout(() => floatText(`+${got} XP`, 'xp', $('meav')), 250);
-  } else { SFX.miss(); shake('meav', 'hurt'); floatText('MISS', 'miss'); }
+    (crit ? SFX.crit : SFX.hit)(); shake('mon', 'hop'); shake('meav', 'atk');
+    floatText(`+${got} XP`, 'xp', $('meav'));
+    const up = petGrow(1); S.grow++;
+    if (up) setTimeout(() => { SFX.lvup(); confetti(); floatText(`✨ ${up.name} 長大了！`, 'xp big'); }, 400);
+  } else { SFX.miss(); shake('meav', 'hurt'); shake('mon', 'hurt'); }
 
   if (S.phase === 'round') {
-    if (ok) {
-      S.score++;
-      const m = S.mon;
-      if (!m.dead) { m.hp = Math.max(0, m.hp - (crit ? 15 : 10));
-        if (m.hp === 0) { m.dead = true; S.kills++; const p = player(); p.kills++; savePlayer(p);
-          gainXP(50); setTimeout(() => { SFX.kill(); confetti(); floatText(`擊敗 ${m.name}！+50 XP`, 'xp big'); }, 350);
-          msg = `<br>💥 你打倒了 ${esc(m.name)}！剩下的題目是「追擊」，繼續賺經驗值！`; } }
-    } else { const k = q._v + '/' + q._u + '|' + tag(q);
-      if (!S.weak[k]) S.weak[k] = {v: q._v, u: q._u, tag: tag(q), streak: 0, st: 'learn', last: 0, wrong: [], mid: MINI_IDS[Object.keys(S.weak).length % MINI_IDS.length], tint: MINI_TINT[Math.floor(Object.keys(S.weak).length / MINI_IDS.length) % MINI_TINT.length]};
-      S.weak[k].wrong.push(q); msg = `<br>👹 這個觀念變成「觀念怪」了，等一下 BOSS 戰再打倒牠！`; }
+    if (ok) S.score++;
+    else { const k = q._v + '/' + q._u + '|' + tag(q);
+      if (!S.weak[k]) S.weak[k] = {v: q._v, u: q._u, tag: tag(q), streak: 0, st: 'learn', last: 0, wrong: []};
+      S.weak[k].wrong.push(q); msg = `<br>📌 這個觀念等一下會在「弱點特訓」再練一次。`; }
     S.i++;
   } else {
     const c = S.weak[S.cur.k];
     if (ok) { c.streak++;
-      if (c.streak >= NEED) { c.st = 'ok'; msg = `<br>🎉 觀念「${esc(c.tag)}」被你打倒了！+30 XP`;
-        gainXP(30); setTimeout(() => { SFX.kill(); floatText('打倒！+30 XP', 'xp big'); }, 350); }
-      else msg = `<br>再答對 ${NEED - c.streak} 題就能打倒牠！`; }
-    else { c.streak = 0; c.wrong.push(q); msg = '<br>💢 觀念怪回血了！再來一題類似題。'; }
+      if (c.streak >= NEED) { c.st = 'ok'; msg = `<br>🎉 觀念「${esc(c.tag)}」精熟了！+30 XP`;
+        gainXP(30); const p = player(); p.bosses++; savePlayer(p); setTimeout(() => { SFX.kill(); floatText('精熟！+30 XP', 'xp big'); }, 350); }
+      else msg = `<br>再答對 ${NEED - c.streak} 題就精熟了！`; }
+    else { c.streak = 0; c.wrong.push(q); msg = '<br>💪 沒關係，重新計算，再來一題類似題。'; }
   }
   // 更新戰鬥區（血條、連擊）
-  const ar = document.querySelector('.arena'); if (ar) { const t = document.createElement('div'); t.innerHTML = arena(); ar.replaceWith(t.firstElementChild);
-    const mr = document.querySelector('.minis.row'); if (mr && t.children[1]) mr.replaceWith(t.children[1]); }
+  const ar = document.querySelector('.arena'); if (ar) { const t = document.createElement('div'); t.innerHTML = arena(); ar.replaceWith(t.firstElementChild); }
   const last = S.phase === 'round' && S.i >= S.list.length;
-  $('fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'no'}"><strong>${ok ? (crit ? '⚡ 暴擊命中！' : '⚔️ 命中！答對了') : '🛡️ 被閃過了！正確答案是 ' + L[q.a]}</strong>${q.e ? '詳解：' + R(q, q.e) : ''}${q.e ? msg : msg.replace(/^<br>/, '')}</div>
-    <div class="acts"><button class="btn gold" onclick="next()">${last ? (Object.keys(S.weak).length ? '🐲 進入 BOSS 戰 →' : '🏆 看戰果 →') : '下一題 ▶'}</button></div>`;
+  $('fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'no'}"><strong>${ok ? (crit ? '⚡ 連對好厲害！答對了' : '✅ 答對了！') : '❌ 答錯了，正確答案是 ' + L[q.a]}</strong>${q.e ? '詳解：' + R(q, q.e) : ''}${q.e ? msg : msg.replace(/^<br>/, '')}</div>
+    <div class="acts"><button class="btn gold" onclick="next()">${last ? (Object.keys(S.weak).length ? '🧠 進入弱點特訓 →' : '🏆 看成果 →') : '下一題 ▶'}</button></div>`;
   $('fb').scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
 function quit() { stopAu(); if (!S.log.length) { S.active = false; location.hash = '#/s/' + S.s.id; return; } summary(); }
@@ -519,12 +534,11 @@ function quit() { stopAu(); if (!S.log.length) { S.active = false; location.hash
 function summary() {
   S.active = false;
   const W = Object.values(S.weak), okC = W.filter(c => c.st === 'ok'), outC = W.filter(c => c.st !== 'ok');
-  if (W.length && !outC.length) { const p = player(); p.bosses++; savePlayer(p); }
   const wrongs = S.log.filter(x => !x.ok);
   const answered = S.log.filter(x => x.phase === 'round').length;
   const unitName = c => { const v = vol(S.s, c.v), u = v && v.units.find(x => x.id === c.u); return (v ? vLabel(S.s, v) + ' ' : '') + (u ? u.name : c.u); };
   const range = [...new Set(S.pairs.map(([v, u]) => vLabel(S.s, v) + ' ' + u.name))].join('、');
-  const win = S.mon.dead && !outC.length;
+  const win = answered > 0 && !outC.length;
   const copyText = W.length ? `我用刷題網練習${S.s.name}（${range}），${S.label} ${answered} 題答對 ${S.score} 題。
 答錯過的觀念：
 ${W.map(c => `・${unitName(c)}／${c.tag}（錯 ${c.wrong.length} 次，${c.st === 'ok' ? '題庫類似題已連對 ' + NEED + ' 題' : '題庫類似題已用完，還沒連對 ' + NEED + ' 題'}）`).join('\n')}
@@ -533,22 +547,23 @@ ${wrongs.map((x, n) => `${n + 1}. ${txt(x.q.s)}${x.q.img || /<img/.test(x.q.s + 
 請針對這些觀念出精熟題，用點選作答、答完顯示詳解。` : '';
   const p = player(), i = lvInfo(p.xp);
   if (win) { SFX.win(); confetti(); }
-  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › 戰果`);
+  crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › 成果`);
   $('app').innerHTML = `<div class="panel result ${win ? 'win' : ''}">
-    <div class="lvtag ${win ? '' : 'red'}">${win ? '🏆 VICTORY！' : S.mon.dead ? '⚔️ 怪物已擊敗，還有觀念怪逃走了' : '💨 怪物逃走了…下次再挑戰！'}</div>
+    <div class="lvtag ${win ? '' : 'red'}">${win ? '🏆 修練完成！' : '📌 還有觀念要再加油'}</div>
     <div class="rgrid">
       <div><span>答對</span><b>${S.score} / ${answered}</b></div>
       <div><span>獲得經驗</span><b class="gold">+${S.xp} XP</b></div>
       <div><span>最高連擊</span><b>🔥 ${S.best}</b></div>
-      <div><span>打倒觀念怪</span><b>${okC.length} / ${W.length}</b></div>
+      <div><span>精熟觀念</span><b>${okC.length} / ${W.length}</b></div>
+      ${activePet() ? `<div><span>${esc(activePet().name)} 成長</span><b>🐾 +${S.grow}</b></div>` : ''}
       ${money().on ? `<div><span>零用錢</span><b class="${(S.nt || 0) < 0 ? 'neg' : 'gold'}">💰 ${(S.nt || 0) >= 0 ? '+' : ''}${S.nt || 0} 元</b></div>` : ''}
     </div>
     <div class="ptitle">Lv ${i.lv}・${title(i.lv)}</div>
     <div class="xpbar big"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP</em></div>
-    ${outC.length ? `<p class="note">還有 ${outC.length} 隻觀念怪沒打倒（類似題用完或中途結束），答錯的題目都放進「錯題魔窟」了。</p>` : ''}
-    <div class="acts" style="justify-content:center"><button class="btn gold" onclick="again()">⚔️ 再戰一回</button><a class="btn ghost" href="#/s/${S.s.id}">🗺️ 回關卡選擇</a></div></div>
-    ${W.length ? `<div class="panel"><table><tr><th>關卡</th><th>觀念怪</th><th>被打中幾次</th><th>狀態</th></tr>
-      ${W.map(c => `<tr><td>${esc(unitName(c))}</td><td><i class="mini sm">${miniSVG(c)}</i> ${esc(c.tag)}</td><td>${c.wrong.length}</td><td>${c.st === 'ok' ? '<span class="st-ok">💥 已打倒</span>' : '<span class="st-w">逃走了</span>'}</td></tr>`).join('')}</table></div>
+    ${outC.length ? `<p class="note">還有 ${outC.length} 個觀念還沒精熟（類似題用完或中途結束），答錯的題目都放進「錯題特訓」了。</p>` : ''}
+    <div class="acts" style="justify-content:center"><button class="btn gold" onclick="again()">⚔️ 再修練一回</button><a class="btn" href="#/pets">🐾 去看寵物</a><a class="btn ghost" href="#/s/${S.s.id}">🗺️ 回關卡選擇</a></div></div>
+    ${W.length ? `<div class="panel"><table><tr><th>單元</th><th>觀念</th><th>答錯幾次</th><th>狀態</th></tr>
+      ${W.map(c => `<tr><td>${esc(unitName(c))}</td><td>${esc(c.tag)}</td><td>${c.wrong.length}</td><td>${c.st === 'ok' ? '<span class="st-ok">✅ 已精熟</span>' : '<span class="st-w">再加油</span>'}</td></tr>`).join('')}</table></div>
     <div class="panel"><b>🧙 請 Claude 出精熟題</b><p class="note" style="margin:4px 0 8px">按「複製」，貼給 Claude（或傳給爸媽），就能針對錯過的觀念出新題目。</p>
       <textarea id="tx" readonly>${esc(copyText)}</textarea><div class="acts"><button class="btn gold" onclick="cp()">複製</button><span id="cpm" class="note"></span></div></div>
     <div class="panel"><b>📖 錯題回顧</b>${wrongs.map(x => `<div class="wl">${qHtml(x.q)}
@@ -557,7 +572,7 @@ ${wrongs.map((x, n) => `${n + 1}. ${txt(x.q.s)}${x.q.img || /<img/.test(x.q.s + 
 }
 function again() {
   const s = S.s, sel = store.get(s.id + ':sel', {n: 10});
-  if (S.label === '錯題魔窟') return startWrong(s, sel.n || 10);
+  if (S.label === '錯題特訓') return startWrong(s, sel.n || 10);
   startRound(s, S.pairs, sel.n || 10);
 }
 function cp() {
