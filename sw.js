@@ -1,7 +1,7 @@
 /* 智慧班級經營：離線用 Service Worker
  * 作用：把網頁、程式庫、字體、寵物圖存在這台裝置，沒有網路也能開、能加分、能批改作業。
  * 網頁有改版時，只要有網路，開啟就會自動拿到最新版。 */
-const CORE_CACHE = 'pk-core-v2';      // 網頁本身（版本號改了就會重新下載）
+const CORE_CACHE = 'pk-core-v3';      // 網頁本身（版本號改了就會重新下載）
 const IMG_CACHE  = 'pk-img-v1';       // 寵物圖（很大，不跟著改版重下載）
 const LIB_CACHE  = 'pk-lib-v1';       // Tailwind、Vue、字體
 const CORE = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
@@ -62,6 +62,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     const path = url.pathname;
+    if (/\/quiz(\/|$)/.test(path)) return;   // 刷題網放在同一個網站的 /quiz/，不要被班級經營的離線機制攔截
     if (/\/pk\//.test(path)) { e.respondWith(cacheFirst(req, IMG_CACHE)); return; }
     if (req.mode === 'navigate' || path.endsWith('/') || path.endsWith('/index.html')) { e.respondWith(networkFirst(req, CORE_CACHE, 'index.html')); return; }
     if (/\/(config\.js|manifest\.webmanifest|icon-\d+\.png)$/.test(path)) { e.respondWith(networkFirst(req, CORE_CACHE, path.split('/').pop())); return; }
