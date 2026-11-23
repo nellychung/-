@@ -81,8 +81,8 @@ function levelUp(lv) {
 }
 
 /* ---------- 零用錢（經驗值換零用錢，家長設定） ---------- */
-const M0 = {on: true, plus: 1, minus: 1, cap: 100, pin: '', days: {}, paid: [], v: 2};
-const money = () => { const raw = store.get('money', {}), m = Object.assign({}, M0, raw); if (raw.v !== 2) Object.assign(m, {plus: 1, minus: 1, cap: 100, v: 2}); return m; };
+const M0 = {on: true, plus: 1, minus: 1, cap: 0, pin: '', days: {}, paid: [], v: 3};
+const money = () => { const raw = store.get('money', {}), m = Object.assign({}, M0, raw); if (raw.v !== 2 && raw.v !== 3) Object.assign(m, {plus: 1, minus: 1}); if (raw.v !== 3) Object.assign(m, {cap: 0, v: 3}); return m; };
 const saveMoney = m => store.set('money', m);
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 function moneySum(m) {
@@ -95,18 +95,18 @@ function moneyAnswer(ok) {
   const t = today(), d = Object.assign({r: 0, w: 0, nt: 0}, m.days[t]);
   ok ? d.r++ : d.w++;
   const before = d.nt;
-  d.nt = Math.min(d.nt + (ok ? m.plus : -m.minus), m.cap);
+  d.nt += ok ? m.plus : -m.minus; if (m.cap > 0) d.nt = Math.min(d.nt, m.cap);
   m.days[t] = d; saveMoney(m);
   const got = d.nt - before; if (S) S.nt = (S.nt || 0) + got;
   hud();
   if (got) setTimeout(() => floatText(`💰 ${got > 0 ? '+' : ''}${got} 元`, got > 0 ? 'xp coin' : 'coin neg', $('hud')), 300);
-  else if (ok && d.nt >= m.cap) setTimeout(() => floatText('💰 今天已達上限', 'coin', $('hud')), 300);
+  else if (ok && m.cap > 0 && d.nt >= m.cap) setTimeout(() => floatText('💰 今天已達上限', 'coin', $('hud')), 300);
 }
 function moneyPage() {
   crumb('› 零用錢存摺');
   const m = money(), sm = moneySum(m), t = m.days[today()] || {xp: 0, nt: 0};
   t.r = t.r || 0; t.w = t.w || 0;
-  const full = t.nt >= m.cap;
+  const lim = m.cap > 0, full = lim && t.nt >= m.cap;
   const days = Object.keys(m.days).sort().reverse().slice(0, 14);
   $('app').innerHTML = `<div class="panel bank">
     <div class="lvtag">💰 零用錢存摺</div>
@@ -117,10 +117,10 @@ function moneyPage() {
       <div><span>已經提現</span><b>NT$ ${sm.paid}</b></div>
       <div><span>花在寵物</span><b>NT$ ${sm.spent}</b></div>
       ${sm.pend ? `<div><span>提現審核中</span><b>NT$ ${sm.pend}</b></div>` : ''}
-      <div><span>今天賺到</span><b class="${t.nt < 0 ? 'neg' : ''}">NT$ ${t.nt} / ${m.cap}</b></div>
+      <div><span>今天賺到</span><b class="${t.nt < 0 ? 'neg' : ''}">NT$ ${t.nt}${lim ? ' / ' + m.cap : ''}</b></div>
     </div>
-    <div class="xpbar big"><i style="width:${Math.max(0, Math.min(100, t.nt / m.cap * 100))}%"></i><em>${full ? '今天已經賺到上限，明天再來！' : `今天答對 ${t.r} 題、答錯 ${t.w} 題，離上限還差 ${m.cap - t.nt} 元`}</em></div>
-    <p class="note">規則：答對 1 題 +${m.plus} 元，答錯 1 題 −${m.minus} 元，每天最多賺 ${m.cap} 元。</p>
+    ${lim ? `<div class="xpbar big"><i style="width:${Math.max(0, Math.min(100, t.nt / m.cap * 100))}%"></i><em>${full ? '今天已經賺到上限，明天再來！' : `今天答對 ${t.r} 題、答錯 ${t.w} 題，離上限還差 ${m.cap - t.nt} 元`}</em></div>` : `<p class="note">今天答對 ${t.r} 題、答錯 ${t.w} 題。</p>`}
+    <p class="note">規則：答對 1 題 +${m.plus} 元，答錯 1 題 −${m.minus} 元，${lim ? '每天最多賺 ' + m.cap + ' 元。' : '沒有每日上限，答越多賺越多！'}</p>
   </div>
   <div class="panel"><div class="lbl" style="margin-top:0">📅 最近的紀錄</div>
     ${days.length ? `<table class="ledger"><tr><th>日期</th><th>答對</th><th>答錯</th><th>零用錢</th></tr>${days.map(k => `<tr><td>${k.slice(5).replace('-', '/')}</td><td>${m.days[k].r || 0}</td><td>${m.days[k].w || 0}</td><td>NT$ ${m.days[k].nt}</td></tr>`).join('')}</table>` : '<div class="empty">還沒有紀錄，去修練賺零用錢吧！</div>'}
@@ -163,7 +163,7 @@ function moneyAdmin() {
     <label class="arow"><span>開啟經驗值換零用錢</span><input type="checkbox" id="mon_on" ${m.on ? 'checked' : ''}></label>
     <label class="arow"><span>答對 1 題賺幾元</span><input type="number" id="mon_plus" min="0" value="${m.plus}"></label>
     <label class="arow"><span>答錯 1 題扣幾元</span><input type="number" id="mon_minus" min="0" value="${m.minus}"></label>
-    <label class="arow"><span>每天最多幾元</span><input type="number" id="mon_cap" min="1" value="${m.cap}"></label>
+    <label class="arow"><span>每天上限（0 = 不設上限）</span><input type="number" id="mon_cap" min="0" value="${m.cap}"></label>
     <button class="btn gold" id="msave">儲存設定</button>
     <hr>${(m.req || []).length ? `<div class="lbl" style="margin-top:0">⏳ 孩子的提現申請</div>${m.req.map(r => `<div class="arow"><span>${r.d.slice(5).replace('-', '/')}　NT$ <b class="gold">${r.amt}</b></span><span><button class="btn sm gold" data-ok="${r.id}">核准發放</button> <button class="btn sm ghost" data-no="${r.id}">退回</button></span></div>`).join('')}<hr>` : ''}
     <div class="arow"><span>目前可以提現 <b class="gold">NT$ ${sm.bal}</b></span></div>
@@ -178,7 +178,7 @@ function moneyAdmin() {
   bindPriceEditor(box, msg);
   val('msave').onclick = () => {
     const q = money(), pl = parseInt(val('mon_plus').value), mi = parseInt(val('mon_minus').value), c = parseInt(val('mon_cap').value), np = val('mon_pin').value.trim();
-    if (!(pl >= 0) || !(mi >= 0) || !(c >= 1)) return msg('請輸入正確的數字');
+    if (!(pl >= 0) || !(mi >= 0) || !(c >= 0)) return msg('請輸入正確的數字');
     if (np && !/^\d{4,8}$/.test(np)) return msg('新密碼請用 4～8 位數字');
     q.on = val('mon_on').checked; q.plus = pl; q.minus = mi; q.cap = c; if (np) q.pin = np; saveMoney(q); hud(); msg('✅ 已儲存');
   };
