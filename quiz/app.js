@@ -19,7 +19,7 @@ const qKey = q => q._v + '/' + q._u + '#' + q.id;
 const uKey = (v, u) => v + '/' + u;
 
 /* ---------- 遊戲設定 ---------- */
-const MAPS = {chinese: ['📜', '藏經閣'], english: ['🐫', '西域商道'], math: ['🧮', '機關迷陣'], nature: ['🌿', '百草谷'], social: ['🏯', '江湖九州'], health: ['🥋', '少林演武場']};
+const MAPS = {chinese: ['📜', '藏經閣'], english: ['🐫', '西域商道'], math: ['🧮', '機關迷陣'], nature: ['🌿', '百草谷'], social: ['🏯', '江湖九州'], health: ['🥋', '林濤武場']};
 const miniSVG = c => `<span style="display:block;width:100%;height:100%;filter:hue-rotate(${c.tint}deg)">${monSVG(c.mid)}</span>`;
 const TITLES = [[1, '江湖新手'], [3, '初出茅廬'], [5, '少年俠客'], [8, '名門弟子'], [12, '一派高手'], [16, '武林名宿'], [20, '一代宗師'], [30, '武林盟主']];
 const P0 = {xp: 0, avatar: 'qingyi', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
@@ -66,7 +66,7 @@ function confetti() {
 }
 function gainXP(n, why) {
   const p = player(), before = lvInfo(p.xp).lv;
-  p.xp += n; savePlayer(p);
+  p.xp += n; savePlayer(p); moneyGain(n);
   const now = lvInfo(p.xp);
   if (S) S.xp += n;
   hud();
@@ -81,11 +81,100 @@ function levelUp(lv) {
   document.body.appendChild(m);
 }
 
+/* ---------- 零用錢（經驗值換零用錢，家長設定） ---------- */
+const M0 = {on: true, rate: 100, cap: 30, pin: '', days: {}, paid: []};
+const money = () => Object.assign({}, M0, store.get('money', {}));
+const saveMoney = m => store.set('money', m);
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function moneySum(m) {
+  const earned = Object.values(m.days).reduce((a, d) => a + (d.nt || 0), 0), paid = m.paid.reduce((a, x) => a + x.amt, 0);
+  return {earned, paid, bal: earned - paid};
+}
+function moneyGain(n) {
+  const m = money(); if (!m.on) return;
+  const t = today(), d = m.days[t] || {xp: 0, nt: 0};
+  d.xp += n;
+  const nt = Math.max(d.nt, Math.min(Math.floor(d.xp / m.rate), m.cap)), got = nt - d.nt;
+  d.nt = nt; m.days[t] = d; saveMoney(m);
+  if (got > 0) { if (S) S.nt = (S.nt || 0) + got; setTimeout(() => { SFX.kill && SFX.kill(); floatText(`💰 零用錢 +${got} 元`, 'xp big coin', $('hud')); }, 900); }
+}
+function moneyPage() {
+  crumb('› 零用錢存摺');
+  const m = money(), sm = moneySum(m), t = m.days[today()] || {xp: 0, nt: 0};
+  const full = t.nt >= m.cap, need = full ? 0 : m.rate * (t.nt + 1) - t.xp;
+  const days = Object.keys(m.days).sort().reverse().slice(0, 14);
+  $('app').innerHTML = `<div class="panel bank">
+    <div class="lvtag">💰 零用錢存摺</div>
+    ${m.on ? '' : '<p class="note">家長目前把「經驗值換零用錢」關掉了。</p>'}
+    <div class="rgrid">
+      <div><span>可以領</span><b class="gold">NT$ ${sm.bal}</b></div>
+      <div><span>累積賺到</span><b>NT$ ${sm.earned}</b></div>
+      <div><span>已經領過</span><b>NT$ ${sm.paid}</b></div>
+      <div><span>今天賺到</span><b>NT$ ${t.nt} / ${m.cap}</b></div>
+    </div>
+    <div class="xpbar big"><i style="width:${Math.min(100, t.nt / m.cap * 100)}%"></i><em>${full ? '今天已經賺到上限，明天再來！' : `再拿 ${need} XP 就多 1 元`}</em></div>
+    <p class="note">規則：每 ${m.rate} XP 換 1 元，每天最多 ${m.cap} 元。答對、連擊、打倒怪物得到的經驗值都算。</p>
+  </div>
+  <div class="panel"><div class="lbl" style="margin-top:0">📅 最近的紀錄</div>
+    ${days.length ? `<table class="ledger"><tr><th>日期</th><th>經驗值</th><th>零用錢</th></tr>${days.map(k => `<tr><td>${k.slice(5).replace('-', '/')}</td><td>${m.days[k].xp} XP</td><td>NT$ ${m.days[k].nt}</td></tr>`).join('')}</table>` : '<div class="empty">還沒有紀錄，去打怪賺零用錢吧！</div>'}
+    ${m.paid.length ? `<div class="lbl">🧧 領取紀錄</div><table class="ledger"><tr><th>日期</th><th>金額</th></tr>${m.paid.slice().reverse().slice(0, 10).map(x => `<tr><td>${x.d.slice(5).replace('-', '/')}</td><td>NT$ ${x.amt}</td></tr>`).join('')}</table>` : ''}
+  </div>
+  <div style="display:flex;gap:.8rem;flex-wrap:wrap"><a class="btn" href="#/">⬅ 回首頁</a><button class="btn gold" onclick="parentGate()">👨‍👩‍👧 家長專區</button></div>`;
+  scrollTo(0, 0);
+}
+function parentGate() {
+  const m = money(), first = !m.pin;
+  const box = document.createElement('div'); box.className = 'modal';
+  box.innerHTML = `<div class="mbox"><div class="lvtag">👨‍👩‍👧 家長專區</div>
+    <p>${first ? '第一次使用，請設定 4 位數家長密碼（請不要讓孩子看到）' : '請輸入家長密碼'}</p>
+    <input id="pin" class="pinput" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+    <p class="note" id="pinmsg"></p>
+    <button class="btn gold" id="pinok">${first ? '設定密碼' : '進入'}</button> <button class="btn" onclick="this.closest('.modal').remove()">取消</button></div>`;
+  document.body.appendChild(box);
+  const inp = box.querySelector('#pin'); inp.focus();
+  const go = () => {
+    const v = inp.value.trim();
+    if (first) { if (!/^\d{4,8}$/.test(v)) { box.querySelector('#pinmsg').textContent = '請輸入 4～8 位數字'; return; } const q = money(); q.pin = v; saveMoney(q); }
+    else if (v !== m.pin) { box.querySelector('#pinmsg').textContent = '密碼不對'; inp.value = ''; return; }
+    box.remove(); moneyAdmin();
+  };
+  box.querySelector('#pinok').onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+function moneyAdmin() {
+  const m = money(), sm = moneySum(m);
+  const box = document.createElement('div'); box.className = 'modal';
+  box.innerHTML = `<div class="mbox admin"><div class="lvtag">⚙️ 零用錢設定</div>
+    <label class="arow"><span>開啟經驗值換零用錢</span><input type="checkbox" id="mon_on" ${m.on ? 'checked' : ''}></label>
+    <label class="arow"><span>幾 XP 換 1 元</span><input type="number" id="mon_rate" min="10" step="10" value="${m.rate}"></label>
+    <label class="arow"><span>每天最多幾元</span><input type="number" id="mon_cap" min="1" value="${m.cap}"></label>
+    <button class="btn gold" id="msave">儲存設定</button>
+    <hr><div class="arow"><span>目前可以領 <b class="gold">NT$ ${sm.bal}</b></span></div>
+    <label class="arow"><span>這次發給孩子</span><input type="number" id="mon_pay" min="1" value="${Math.max(sm.bal, 0)}"></label>
+    <button class="btn" id="mpay">💵 記錄已發放</button>
+    <hr><label class="arow"><span>改家長密碼</span><input type="password" inputmode="numeric" id="mon_pin" maxlength="8" placeholder="新密碼"></label>
+    <p class="note" id="amsg"></p>
+    <button class="btn" onclick="this.closest('.modal').remove();moneyPage()">關閉</button></div>`;
+  document.body.appendChild(box);
+  const msg = t => box.querySelector('#amsg').textContent = t, val = id => box.querySelector('#' + id);
+  val('msave').onclick = () => {
+    const q = money(), r = parseInt(val('mon_rate').value), c = parseInt(val('mon_cap').value), np = val('mon_pin').value.trim();
+    if (!(r >= 10) || !(c >= 1)) return msg('請輸入正確的數字');
+    if (np && !/^\d{4,8}$/.test(np)) return msg('新密碼請用 4～8 位數字');
+    q.on = val('mon_on').checked; q.rate = r; q.cap = c; if (np) q.pin = np; saveMoney(q); hud(); msg('✅ 已儲存');
+  };
+  val('mpay').onclick = () => {
+    const q = money(), a = parseInt(val('mon_pay').value);
+    if (!(a > 0)) return msg('請輸入發放金額');
+    q.paid.push({d: today(), amt: a}); saveMoney(q); hud(); box.remove(); moneyPage();
+  };
+}
+
 /* ---------- 上方 HUD（等級、經驗值、音效） ---------- */
 function hud() {
   const p = player(), i = lvInfo(p.xp);
   $('hud').innerHTML = `<span class="hav">${avatar(p, {head: true})}</span><span class="hlv">Lv ${i.lv}</span>
     <span class="hxp"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP</em></span>
+    ${money().on ? `<a class="hcoin" href="#/money" title="零用錢存摺">💰 ${moneySum(money()).bal}</a>` : ''}
     <button class="hsnd" onclick="toggleSound()" title="音效">${p.sound ? '🔊' : '🔇'}</button>`;
 }
 function toggleSound() { const p = player(); p.sound = !p.sound; savePlayer(p); hud(); }
@@ -109,6 +198,7 @@ window.addEventListener('hashchange', () => {
 function route() {
   const p = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   if (p[0] === 's' && subj(p[1])) return subjectPage(p[1]);
+  if (p[0] === 'money') return moneyPage();
   home();
 }
 function crumb(h) { $('crumb').innerHTML = h || ''; }
@@ -125,7 +215,7 @@ function home() {
       <input class="pname" id="pname" maxlength="10" placeholder="輸入俠客名號" value="${esc(p.name)}">
       <div class="ptitle">Lv ${i.lv}・${title(i.lv)}</div>
       <div class="xpbar big"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP　距離升級還差 ${i.need - i.cur}</em></div>
-      <div class="stats"><span>⚔️ 擊敗怪物 <b>${p.kills}</b></span><span>🐲 打倒 BOSS <b>${p.bosses}</b></span><span>🔥 最高連擊 <b>${p.best}</b></span><span>✅ 累積答對 <b>${p.right}</b></span></div>
+      <div class="stats"><span>⚔️ 擊敗怪物 <b>${p.kills}</b></span><span>🐲 打倒 BOSS <b>${p.bosses}</b></span><span>🔥 最高連擊 <b>${p.best}</b></span><span>✅ 累積答對 <b>${p.right}</b></span>${money().on ? `<a class="coinbtn" href="#/money">💰 零用錢 <b>NT$ ${moneySum(money()).bal}</b></a>` : ''}</div>
     </div>
   </div>
   <div class="lbl">🗺️ 選擇闖蕩之地</div>
@@ -444,6 +534,7 @@ ${wrongs.map((x, n) => `${n + 1}. ${txt(x.q.s)}${x.q.img || /<img/.test(x.q.s + 
       <div><span>獲得經驗</span><b class="gold">+${S.xp} XP</b></div>
       <div><span>最高連擊</span><b>🔥 ${S.best}</b></div>
       <div><span>打倒觀念怪</span><b>${okC.length} / ${W.length}</b></div>
+      ${money().on ? `<div><span>零用錢</span><b class="gold">💰 +${S.nt || 0} 元</b></div>` : ''}
     </div>
     <div class="ptitle">Lv ${i.lv}・${title(i.lv)}</div>
     <div class="xpbar big"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP</em></div>
