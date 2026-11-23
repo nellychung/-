@@ -1,15 +1,14 @@
 /* 寵物系統：用零用錢買寵物、餵食養大；太久沒餵會離家出走（可花錢找回）
    圖片：img/pets/<種類>_<階段 1~3>.png。還沒有圖的種類先用表情符號代替。 */
-const PET = {
-  crane:   {name: '仙鶴',   e: '🦢', price: 30,  img: false},
-  fox:     {name: '九尾狐', e: '🦊', price: 50,  img: false},
-  panda:   {name: '食鐵獸', e: '🐼', price: 60,  img: false},
-  turtle:  {name: '玄武',   e: '🐢', price: 80,  img: false},
-  tiger:   {name: '白虎',   e: '🐯', price: 100, img: false},
-  qilin:   {name: '麒麟',   e: '🦄', price: 120, img: false},
-  phoenix: {name: '朱雀',   e: '🦚', price: 150, img: false},
-  dragon:  {name: '青龍',   e: '🐉', price: 200, img: false}
+const PET = {   // img = 已經有幾個階段的圖（img/pets/<id>_<階段>.jpg）；還沒有的階段先用最後一張圖加光暈
+  zichen:   {name: '紫宸', kind: '靈貓',   e: '🐈‍⬛', price: 30,  img: 1},
+  shuangli: {name: '霜璃', kind: '九尾狐', e: '🦊', price: 50,  img: 1},
+  xueling:  {name: '雪翎', kind: '靈鹿',   e: '🦌', price: 80,  img: 1},
+  yanhuang: {name: '焰凰', kind: '火鳳',   e: '🦚', price: 120, img: 1},
+  yejin:    {name: '夜燼', kind: '幽龍',   e: '🐉', price: 150, img: 1},
+  cangming: {name: '滄溟', kind: '水龍',   e: '🐲', price: 200, img: 1}
 };
+const OLD_PET = {crane: 'xueling', fox: 'shuangli', panda: 'zichen', turtle: 'cangming', tiger: 'xueling', qilin: 'xueling', phoenix: 'yanhuang', dragon: 'yejin'};
 const PET_IDS = Object.keys(PET);
 const FOOD = [
   {id: 'snack', name: '飯糰', e: '🍙', price: 3, full: 30, grow: 10},
@@ -20,7 +19,8 @@ const DECAY = 25;        // 每天少多少飽足度（100 → 0 約 4 天）
 const RUN_DAYS = 3;      // 餓到 0 之後再過幾天會離家出走
 const DAY = 864e5;
 
-const pets = () => Object.assign({list: [], active: ''}, store.get('pets', {}));
+const pets = () => { const d = Object.assign({list: [], active: ''}, store.get('pets', {}));
+  d.list.forEach(p => { if (!PET[p.sp]) { p.sp = OLD_PET[p.sp] || 'zichen'; } }); return d; };
 const savePets = d => store.set('pets', d);
 const fullNow = p => Math.max(0, Math.round(p.full - DECAY * (Date.now() - p.fed) / DAY));
 const stageOf = p => STAGES.filter(s => (p.grow || 0) >= s[0]).length;           // 1~3
@@ -35,9 +35,8 @@ function mood(p) {
 function petArt(p, cls = '') {
   const sp = PET[p.sp], st = stageOf(p), m = mood(p)[0];
   const sad = !p.away && fullNow(p) < 25 ? ' sad' : '';
-  return sp.img
-    ? `<img class="pet ${cls}${sad}" src="img/pets/${p.sp}_${st}.png" alt="${esc(sp.name)}">`
-    : `<span class="pet emo st${st} ${cls}${sad}">${sp.e}<i>${m}</i></span>`;
+  if (sp.img) return `<span class="pet pic st${st} ${cls}${sad}"><img src="img/pets/${p.sp}_${Math.min(st, sp.img)}.jpg" alt="${esc(sp.name)}"><i>${m}</i></span>`;
+  return `<span class="pet emo st${st} ${cls}${sad}">${sp.e}<i>${m}</i></span>`;
 }
 /* 打開網頁時檢查有沒有寵物離家出走 */
 function checkPets() {
@@ -69,7 +68,7 @@ function petPage(msg) {
     return `<div class="pcard ${p.uid === d.active ? 'on' : ''}">
       <div class="part">${petArt(p)}</div>
       <div class="pinfo">
-        <div class="pname2"><b>${esc(p.name)}</b> <small>${PET[p.sp].name}・${stageName(p)}</small></div>
+        <div class="pname2"><b>${esc(p.name)}</b> <small>${PET[p.sp].kind}・${stageName(p)}</small></div>
         <div class="note">${me} ${mt}</div>
         <div class="bar2"><span>飽足</span><span class="meter"><i style="width:${f}%" class="${f < 25 ? 'low' : ''}"></i></span><em>${f}</em></div>
         <div class="bar2"><span>成長</span><span class="meter g"><i style="width:${nx ? Math.min(100, (p.grow || 0) / nx[0] * 100) : 100}%"></i></span><em>${nx ? `${p.grow || 0}/${nx[0]}` : '完全體'}</em></div>
@@ -86,11 +85,11 @@ function petPage(msg) {
     <div class="wallet">💰 可用零用錢 <b>NT$ ${bal}</b> <a href="#/money">看存摺 / 申請提現 →</a></div>
   </div>
   ${home.length ? `<div class="lbl">🏡 我的寵物</div>${home.map(card).join('')}` : ''}
-  ${away.length ? `<div class="lbl">💨 離家出走的寵物</div><div class="shop">${away.map(p => { const c = Math.ceil(PET[p.sp].price / 2); return `<div class="sitem away">${petArt(p)}<b>${esc(p.name)}</b><small>${PET[p.sp].name}</small>
+  ${away.length ? `<div class="lbl">💨 離家出走的寵物</div><div class="shop">${away.map(p => { const c = Math.ceil(PET[p.sp].price / 2); return `<div class="sitem away">${petArt(p)}<b>${esc(p.name)}</b><small>${PET[p.sp].kind}</small>
       <button class="btn sm gold" onclick="findPet('${p.uid}')" ${bal < c ? 'disabled' : ''}>🔍 找回來 ${c}元</button></div>`; }).join('')}</div>` : ''}
   <div class="lbl">🏪 寵物商店</div>
   <div class="shop">${PET_IDS.map(id => { const sp = PET[id], own = d.list.filter(p => p.sp === id).length;
-    return `<div class="sitem">${petArt({sp: id, grow: 0, full: 100, fed: Date.now()})}<b>${sp.name}</b><small>NT$ ${sp.price}${own ? `・已有 ${own} 隻` : ''}</small>
+    return `<div class="sitem">${petArt({sp: id, grow: 0, full: 100, fed: Date.now()})}<b>${sp.name}</b><small>${sp.kind}・NT$ ${sp.price}${own ? `・已有 ${own} 隻` : ''}</small>
       <button class="btn sm gold" onclick="buyPet('${id}')" ${bal < sp.price ? 'disabled' : ''}>購買</button></div>`; }).join('')}</div>
   <div class="acts"><a class="btn ghost" href="#/">⬅ 回首頁</a></div>`;
   scrollTo(0, 0);

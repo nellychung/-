@@ -368,3 +368,16 @@ img.pet{width:5.5rem;height:5.5rem;object-fit:contain;animation:bob 1.8s ease-in
 .wtags span{background:#3b2268;border:1px solid #a07d3e;border-radius:99px;padding:.2rem .8rem;font-size:.9rem}
 @media (max-width:700px){.shop{grid-template-columns:repeat(2,1fr)}.buddy .finfo{display:none}}
 html{background:#120a26}.sitem:not(.away) .pet i{display:none}
+
+.pet.pic{position:relative;display:inline-block;border-radius:1rem;border:2px solid #d9b46a;overflow:visible;box-shadow:0 0 1rem #c084fc55;animation:none}
+.pet.pic img{display:block;width:100%;height:100%;object-fit:cover;border-radius:.9rem}
+.pet.pic i{position:absolute;right:-.5rem;top:-.6rem;font-size:1.4rem;font-style:normal}
+.pet.pic.st1{width:8rem;height:6.6rem}
+.pet.pic.st2{width:8.8rem;height:7.2rem;box-shadow:0 0 1.4rem #e9d5ffaa}
+.pet.pic.st3{width:9.6rem;height:7.9rem;border-color:#fde68a;box-shadow:0 0 1.6rem #fde68a,0 0 3rem #c084fc88}
+.pet.pic.mini2{width:6.4rem;height:5.2rem}
+.pet.pic.sad{filter:grayscale(.6) brightness(.8)}
+.sitem .pet.pic{width:100%;height:auto;aspect-ratio:261/210}
+.part{width:10rem}
+.shop{grid-template-columns:repeat(3,1fr)}
+.sitem .pet.pic{width:100%!important;height:auto!important;aspect-ratio:261/210}.sitem .pet.pic img{height:100%}
