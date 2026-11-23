@@ -22,10 +22,10 @@ const uKey = (v, u) => v + '/' + u;
 const MAPS = {chinese: ['📜', '文字神殿'], english: ['🗽', '英語王國'], math: ['🔢', '數字迷宮'], nature: ['🌋', '自然秘境'], social: ['🏰', '時空大陸'], health: ['🏟️', '體能競技場']};
 const MONSTERS = [['👾', '像素怪'], ['👻', '迷糊幽靈'], ['🦇', '夜行蝙蝠'], ['🐙', '墨汁章魚'], ['🦂', '沙漠毒蠍'], ['🧟', '瞌睡殭屍'], ['🐺', '月夜狼'], ['🦖', '暴龍'], ['🕷️', '織網蜘蛛'], ['🤖', '機械兵'], ['🦈', '鯊魚怪'], ['🐊', '沼澤鱷']];
 const MINIS = ['👺', '👹', '💀', '🐉', '😈', '🦑', '🧌', '🐲'];
-const AVATARS = ['🧙', '🦸', '🥷', '🧝', '🧑‍🚀', '🤖', '🐱', '🐶', '🦊', '🐼'];
 const TITLES = [[1, '見習冒險者'], [3, '新手劍士'], [5, '銅牌勇者'], [8, '白銀騎士'], [12, '黃金戰士'], [16, '鑽石劍聖'], [20, '傳說英雄'], [30, '學霸大魔導師']];
-const P0 = {xp: 0, avatar: '🧙', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
-const player = () => Object.assign({}, P0, store.get('player', {}));
+const P0 = {xp: 0, avatar: 'reaper', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
+const player = () => { const p = Object.assign({}, P0, store.get('player', {})); if (!CHARS[p.avatar]) p.avatar = 'reaper'; return p; };
+const avatar = (p, opt = {}) => charSVG(p.avatar, Object.assign({aura: tierAura(lvInfo(p.xp).lv)}, opt));
 const savePlayer = p => store.set('player', p);
 function lvInfo(xp) { let lv = 1, need = 100; while (xp >= need) { xp -= need; lv++; need = 100 + 50 * (lv - 1); } return {lv, cur: xp, need}; }
 const title = lv => TITLES.filter(t => lv >= t[0]).pop()[1];
@@ -77,7 +77,7 @@ function gainXP(n, why) {
 function levelUp(lv) {
   SFX.lvup(); confetti();
   const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div class="mbox lvbox"><div class="lvtag">LEVEL UP!</div><div class="lvbig">Lv ${lv}</div>
+  m.innerHTML = `<div class="mbox lvbox"><div class="lvchar">${avatar(player())}</div><div class="lvtag">LEVEL UP!</div><div class="lvbig">Lv ${lv}</div>
     <div class="lvtitle">稱號：${title(lv)}</div><button class="btn gold" onclick="this.closest('.modal').remove()">繼續冒險 ▶</button></div>`;
   document.body.appendChild(m);
 }
@@ -85,7 +85,7 @@ function levelUp(lv) {
 /* ---------- 上方 HUD（等級、經驗值、音效） ---------- */
 function hud() {
   const p = player(), i = lvInfo(p.xp);
-  $('hud').innerHTML = `<span class="hav">${p.avatar}</span><span class="hlv">Lv ${i.lv}</span>
+  $('hud').innerHTML = `<span class="hav">${avatar(p, {head: true})}</span><span class="hlv">Lv ${i.lv}</span>
     <span class="hxp"><i style="width:${i.cur / i.need * 100}%"></i><em>${i.cur} / ${i.need} XP</em></span>
     <button class="hsnd" onclick="toggleSound()" title="音效">${p.sound ? '🔊' : '🔇'}</button>`;
 }
@@ -120,7 +120,7 @@ function home() {
   const tot = s => s.vols.reduce((n, v) => n + v.units.reduce((m, u) => m + (u.count || 0), 0), 0);
   $('app').innerHTML = `
   <div class="panel hero">
-    <button class="ava" onclick="pickAvatar()" title="換角色">${p.avatar}<small>換角色</small></button>
+    <button class="ava" onclick="pickAvatar()" title="換角色">${avatar(p)}<small>${CHARS[p.avatar].name}・換角色</small></button>
     <div class="hinfo">
       <input class="pname" id="pname" maxlength="10" placeholder="輸入冒險者名字" value="${esc(p.name)}">
       <div class="ptitle">Lv ${i.lv}・${title(i.lv)}</div>
@@ -139,7 +139,7 @@ function home() {
 }
 function pickAvatar() {
   const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div class="mbox"><div class="lvtag">選擇你的角色</div><div class="avs">${AVATARS.map(a => `<button onclick="setAvatar('${a}',this)">${a}</button>`).join('')}</div></div>`;
+  m.innerHTML = `<div class="mbox"><div class="lvtag">選擇你的角色</div><div class="avs">${CHAR_IDS.map(a => `<button onclick="setAvatar('${a}',this)" class="${player().avatar === a ? 'on' : ''}">${charSVG(a, {aura: tierAura(lvInfo(player().xp).lv)})}<b>${CHARS[a].name}</b><small>${CHARS[a].cls}</small></button>`).join('')}</div></div>`;
   m.onclick = e => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
 }
@@ -296,14 +296,14 @@ function arena() {
   if (S.phase === 'round') {
     const m = S.mon, pct = m.hp / m.max * 100;
     return `<div class="arena">
-      <div class="me"><span class="meav" id="meav">${p.avatar}</span><div><b>${esc(p.name || '冒險者')}</b><div class="note">${S.label} ${Math.min(S.i + 1, S.list.length)} / ${S.list.length}</div></div></div>
+      <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>${esc(p.name || CHARS[p.avatar].name)}</b><div class="note">${S.label} ${Math.min(S.i + 1, S.list.length)} / ${S.list.length}</div></div></div>
       <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連擊` : ''}</div>
       <div class="foe"><div class="finfo"><b>${m.dead ? '已擊敗！' : esc(m.name)}</b><div class="hp"><i style="width:${pct}%" class="${pct < 30 ? 'low' : ''}"></i><em>HP ${m.hp} / ${m.max}</em></div></div>
         <span class="mon ${m.dead ? 'dead' : ''}" id="mon">${m.dead ? '💥' : m.e}</span></div></div>`;
   }
   const W = Object.values(S.weak), c = S.weak[S.cur.k];
   return `<div class="arena boss">
-    <div class="me"><span class="meav" id="meav">${p.avatar}</span><div><b>BOSS 戰</b><div class="note">打倒 ${W.filter(x => x.st === 'ok').length} / ${W.length} 隻觀念怪</div></div></div>
+    <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>BOSS 戰</b><div class="note">打倒 ${W.filter(x => x.st === 'ok').length} / ${W.length} 隻觀念怪</div></div></div>
     <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連擊` : ''}</div>
     <div class="foe"><div class="finfo"><b>${esc(c.tag)}</b><div class="hearts">${'❤️'.repeat(NEED - c.streak)}${'🖤'.repeat(c.streak)}</div></div>
       <span class="mon big" id="mon">${c.e}</span></div></div>
