@@ -320,8 +320,11 @@ const txt = h => { const d = document.createElement('div'); d.innerHTML = String
 function qHtml(q) {
   const pic = q._img ? `<img src="${esc(q._img)}" alt="題目附圖" loading="lazy">` : '';
   const psg = q.p ? `<div class="psg">${R(q, q.p)}</div>` : '';
-  return psg + (q.img && !q.o ? pic : R(q, q.s) + pic);
+  const au = q.au ? `<div class="aud"><button class="btn" onclick="playAu()">🔊 播放題目</button><span class="note">可以重複播放</span><audio id="au" src="${esc(q.au)}" preload="auto"></audio></div>` : '';
+  return au + psg + (q.img && !q.o ? pic : R(q, q.s) + pic);
 }
+function stopAu() { const a = $('au'); if (a) a.pause(); }
+function playAu() { const a = $('au'); if (!a) return; a.currentTime = 0; a.play().catch(() => {}); }
 function arena() {
   const p = player();
   if (S.phase === 'round') {
@@ -341,6 +344,7 @@ function arena() {
     <div class="minis row">${W.map(x => `<span class="${x === c ? 'cur' : ''} ${x.st === 'ok' ? 'ko' : ''}">${x.st === 'ok' ? boomSVG() : miniSVG(x)}</span>`).join('')}</div>`;
 }
 function render() {
+  stopAu();
   const q = S.cur.q;
   crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › ${S.phase === 'round' ? S.label : 'BOSS 戰'}`);
   const nOpt = q.o ? q.o.length : (q.n || 4);
@@ -352,6 +356,7 @@ function render() {
     <div id="fb"></div></div></div></div>
     <div class="acts"><button class="btn ghost" onclick="quit()">🏳️ 結束戰鬥，看戰果</button></div>`;
   scrollTo(0, 0);
+  if (q.au) setTimeout(playAu, 400);
 }
 function record(q, ok) {
   const sid = S.s.id, k = qKey(q);
@@ -411,7 +416,7 @@ function answer(i) {
     <div class="acts"><button class="btn gold" onclick="next()">${last ? (Object.keys(S.weak).length ? '🐲 進入 BOSS 戰 →' : '🏆 看戰果 →') : '下一題 ▶'}</button></div>`;
   $('fb').scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
-function quit() { if (!S.log.length) { S.active = false; location.hash = '#/s/' + S.s.id; return; } summary(); }
+function quit() { stopAu(); if (!S.log.length) { S.active = false; location.hash = '#/s/' + S.s.id; return; } summary(); }
 
 /* ---------- 戰果 ---------- */
 function summary() {
