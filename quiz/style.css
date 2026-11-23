@@ -326,3 +326,6 @@ img.char.head{border-radius:50%;border:2px solid #d9b46a;width:2.2rem;height:2.2
   -webkit-mask-image:radial-gradient(ellipse 100% 150% at 0% 100%,#000 25%,transparent 72%);mask-image:radial-gradient(ellipse 100% 150% at 0% 100%,#000 25%,transparent 72%)}
 body::after{display:none}
 .arena{background:linear-gradient(180deg,rgba(76,42,140,.85) 0%,rgba(46,24,92,.9) 72%,rgba(30,14,60,.95) 72%,rgba(22,10,44,.95) 100%);border:1.5px solid #a07d3e}
+
+.float.coin.neg{color:#fca5a5}
+.rgrid b.neg,b.neg{color:#fca5a5}
