@@ -186,6 +186,8 @@ function subjectPage(sid) {
     document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sel.n = +b.dataset.n; save(); draw(); });
     document.querySelectorAll('.unit input').forEach(c => c.onchange = () => {
       const k = c.dataset.u; sel.units = c.checked ? sel.units.concat(k) : sel.units.filter(x => x !== k); save(); draw(); });
+    document.querySelectorAll('.gall').forEach(c => c.onchange = () => {
+      const ks = c.dataset.k.split(','); sel.units = sel.units.filter(x => !ks.includes(x)); if (c.checked) sel.units.push(...ks); save(); draw(); });
     document.querySelectorAll('.vall').forEach(c => c.onchange = () => {
       const v = vol(s, c.dataset.v), ks = v.units.filter(u => u.count).map(u => uKey(v.id, u.id));
       sel.units = sel.units.filter(x => !ks.includes(x)); if (c.checked) sel.units.push(...ks); save(); draw(); });
@@ -200,7 +202,7 @@ function subjectPage(sid) {
     const all = us.every(u => sel.units.includes(uKey(v.id, u.id)));
     let lastG = null;
     const rows = '<div class="ulist">' + v.units.map(u => {
-      const k = uKey(v.id, u.id), st = stat[k], g = u.group && u.group !== lastG ? `<div class="grp">${esc(u.group)}</div>` : '';
+      const k = uKey(v.id, u.id), st = stat[k], g = u.group && u.group !== lastG ? (() => { const ks = v.units.filter(x => x.group === u.group && x.count).map(x => uKey(v.id, x.id)); return `<label class="grp chk"><input type="checkbox" class="gall" data-k="${ks.join(',')}" ${ks.length && ks.every(x => sel.units.includes(x)) ? 'checked' : ''}> ${esc(u.group)}</label>`; })() : '';
       lastG = u.group || lastG;
       if (!u.count) return g + `<div class="unit off"><input type="checkbox" disabled><span class="nm">${esc(u.name)}</span><span class="meta">🔒 準備中</span></div>`;
       const done = st ? Math.min(st.seen || 0, u.count) : 0;
@@ -286,9 +288,14 @@ function bossIntro() {
     <button class="btn red" onclick="next()">⚔️ 開戰</button></div>`;
   SFX.miss(); scrollTo(0, 0);
 }
+/* 題目內容：有 html 旗標的題庫（Word 轉來）保留附圖與表格 */
+const fixH = (q, h) => String(h || '').replace(/src="img\//g, `loading="lazy" src="data/${q._s}/${q._v}/img/`).replace(/ width="(\d+)"/g, (m, w) => ` style="width:${Math.round(w * 1.15)}px"`);
+const R = (q, t) => q.html ? fixH(q, t) : esc(t);
+const txt = h => { const d = document.createElement('div'); d.innerHTML = String(h || '').replace(/<br>/g, ' '); return d.textContent; };
 function qHtml(q) {
   const pic = q._img ? `<img src="${esc(q._img)}" alt="題目附圖" loading="lazy">` : '';
-  return q.img && !q.o ? pic : esc(q.s) + pic;
+  const psg = q.p ? `<div class="psg">${R(q, q.p)}</div>` : '';
+  return psg + (q.img && !q.o ? pic : R(q, q.s) + pic);
 }
 function arena() {
   const p = player();
@@ -316,7 +323,7 @@ function render() {
     <div class="bar"><span class="pill">${esc(uName(q))}</span>${q.k ? `<span class="pill">${esc(q.k.join('、'))}</span>` : ''}${q.d ? `<span class="pill d${esc(q.d)}">${esc(q.d)}・${xpFor(q)} XP</span>` : ''}</div>
     <div class="qgrid"><div class="qleft"><div class="stem">${qHtml(q)}</div>
     ${q.img && !q.o ? '<p class="note" style="margin:0">看圖作答，點選答案：</p>' : ''}</div>
-    <div class="qright">${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="answer(${i})"><b>${L[i]}</b><span>${q.o ? esc(q.o[i]) : ''}</span></button>`).join('')}
+    <div class="qright">${Array.from({length: nOpt}, (_, i) => `<button class="opt" id="o${i}" onclick="answer(${i})"><b>${L[i]}</b><span>${q.o ? R(q, q.o[i]) : ''}</span></button>`).join('')}
     <div id="fb"></div></div></div></div>
     <div class="acts"><button class="btn ghost" onclick="quit()">🏳️ 結束戰鬥，看戰果</button></div>`;
   scrollTo(0, 0);
@@ -375,7 +382,7 @@ function answer(i) {
   const ar = document.querySelector('.arena'); if (ar) { const t = document.createElement('div'); t.innerHTML = arena(); ar.replaceWith(t.firstElementChild);
     const mr = document.querySelector('.minis.row'); if (mr && t.children[1]) mr.replaceWith(t.children[1]); }
   const last = S.phase === 'round' && S.i >= S.list.length;
-  $('fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'no'}"><strong>${ok ? (crit ? '⚡ 暴擊命中！' : '⚔️ 命中！答對了') : '🛡️ 被閃過了！正確答案是 ' + L[q.a]}</strong>${q.e ? '詳解：' + esc(q.e) : ''}${q.e ? msg : msg.replace(/^<br>/, '')}</div>
+  $('fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'no'}"><strong>${ok ? (crit ? '⚡ 暴擊命中！' : '⚔️ 命中！答對了') : '🛡️ 被閃過了！正確答案是 ' + L[q.a]}</strong>${q.e ? '詳解：' + R(q, q.e) : ''}${q.e ? msg : msg.replace(/^<br>/, '')}</div>
     <div class="acts"><button class="btn gold" onclick="next()">${last ? (Object.keys(S.weak).length ? '🐲 進入 BOSS 戰 →' : '🏆 看戰果 →') : '下一題 ▶'}</button></div>`;
   $('fb').scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
@@ -395,7 +402,7 @@ function summary() {
 答錯過的觀念：
 ${W.map(c => `・${unitName(c)}／${c.tag}（錯 ${c.wrong.length} 次，${c.st === 'ok' ? '題庫類似題已連對 ' + NEED + ' 題' : '題庫類似題已用完，還沒連對 ' + NEED + ' 題'}）`).join('\n')}
 我答錯的題目：
-${wrongs.map((x, n) => `${n + 1}. ${x.q.s || ''}${x.q.img ? '（附圖題，題號 ' + x.q.id + '）' : ''}（我選 ${L[x.pick]}，答案 ${L[x.q.a]}）`).join('\n')}
+${wrongs.map((x, n) => `${n + 1}. ${txt(x.q.s)}${x.q.img || /<img/.test(x.q.s + (x.q.p || '')) ? '（附圖題，題號 ' + x.q.id + '）' : ''}（我選 ${L[x.pick]}，答案 ${L[x.q.a]}）`).join('\n')}
 請針對這些觀念出精熟題，用點選作答、答完顯示詳解。` : '';
   const p = player(), i = lvInfo(p.xp);
   if (win) { SFX.win(); confetti(); }
@@ -417,7 +424,7 @@ ${wrongs.map((x, n) => `${n + 1}. ${x.q.s || ''}${x.q.img ? '（附圖題，題�
     <div class="panel"><b>🧙 請 Claude 出精熟題</b><p class="note" style="margin:4px 0 8px">按「複製」，貼給 Claude（或傳給爸媽），就能針對錯過的觀念出新題目。</p>
       <textarea id="tx" readonly>${esc(txt)}</textarea><div class="acts"><button class="btn gold" onclick="cp()">複製</button><span id="cpm" class="note"></span></div></div>
     <div class="panel"><b>📖 錯題回顧</b>${wrongs.map(x => `<div class="wl">${qHtml(x.q)}
-你選 ${L[x.pick]} ${x.q.o ? esc(x.q.o[x.pick]) : ''}　→　正確 ${L[x.q.a]} ${x.q.o ? esc(x.q.o[x.q.a]) : ''}${x.q.e ? '\n<span class="note">詳解：' + esc(x.q.e) + '</span>' : ''}</div>`).join('')}</div>` : ''}`;
+你選 ${L[x.pick]} ${x.q.o ? R(x.q, x.q.o[x.pick]) : ''}　→　正確 ${L[x.q.a]} ${x.q.o ? R(x.q, x.q.o[x.q.a]) : ''}${x.q.e ? '\n<span class="note">詳解：' + R(x.q, x.q.e) + '</span>' : ''}</div>`).join('')}</div>` : ''}`;
   scrollTo(0, 0);
 }
 function again() {

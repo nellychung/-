@@ -250,5 +250,17 @@ textarea{width:100%;min-height:9rem;font:inherit;font-size:.88rem;border:2px sol
 
 /* 武俠角色圖片 */
 img.char{display:block;width:100%;height:100%;object-fit:contain;object-position:bottom}
-img.char.head{object-fit:cover;object-position:50% 30%;transform:scale(1.7);transform-origin:50% 28%}
+img.char.head{object-fit:cover;object-position:center}
 .hav{background:#fef3c7}
+
+/* Word 題庫：附圖、表格、題組題幹 */
+.stem img:not(.blk),.opt img:not(.blk),.fb img:not(.blk),.wl img:not(.blk),.psg img:not(.blk){display:inline-block;vertical-align:middle;margin:0 .15rem;max-height:none}
+.opt img.blk{max-height:30vh;display:block;margin:.2rem 0}
+.psg{background:#f5efe0;border-left:4px solid #d6b36a;padding:.5rem .8rem;margin:0 0 .7rem;border-radius:.4rem;font-size:.95em;white-space:normal}
+.qt{border-collapse:collapse;margin:.4rem 0;font-size:.92em;background:#fff;white-space:normal}
+.qt td{border:1px solid #a8a29e;padding:.2rem .5rem;text-align:center;vertical-align:middle}
+.qt tr:first-child td{background:#f5f5f4;font-weight:600}
+.stem{white-space:normal}
+.fb img{max-width:100%}
+
+.grp.chk{display:flex;gap:.5rem;font-size:.95rem;margin:.9rem 0 .2rem;cursor:pointer}

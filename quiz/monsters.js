@@ -33,6 +33,8 @@ function yaoSVG(id) {
 /* 怪物資料（之後有 GPT 圖片時，在這裡加 img: 'img/mon/xxx.png'） */
 const MON = {};
 YAO_LIST.forEach(([id, n]) => MON[id] = {name: n.replace('BOSS ', ''), boss: id.startsWith('boss')});
+/* GPT 繪製的怪物圖 */
+['boar'].forEach(id => MON[id].img = `img/mon/${id}.png`);
 const MON_IDS = YAO_LIST.map(x => x[0]).filter(k => !MON[k].boss);
 const MINI_IDS = ['imp', 'bat', 'gourd', 'fox', 'umbrella', 'rock', 'tree', 'snake'];
 const MINI_TINT = [0, 40, 90, 150, 210, 280];
