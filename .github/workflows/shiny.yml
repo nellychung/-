@@ -10,7 +10,7 @@ on:
         required: false
         default: ''
   push:
-    branches: [claude/pokemon-kingdom]
+    branches: [main, claude/pokemon-kingdom]
     paths:
       - '.github/workflows/shiny.yml'
       - '下載寶可夢圖.py'
