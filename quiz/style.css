@@ -237,3 +237,13 @@ textarea{width:100%;min-height:9rem;font:inherit;font-size:.88rem;border:2px sol
 .mbox{max-width:40rem}
 .lvbox{max-width:26rem}
 @media (max-width:600px){.ava{width:6.5rem;height:9.5rem}.meav{width:3.6rem;height:5rem}.avs{grid-template-columns:repeat(2,1fr)}.avs button .char{height:7rem}}
+
+/* 怪物圖 */
+.monsvg{display:block;width:100%;height:100%;overflow:visible}
+.mon{width:7rem;height:7rem;font-size:0}
+.mon.big{width:7.5rem;height:7.5rem}
+.bossbig{width:11rem;height:11rem;margin:0 auto .3rem;font-size:0}
+.mini{display:inline-block;width:4rem;height:4rem;vertical-align:middle;font-style:normal}
+.mini.sm{width:2rem;height:2rem}
+.minis.row span{width:3rem;height:3rem;padding:.15rem}
+@media (max-width:600px){.mon,.mon.big{width:5rem;height:5rem}.bossbig{width:8rem;height:8rem}}

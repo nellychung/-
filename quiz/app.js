@@ -20,8 +20,7 @@ const uKey = (v, u) => v + '/' + u;
 
 /* ---------- 遊戲設定 ---------- */
 const MAPS = {chinese: ['📜', '文字神殿'], english: ['🗽', '英語王國'], math: ['🔢', '數字迷宮'], nature: ['🌋', '自然秘境'], social: ['🏰', '時空大陸'], health: ['🏟️', '體能競技場']};
-const MONSTERS = [['👾', '像素怪'], ['👻', '迷糊幽靈'], ['🦇', '夜行蝙蝠'], ['🐙', '墨汁章魚'], ['🦂', '沙漠毒蠍'], ['🧟', '瞌睡殭屍'], ['🐺', '月夜狼'], ['🦖', '暴龍'], ['🕷️', '織網蜘蛛'], ['🤖', '機械兵'], ['🦈', '鯊魚怪'], ['🐊', '沼澤鱷']];
-const MINIS = ['👺', '👹', '💀', '🐉', '😈', '🦑', '🧌', '🐲'];
+const miniSVG = c => monSVG(c.mid, {c1: c.tint[0], c2: c.tint[1]});
 const TITLES = [[1, '見習冒險者'], [3, '新手劍士'], [5, '銅牌勇者'], [8, '白銀騎士'], [12, '黃金戰士'], [16, '鑽石劍聖'], [20, '傳說英雄'], [30, '學霸大魔導師']];
 const P0 = {xp: 0, avatar: 'reaper', name: '', kills: 0, bosses: 0, best: 0, right: 0, sound: true};
 const player = () => { const p = Object.assign({}, P0, store.get('player', {})); if (!CHARS[p.avatar]) p.avatar = 'reaper'; return p; };
@@ -242,10 +241,10 @@ async function startWrong(s, n) {
   begin(s, list, pairs, '錯題魔窟');
 }
 function begin(s, list, pairs, label) {
-  const m = pick(MONSTERS), hp = 10 * Math.max(1, Math.ceil(list.length * .7));
+  const mid = pick(MON_IDS), hp = 10 * Math.max(1, Math.ceil(list.length * .7));
   S = {s, list, pairs, label, i: 0, score: 0, used: new Set(list.map(qKey)), seen: new Set(store.get(s.id + ':seen', [])),
        weak: {}, log: [], cur: null, ans: false, phase: 'round', active: true, hash: '#/s/' + s.id + '/play',
-       mon: {e: m[0], name: m[1], hp, max: hp, dead: false}, combo: 0, best: 0, xp: 0, kills: 0};
+       mon: {id: mid, name: MON[mid].name, hp, max: hp, dead: false}, combo: 0, best: 0, xp: 0, kills: 0};
   if (location.hash === S.hash) history.replaceState(null, '', S.hash); else history.pushState(null, '', S.hash);
   next();
 }
@@ -281,9 +280,9 @@ function bossIntro() {
   S.phase = 'weak';
   crumb(`› <a href="#/s/${S.s.id}">${esc(S.s.name)}</a> › BOSS 戰`);
   const W = Object.values(S.weak);
-  $('app').innerHTML = `<div class="panel bossin"><div class="bossbig">🐲</div><div class="lvtag red">BOSS 戰！</div>
+  $('app').innerHTML = `<div class="panel bossin"><div class="bossbig">${monSVG(pick(['dragon', 'demon']))}</div><div class="lvtag red">BOSS 戰！</div>
     <p>剛剛答錯的 <b>${W.length}</b> 個觀念變成了「觀念怪」！<br>每隻有 <b>${NEED}</b> 顆心，連續答對 ${NEED} 題同觀念的類似題才能打倒；答錯牠會回血。</p>
-    <div class="minis">${W.map(c => `<span>${c.e}<small>${esc(c.tag)}</small></span>`).join('')}</div>
+    <div class="minis">${W.map(c => `<span><i class="mini">${miniSVG(c)}</i><small>${esc(c.tag)}</small></span>`).join('')}</div>
     <button class="btn red" onclick="next()">⚔️ 開戰</button></div>`;
   SFX.miss(); scrollTo(0, 0);
 }
@@ -299,15 +298,15 @@ function arena() {
       <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>${esc(p.name || CHARS[p.avatar].name)}</b><div class="note">${S.label} ${Math.min(S.i + 1, S.list.length)} / ${S.list.length}</div></div></div>
       <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連擊` : ''}</div>
       <div class="foe"><div class="finfo"><b>${m.dead ? '已擊敗！' : esc(m.name)}</b><div class="hp"><i style="width:${pct}%" class="${pct < 30 ? 'low' : ''}"></i><em>HP ${m.hp} / ${m.max}</em></div></div>
-        <span class="mon ${m.dead ? 'dead' : ''}" id="mon">${m.dead ? '💥' : m.e}</span></div></div>`;
+        <span class="mon ${m.dead ? 'dead' : ''}" id="mon">${m.dead ? boomSVG() : monSVG(m.id)}</span></div></div>`;
   }
   const W = Object.values(S.weak), c = S.weak[S.cur.k];
   return `<div class="arena boss">
     <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>BOSS 戰</b><div class="note">打倒 ${W.filter(x => x.st === 'ok').length} / ${W.length} 隻觀念怪</div></div></div>
     <div class="combo ${S.combo >= 3 ? 'hot' : ''}">${S.combo >= 2 ? `🔥 ${S.combo} 連擊` : ''}</div>
-    <div class="foe"><div class="finfo"><b>${esc(c.tag)}</b><div class="hearts">${'❤️'.repeat(NEED - c.streak)}${'🖤'.repeat(c.streak)}</div></div>
-      <span class="mon big" id="mon">${c.e}</span></div></div>
-    <div class="minis row">${W.map(x => `<span class="${x === c ? 'cur' : ''} ${x.st === 'ok' ? 'ko' : ''}">${x.st === 'ok' ? '💥' : x.e}</span>`).join('')}</div>`;
+    <div class="foe"><div class="finfo"><b>觀念怪：${esc(c.tag)}</b><div class="hearts">${'❤️'.repeat(NEED - c.streak)}${'🖤'.repeat(c.streak)}</div></div>
+      <span class="mon big" id="mon">${miniSVG(c)}</span></div></div>
+    <div class="minis row">${W.map(x => `<span class="${x === c ? 'cur' : ''} ${x.st === 'ok' ? 'ko' : ''}">${x.st === 'ok' ? boomSVG() : miniSVG(x)}</span>`).join('')}</div>`;
 }
 function render() {
   const q = S.cur.q;
@@ -361,7 +360,7 @@ function answer(i) {
           gainXP(50); setTimeout(() => { SFX.kill(); confetti(); floatText(`擊敗 ${m.name}！+50 XP`, 'xp big'); }, 350);
           msg = `<br>💥 你打倒了 ${esc(m.name)}！剩下的題目是「追擊」，繼續賺經驗值！`; } }
     } else { const k = q._v + '/' + q._u + '|' + tag(q);
-      if (!S.weak[k]) S.weak[k] = {v: q._v, u: q._u, tag: tag(q), streak: 0, st: 'learn', last: 0, wrong: [], e: MINIS[Object.keys(S.weak).length % MINIS.length]};
+      if (!S.weak[k]) S.weak[k] = {v: q._v, u: q._u, tag: tag(q), streak: 0, st: 'learn', last: 0, wrong: [], mid: MINI_IDS[Object.keys(S.weak).length % MINI_IDS.length], tint: MINI_TINT[Object.keys(S.weak).length % MINI_TINT.length]};
       S.weak[k].wrong.push(q); msg = `<br>👹 這個觀念變成「觀念怪」了，等一下 BOSS 戰再打倒牠！`; }
     S.i++;
   } else {
@@ -414,7 +413,7 @@ ${wrongs.map((x, n) => `${n + 1}. ${x.q.s || ''}${x.q.img ? '（附圖題，題�
     ${outC.length ? `<p class="note">還有 ${outC.length} 隻觀念怪沒打倒（類似題用完或中途結束），答錯的題目都放進「錯題魔窟」了。</p>` : ''}
     <div class="acts" style="justify-content:center"><button class="btn gold" onclick="again()">⚔️ 再戰一回</button><a class="btn ghost" href="#/s/${S.s.id}">🗺️ 回關卡選擇</a></div></div>
     ${W.length ? `<div class="panel"><table><tr><th>關卡</th><th>觀念怪</th><th>被打中幾次</th><th>狀態</th></tr>
-      ${W.map(c => `<tr><td>${esc(unitName(c))}</td><td>${c.e} ${esc(c.tag)}</td><td>${c.wrong.length}</td><td>${c.st === 'ok' ? '<span class="st-ok">💥 已打倒</span>' : '<span class="st-w">逃走了</span>'}</td></tr>`).join('')}</table></div>
+      ${W.map(c => `<tr><td>${esc(unitName(c))}</td><td><i class="mini sm">${miniSVG(c)}</i> ${esc(c.tag)}</td><td>${c.wrong.length}</td><td>${c.st === 'ok' ? '<span class="st-ok">💥 已打倒</span>' : '<span class="st-w">逃走了</span>'}</td></tr>`).join('')}</table></div>
     <div class="panel"><b>🧙 請 Claude 出精熟題</b><p class="note" style="margin:4px 0 8px">按「複製」，貼給 Claude（或傳給爸媽），就能針對錯過的觀念出新題目。</p>
       <textarea id="tx" readonly>${esc(txt)}</textarea><div class="acts"><button class="btn gold" onclick="cp()">複製</button><span id="cpm" class="note"></span></div></div>
     <div class="panel"><b>📖 錯題回顧</b>${wrongs.map(x => `<div class="wl">${qHtml(x.q)}
