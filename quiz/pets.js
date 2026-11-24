@@ -1,14 +1,18 @@
 /* 寵物系統：用零用錢買寵物、餵食養大；太久沒餵會離家出走（可花錢找回）
    圖片：img/pets/<種類>_<階段 1~3>.png。還沒有圖的種類先用表情符號代替。 */
-const PET = {   // img = 已經有幾個階段的圖（img/pets/<id>_<階段>.jpg）；還沒有的階段先用最後一張圖加光暈
-  zichen:   {name: '紫宸', kind: '靈貓',   e: '🐈‍⬛', price: 30,  img: 1, xp: 1.1},
-  shuangli: {name: '霜璃', kind: '九尾狐', e: '🦊', price: 50,  img: 1, xp: 1.2},
-  xueling:  {name: '雪翎', kind: '靈鹿',   e: '🦌', price: 80,  img: 1, xp: 1.3},
-  yanhuang: {name: '焰凰', kind: '火鳳',   e: '🦚', price: 120, img: 1, xp: 1.45},
-  yejin:    {name: '夜燼', kind: '幽龍',   e: '🐉', price: 150, img: 1, xp: 1.6},
-  cangming: {name: '滄溟', kind: '水龍',   e: '🐲', price: 200, img: 1, xp: 1.75}
+const PET = {   // img = 有幾個階段的圖；ext = 圖檔格式（png 是去背的進化圖，jpg 是卡片圖）
+  zichen:   {name: '紫宸', kind: '靈貓',   e: '🐈‍⬛', price: 30,  img: 1, ext: 'jpg', xp: 1.1},
+  zhumo:    {name: '竹墨', kind: '食鐵獸', e: '🐼', price: 40,  img: 3, ext: 'png', xp: 1.15},
+  yuehe:    {name: '月鶴', kind: '仙鶴',   e: '🦢', price: 50,  img: 3, ext: 'png', xp: 1.2},
+  shuangli: {name: '霜璃', kind: '九尾狐', e: '🦊', price: 60,  img: 3, ext: 'png', xp: 1.25},
+  xuanyuan: {name: '玄淵', kind: '玄武',   e: '🐢', price: 80,  img: 3, ext: 'png', xp: 1.3},
+  xueling:  {name: '雪翎', kind: '麒麟',   e: '🦌', price: 100, img: 3, ext: 'png', xp: 1.4},
+  baixiao:  {name: '白嘯', kind: '白虎',   e: '🐯', price: 120, img: 3, ext: 'png', xp: 1.45},
+  yanhuang: {name: '焰凰', kind: '朱雀',   e: '🦚', price: 150, img: 3, ext: 'png', xp: 1.55},
+  yejin:    {name: '夜燼', kind: '幽龍',   e: '🐉', price: 180, img: 1, ext: 'jpg', xp: 1.65},
+  cangming: {name: '滄溟', kind: '青龍',   e: '🐲', price: 200, img: 3, ext: 'png', xp: 1.75}
 };
-const OLD_PET = {crane: 'xueling', fox: 'shuangli', panda: 'zichen', turtle: 'cangming', tiger: 'xueling', qilin: 'xueling', phoenix: 'yanhuang', dragon: 'yejin'};
+const OLD_PET = {crane: 'yuehe', fox: 'shuangli', panda: 'zhumo', turtle: 'xuanyuan', tiger: 'baixiao', qilin: 'xueling', phoenix: 'yanhuang', dragon: 'cangming'};
 const PET_IDS = Object.keys(PET);
 const FOOD = [
   {id: 'snack', name: '飯糰', e: '🍙', price: 3,  full: 30,  grow: 10, desc: '飽足 +30、成長 +10'},
@@ -52,6 +56,7 @@ function mood(p) {
 function petArt(p, cls = '') {
   const sp = PET[p.sp], st = stageOf(p), m = mood(p)[0];
   const sad = (!p.away && p.fed && fullNow(p) < 25 ? ' sad' : '') + (hasGear(p, 'cape') ? ' cape' : '');
+  if (sp.ext === 'png') return `<span class="pet free st${st} ${cls}${sad}"><img src="img/pets/${p.sp}_${Math.min(st, sp.img)}.png" alt="${esc(sp.name)}"><i>${m}</i></span>`;
   if (sp.img) return `<span class="pet pic st${st} ${cls}${sad}"><img src="img/pets/${p.sp}_${Math.min(st, sp.img)}.jpg" alt="${esc(sp.name)}"><i>${m}</i></span>`;
   return `<span class="pet emo st${st} ${cls}${sad}">${sp.e}<i>${m}</i></span>`;
 }
@@ -110,7 +115,7 @@ function petPage(msg) {
       <button class="btn sm gold" onclick="findPet('${p.uid}')" ${bal < c ? 'disabled' : ''}>🔍 找回來 ${c}元</button></div>`; }).join('')}</div>` : ''}
   <div class="lbl">🏪 寵物商店</div>
   <div class="shop">${PET_IDS.map(id => { const sp = PET[id], own = d.list.filter(p => p.sp === id).length;
-    return `<div class="sitem">${petArt({sp: id, grow: 0, full: 100, fed: Date.now()})}<b>${sp.name}</b><span class="xpb">經驗值 ×${sp.xp}</span><small>${sp.kind}・NT$ ${petPrice(id)}${own ? `・已有 ${own} 隻` : ''}</small>
+    return `<div class="sitem">${petArt({sp: id, grow: 0, full: 100, fed: Date.now()})}${sp.img > 1 ? `<div class="evo">${[1, 2, 3].map(k => `<img src="img/pets/${id}_${k}.png" title="${STAGES[k - 1][1]}">`).join('<span>›</span>')}</div>` : '<div class="evo none">進化圖準備中</div>'}<b>${sp.name}</b><span class="xpb">經驗值 ×${sp.xp}</span><small>${sp.kind}・NT$ ${petPrice(id)}${own ? `・已有 ${own} 隻` : ''}</small>
       <button class="btn sm gold" onclick="buyPet('${id}')" ${bal < petPrice(id) ? 'disabled' : ''}>購買</button></div>`; }).join('')}</div>
   <div class="acts"><a class="btn ghost" href="#/">⬅ 回首頁</a></div>`;
   scrollTo(0, 0);
