@@ -64,6 +64,7 @@ function confetti() {
   document.body.appendChild(box); setTimeout(() => box.remove(), 2600);
 }
 function gainXP(n, why) {
+  n = Math.round(n * petXP());
   const p = player(), before = lvInfo(p.xp).lv;
   p.xp += n; savePlayer(p);
   const now = lvInfo(p.xp);
@@ -458,7 +459,7 @@ function stopAu() { const a = $('au'); if (a) a.pause(); }
 function playAu() { const a = $('au'); if (!a) return; a.currentTime = 0; a.play().catch(() => {}); }
 function arena() {
   const p = player(), pt = activePet();
-  const right = pt ? `<div class="buddy"><div class="finfo"><b>${esc(pt.name)}</b><div class="note">${mood(pt)[0]} 陪你修練・${stageName(pt)}</div></div><span id="mon">${petArt(pt, 'mini2')}</span></div>`
+  const right = pt ? `<div class="buddy"><div class="finfo"><b>${esc(pt.name)}</b><div class="note">${mood(pt)[0]} 陪你修練・經驗值 ×${PET[pt.sp].xp}</div></div><span id="mon">${petArt(pt, 'mini2')}</span></div>`
     : `<a class="buddy none" href="#/pets"><div class="finfo"><b>還沒有寵物</b><div class="note">去寵物園買一隻陪你 →</div></div><span id="mon" class="pet emo">🥚</span></a>`;
   if (S.phase === 'round') return `<div class="arena">
       <div class="me"><span class="meav" id="meav">${avatar(p)}</span><div><b>${esc(p.name || CHARS[p.avatar].name)}</b><div class="note">${S.label} ${Math.min(S.i + 1, S.list.length)} / ${S.list.length}</div></div></div>

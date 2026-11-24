@@ -1,12 +1,12 @@
 /* 寵物系統：用零用錢買寵物、餵食養大；太久沒餵會離家出走（可花錢找回）
    圖片：img/pets/<種類>_<階段 1~3>.png。還沒有圖的種類先用表情符號代替。 */
 const PET = {   // img = 已經有幾個階段的圖（img/pets/<id>_<階段>.jpg）；還沒有的階段先用最後一張圖加光暈
-  zichen:   {name: '紫宸', kind: '靈貓',   e: '🐈‍⬛', price: 30,  img: 1},
-  shuangli: {name: '霜璃', kind: '九尾狐', e: '🦊', price: 50,  img: 1},
-  xueling:  {name: '雪翎', kind: '靈鹿',   e: '🦌', price: 80,  img: 1},
-  yanhuang: {name: '焰凰', kind: '火鳳',   e: '🦚', price: 120, img: 1},
-  yejin:    {name: '夜燼', kind: '幽龍',   e: '🐉', price: 150, img: 1},
-  cangming: {name: '滄溟', kind: '水龍',   e: '🐲', price: 200, img: 1}
+  zichen:   {name: '紫宸', kind: '靈貓',   e: '🐈‍⬛', price: 30,  img: 1, xp: 1.1},
+  shuangli: {name: '霜璃', kind: '九尾狐', e: '🦊', price: 50,  img: 1, xp: 1.2},
+  xueling:  {name: '雪翎', kind: '靈鹿',   e: '🦌', price: 80,  img: 1, xp: 1.3},
+  yanhuang: {name: '焰凰', kind: '火鳳',   e: '🦚', price: 120, img: 1, xp: 1.45},
+  yejin:    {name: '夜燼', kind: '幽龍',   e: '🐉', price: 150, img: 1, xp: 1.6},
+  cangming: {name: '滄溟', kind: '水龍',   e: '🐲', price: 200, img: 1, xp: 1.75}
 };
 const OLD_PET = {crane: 'xueling', fox: 'shuangli', panda: 'zichen', turtle: 'cangming', tiger: 'xueling', qilin: 'xueling', phoenix: 'yanhuang', dragon: 'yejin'};
 const PET_IDS = Object.keys(PET);
@@ -62,6 +62,7 @@ function checkPets() {
   if (gone.length) { if (gone.some(p => p.uid === d.active)) d.active = (d.list.find(p => !p.away) || {}).uid || ''; savePets(d); }
   return gone;
 }
+const petXP = () => { const p = activePet(); return p ? PET[p.sp].xp : 1; };
 const activePet = () => { const d = pets(); return d.list.find(p => p.uid === d.active && !p.away) || null; };
 function petGrow(n) {  // 答對題目時，陪你修練的寵物也會成長
   const d = pets(), p = d.list.find(x => x.uid === d.active && !x.away); if (!p) return null;
@@ -85,7 +86,7 @@ function petPage(msg) {
     return `<div class="pcard ${p.uid === d.active ? 'on' : ''}">
       <div class="part">${petArt(p)}</div>
       <div class="pinfo">
-        <div class="pname2"><b>${esc(p.name)}</b> <small>${PET[p.sp].kind}・${stageName(p)}</small></div>
+        <div class="pname2"><b>${esc(p.name)}</b> <small>${PET[p.sp].kind}・${stageName(p)}</small> <span class="xpb">經驗值 ×${PET[p.sp].xp}</span></div>
         <div class="note">${me} ${mt}</div>
         <div class="bar2"><span>飽足</span><span class="meter"><i style="width:${f}%" class="${f < 25 ? 'low' : ''}"></i></span><em>${f}</em></div>
         <div class="bar2"><span>成長</span><span class="meter g"><i style="width:${nx ? Math.min(100, (p.grow || 0) / nx[0] * 100) : 100}%"></i></span><em>${nx ? `${p.grow || 0}/${nx[0]}` : '完全體'}</em></div>
@@ -99,7 +100,7 @@ function petPage(msg) {
   $('app').innerHTML = `
   ${msg ? `<div class="panel pmsg">${msg}</div>` : ''}
   <div class="panel"><div class="lvtag">🐾 寵物園</div>
-    <p class="note">用零用錢買寵物、餵牠吃東西。帶著寵物去修練，每答對一題牠也會長大一點，長大會變身！<br>
+    <p class="note">用零用錢買寵物、餵牠吃東西。帶著寵物去修練，每答對一題牠也會長大一點，長大會變身！每種靈寵還會讓你的<b>經驗值加倍</b>（×1.1～×1.75）。<br>
     每天飽足度會少 ${DECAY}，餓到 0 之後再 ${RUN_DAYS} 天沒餵，寵物就會<b>離家出走</b>。可以幫寵物買配備（項圈、玉珮、護身符、披風）。</p>
     <div class="menu">${FOOD.map(f => `<span>${f.e} ${f.name} <b>${foodPrice(f)}元</b><small>${f.desc}</small></span>`).join('')}</div>
     <div class="wallet">💰 可用零用錢 <b>NT$ ${bal}</b> <a href="#/money">看存摺 / 申請提現 →</a></div>
@@ -109,7 +110,7 @@ function petPage(msg) {
       <button class="btn sm gold" onclick="findPet('${p.uid}')" ${bal < c ? 'disabled' : ''}>🔍 找回來 ${c}元</button></div>`; }).join('')}</div>` : ''}
   <div class="lbl">🏪 寵物商店</div>
   <div class="shop">${PET_IDS.map(id => { const sp = PET[id], own = d.list.filter(p => p.sp === id).length;
-    return `<div class="sitem">${petArt({sp: id, grow: 0, full: 100, fed: Date.now()})}<b>${sp.name}</b><small>${sp.kind}・NT$ ${petPrice(id)}${own ? `・已有 ${own} 隻` : ''}</small>
+    return `<div class="sitem">${petArt({sp: id, grow: 0, full: 100, fed: Date.now()})}<b>${sp.name}</b><span class="xpb">經驗值 ×${sp.xp}</span><small>${sp.kind}・NT$ ${petPrice(id)}${own ? `・已有 ${own} 隻` : ''}</small>
       <button class="btn sm gold" onclick="buyPet('${id}')" ${bal < petPrice(id) ? 'disabled' : ''}>購買</button></div>`; }).join('')}</div>
   <div class="acts"><a class="btn ghost" href="#/">⬅ 回首頁</a></div>`;
   scrollTo(0, 0);
