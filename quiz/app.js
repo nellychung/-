@@ -214,7 +214,7 @@ async function loadUnit(sid, vid, uid) {
 }
 
 /* ---------- 路由 ---------- */
-fetch('data/catalog.json', {cache: 'no-cache'}).then(r => r.json()).then(c => { CAT = c; hud(); route(); })
+fetch('data/catalog.json', {cache: 'no-cache'}).then(r => r.json()).then(c => { CAT = c; fxInit(player().avatar); hud(); route(); })
   .catch(() => $('app').innerHTML = '<div class="panel">題庫目錄載入失敗，請檢查網路後重新整理。</div>');
 window.addEventListener('hashchange', () => {
   if (S && S.active && !confirm('要結束這次修練嗎？（已作答的紀錄和經驗值會保留）')) { history.pushState(null, '', S.hash); return; }
@@ -263,13 +263,19 @@ function petAlert() {
   if (!d.list.length) return `<a class="panel pmsg" href="#/pets">🥚 用零用錢去寵物園買一隻寵物，帶牠一起修練吧！</a>`;
   return '';
 }
-function pickAvatar() {
-  const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div class="mbox"><div class="lvtag">選擇你的俠客</div><div class="avs">${CHAR_IDS.map(a => `<button onclick="setAvatar('${a}',this)" class="${player().avatar === a ? 'on' : ''}">${charSVG(a, {aura: tierAura(lvInfo(player().xp).lv)})}<b>${CHARS[a].name}</b><small>${CHARS[a].cls}</small></button>`).join('')}</div></div>`;
+function pickAvatar(sex) {
+  document.querySelectorAll('.modal.pick').forEach(x => x.remove());
+  const cur = player().avatar, sx = sex || (CHARS[cur] || {}).sex || 'f';
+  const m = document.createElement('div'); m.className = 'modal pick';
+  m.innerHTML = `<div class="mbox pickbox"><button class="pclose" onclick="this.closest('.modal').remove()">✕</button>
+    <div class="ptitle">✦ 選擇你的俠客 ✦</div>
+    <div class="ptabs"><button class="${sx === 'f' ? 'on' : ''}" onclick="pickAvatar('f')">🌸 女俠</button><button class="${sx === 'm' ? 'on' : ''}" onclick="pickAvatar('m')">⚔️ 男俠</button></div>
+    <div class="avs2">${CHAR_IDS.filter(a => CHARS[a].sex === sx).map(a => `<button onclick="setAvatar('${a}',this)" class="${cur === a ? 'on' : ''}">
+      <img src="img/chars/${a}.png" alt="${CHARS[a].name}"><span class="cap"><b>${CHARS[a].name}</b><small>${CHARS[a].cls}・${fxOf(a).name}</small></span></button>`).join('')}</div></div>`;
   m.onclick = e => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
 }
-function setAvatar(a, b) { const p = player(); p.avatar = a; savePlayer(p); b.closest('.modal').remove(); hud(); home(); }
+function setAvatar(a, b) { const p = player(); p.avatar = a; savePlayer(p); b.closest('.modal').remove(); fxInit(a); hud(); home(); }
 
 /* ---------- 科目頁：冊次（可複選）＋單元（關卡） ---------- */
 function stars(st, count) {
