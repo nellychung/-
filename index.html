@@ -1658,11 +1658,13 @@
         <button @click="friendPopup.show = false" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-lg active:scale-95">太棒了！</button>
       </div>
     </div>
-    <div v-if="bigFx.show" :key="bigFx.key" class="fixed inset-0 z-[320] pointer-events-none flex items-center justify-center px-4">
-      <div class="bigfx rounded-3xl border-4 px-6 py-4 sm:px-10 sm:py-6 text-center shadow-2xl bg-white/95"
-           :class="bigFx.kind === 'minus' ? 'border-rose-400' : 'border-emerald-400'">
-        <div class="text-2xl sm:text-4xl font-black text-slate-800">{{ bigFx.title }}</div>
-        <div class="text-4xl sm:text-6xl font-black mt-1" :class="bigFx.kind === 'minus' ? 'text-rose-500' : 'text-emerald-500'">{{ bigFx.sub }}</div>
+    <!-- 加分／徽章提示：午餐頁改成貼在畫面底部的窄橫幅，不擋住中間的影片 -->
+    <div v-if="bigFx.show" :key="bigFx.key" class="fixed z-[320] pointer-events-none flex justify-center px-4"
+         :class="currentTab === 'lunch' ? 'inset-x-0 bottom-3 items-end' : 'inset-0 items-center'">
+      <div class="bigfx border-4 text-center shadow-2xl bg-white/95"
+           :class="[bigFx.kind === 'minus' ? 'border-rose-400' : 'border-emerald-400', currentTab === 'lunch' ? 'rounded-2xl px-5 py-1.5 max-w-[92vw]' : 'rounded-3xl px-6 py-4 sm:px-10 sm:py-6']">
+        <div class="font-black text-slate-800" :class="currentTab === 'lunch' ? 'text-base sm:text-lg' : 'text-2xl sm:text-4xl'">{{ bigFx.title }}</div>
+        <div class="font-black" :class="[bigFx.kind === 'minus' ? 'text-rose-500' : 'text-emerald-500', currentTab === 'lunch' ? 'text-xl sm:text-2xl' : 'text-4xl sm:text-6xl mt-1']">{{ bigFx.sub }}</div>
       </div>
     </div>
     <div v-if="alertState.show" class="fixed inset-0 z-[310] bg-black/45 flex items-end justify-center px-3 pb-3 sm:pb-6" @click.self="alertState.show = false">
